@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.Windows.Data;
+using System.Linq;
 
 namespace SDKSamples.ImageSample
 {
@@ -139,7 +140,8 @@ namespace SDKSamples.ImageSample
     {
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
-            if ((values[0] == null) || (values[1] == null))
+            
+            if (values.Any(v => v == null || v == System.Windows.DependencyProperty.UnsetValue))
             {
                 return String.Empty;
             }

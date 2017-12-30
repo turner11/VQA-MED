@@ -24,7 +24,8 @@
                 <!-- Image Template -->
                 <Border Padding="4" Background="White" BorderBrush="#22000000" BorderThickness="1">
                     <StackPanel Orientation="Vertical">
-                        <Image Source="{Binding Image.Thumbnail}"/>
+                        <Image Source="{Binding Image}"/>
+                        <!--<Image Source="{Binding Image.Thumbnail}"/>-->
                         <Label Content="{Binding Metadata.DateImageTaken}">
                             <Label.ToolTip>
                                 Only JPeg images with a stored thumbnail will display a thumbnail during preview.
@@ -37,7 +38,7 @@
 
 
         <Style TargetType="{x:Type ListBox}" x:Key="PhotoListBoxStyle">
-            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Foreground" Value="White" />            
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type ListBox}">
@@ -46,12 +47,18 @@
                          HorizontalScrollBarVisibility="Disabled">
                             <VirtualizingStackPanel x:Name="StackPanel1" 
                                                     
+                            Height="{Binding ElementName=ZoomSlider, Path='Value'}" 
+                            Width="{Binding ElementName=ZoomSlider, Path='Value'}"
                             IsItemsHost="True"
                             
                             Margin="5" 
                             Orientation="Vertical" 
                             VerticalAlignment="Top" 
-                            HorizontalAlignment="Stretch" />
+                            HorizontalAlignment="Stretch">
+
+
+
+                            </VirtualizingStackPanel>
                         </ScrollViewer>
                     </ControlTemplate>
                 </Setter.Value>
@@ -78,8 +85,8 @@
                             VirtualizingPanel.CacheLength="2,2"-->
 
 
-                       
-                       
+
+
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -181,6 +188,7 @@
 
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="250" />
         </Grid.ColumnDefinitions>
 
@@ -196,15 +204,37 @@
             <TextBox Name="ImagesDir" Margin="10,0" MouseDoubleClick="ImagesDir_MouseDoubleClick"/>
         </DockPanel>
 
-        <GroupBox Grid.Column="0" Grid.Row="1">
+        <GroupBox Grid.Column="0" Grid.Row="1" >
+            <Grid Background="BurlyWood">
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />                    
+                </Grid.ColumnDefinitions>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="75" />
+                </Grid.RowDefinitions>
+
+                <Image Grid.Row="0"  Source="{Binding ElementName=lstPhotos, Path=SelectedItem.Path}" />
+                <Grid Grid.Row="1"  Background="BurlyWood">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="40" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox Grid.Column="0" TextWrapping="Wrap" AcceptsReturn="True" AcceptsTab="True" SpellCheck.IsEnabled="True"></TextBox>
+                    <Button  Grid.Column="1" Name="btnAsk" Click="btnAsk_Click" Content="Go" Background="LightGreen"></Button>
+                  
+                </Grid>
+                
+            </Grid>
+        </GroupBox>
+
+            <GroupBox Grid.Column="1" Grid.Row="1">
             <!--<ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">-->
 
             <!--IsSynchronizedWithCurrentItem="True"-->
-            <!--VirtualizingPanel.IsContainerVirtualizable="True"
-                VirtualizingPanel.IsVirtualizing="True"
-                VirtualizingPanel.VirtualizationMode="Recycling"
-                VirtualizingPanel.CacheLengthUnit="Page"
-                VirtualizingPanel.CacheLength="2,2"-->
+           
             <ListBox 
                 Name="lstPhotos"                     
                 ItemsSource="{Binding}" 
@@ -214,15 +244,15 @@
                 SelectionMode="Extended" 
                 SelectedIndex="0" 
                 
+                VirtualizingPanel.IsContainerVirtualizable="True"
+                VirtualizingPanel.IsVirtualizing="True"
+                VirtualizingPanel.VirtualizationMode="Recycling"
+                VirtualizingPanel.CacheLengthUnit="Item"
+                VirtualizingPanel.CacheLength="20,20"
+                
                 Style="{StaticResource PhotoListBoxStyle}">
 
-                <ControlTemplate TargetType="{x:Type ListBox}" >
-                    <!--WrapPanel-->
-                    <WrapPanel
-                        ItemHeight="{Binding ElementName=ZoomSlider, Path='Value'}" 
-                            ItemWidth="{Binding ElementName=ZoomSlider, Path='Value'}">
-                    </WrapPanel>
-                </ControlTemplate>
+                
 
                 <!--ItemHeight="{Binding ElementName=ZoomSlider, Path='Value'}" 
                             ItemWidth="{Binding ElementName=ZoomSlider, Path='Value'}"-->
@@ -240,10 +270,10 @@
         </GroupBox>
 
         <!-- Splitter -->
-        <GridSplitter Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Stretch" Width="15" Background="Transparent" ShowsPreview="True"/>
+        <GridSplitter Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Stretch" Width="15" Background="Transparent" ShowsPreview="True"/>
 
         <!-- Right Hand Panel -->
-        <DockPanel Grid.Row="0" Grid.Column="1" Grid.RowSpan="2"
+        <DockPanel Grid.Row="0" Grid.Column="2" Grid.RowSpan="2"
         Margin="15,0,0,0">
 
             <!--Zoom Control-->
@@ -306,3 +336,4 @@
 
     </Grid>
 </Window>
+    

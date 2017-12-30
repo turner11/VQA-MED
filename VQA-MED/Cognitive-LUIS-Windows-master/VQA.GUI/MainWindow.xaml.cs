@@ -49,5 +49,10 @@ namespace SDKSamples.ImageSample
             this.Photos.Path = ImagesDir.Text;
 
         }
+
+        private void btnAsk_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }
