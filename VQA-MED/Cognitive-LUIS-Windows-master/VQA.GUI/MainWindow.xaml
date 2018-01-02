@@ -4,6 +4,7 @@
     Title="WPF Photo Viewer"
     Loaded="OnLoaded"
     xmlns:er="clr-namespace:SDKSamples.ImageSample" 
+        Activated="Window_Activated"
     xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase">
 
     <!-- Styles and Templates -->
@@ -214,16 +215,23 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
                     <RowDefinition Height="75" />
+                    
                 </Grid.RowDefinitions>
 
-                <Image Grid.Row="0"  Source="{Binding ElementName=lstPhotos, Path=SelectedItem.Path}" />
+                <Image Grid.Row="0"  Name="imgSelected" Source="{Binding ElementName=lstPhotos, Path=SelectedItem.Path}" />
                 <Grid Grid.Row="1"  Background="BurlyWood">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="40" />
+                        
                     </Grid.ColumnDefinitions>
-                    <TextBox Grid.Column="0" TextWrapping="Wrap" AcceptsReturn="True" AcceptsTab="True" SpellCheck.IsEnabled="True"></TextBox>
-                    <Button  Grid.Column="1" Name="btnAsk" Click="btnAsk_Click" Content="Go" Background="LightGreen"></Button>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBox Grid.Row="0"  Grid.Column="0" Name="txbQuestion" TextWrapping="Wrap" AcceptsReturn="True" AcceptsTab="True" SpellCheck.IsEnabled="True" KeyDown="txbQuestion_KeyDown"></TextBox>
+                    <Button  Grid.Row="0" Grid.Column="1" Name="btnAsk" Click="btnAsk_Click" Content="Go" Background="LightGreen" Grid.RowSpan="2"></Button>
+                    <TextBlock Grid.Row="1" Name="txbResponce" Background="LightGray" Height="Auto"></TextBlock>
                   
                 </Grid>
                 
@@ -240,6 +248,7 @@
                 ItemsSource="{Binding}" 
                 Margin="5" 
                 MouseDoubleClick="OnPhotoClick"
+                SelectionChanged="lstPhotos_SelectionChanged"
                        
                 SelectionMode="Extended" 
                 SelectedIndex="0" 

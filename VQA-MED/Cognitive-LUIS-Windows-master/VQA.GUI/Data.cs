@@ -1,7 +1,11 @@
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Windows.Media.Imaging;
+using System.Linq;
 
 namespace SDKSamples.ImageSample
 {
@@ -88,6 +92,14 @@ namespace SDKSamples.ImageSample
             get { return _directory.FullName; }
         }
 
+        private FileInfo _captions;
+
+        public string Captions
+        {
+            get { return _captions?.FullName ?? ""; }
+            set { _captions = new FileInfo(value);}
+        }
+
         public DirectoryInfo Directory
         {
             set
@@ -109,7 +121,7 @@ namespace SDKSamples.ImageSample
             }
             catch (DirectoryNotFoundException)
             {
-                System.Windows.MessageBox.Show("No Such Directory");
+                System.Windows.MessageBox.Show($"No Such Directory: {this._directory}");
             }
         }
 
