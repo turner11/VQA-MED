@@ -60,6 +60,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="UIElementGenerator.cs" />
     <Compile Include="VirtualizingWrapPanel.cs" />
     <Page Include="MainWindow.xaml">
       <SubType>

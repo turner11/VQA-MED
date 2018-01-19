@@ -72,14 +72,15 @@ namespace SDKSamples.ImageSample
     /// </summary>
     public class PhotoCollection : ObservableCollection<Photo>
     {
-        public PhotoCollection() { }
-
-        public PhotoCollection(string path) : this(new DirectoryInfo(path)) { }
-
-        public PhotoCollection(DirectoryInfo directory)
+        private Predicate<string> _filter;
+        public Predicate<string> Filter
         {
-            _directory = directory;
-            Update();
+            get { return this._filter; }
+            set
+            {
+                this._filter = value;
+                this.Update();
+            }
         }
 
         public string Path
@@ -97,7 +98,7 @@ namespace SDKSamples.ImageSample
         public string Captions
         {
             get { return _captions?.FullName ?? ""; }
-            set { _captions = new FileInfo(value);}
+            set { _captions = new FileInfo(value); }
         }
 
         public DirectoryInfo Directory
@@ -109,14 +110,31 @@ namespace SDKSamples.ImageSample
             }
             get { return _directory; }
         }
+
+
+        public PhotoCollection() { }
+
+        public PhotoCollection(string path) : this(new DirectoryInfo(path)) { }
+
+        public PhotoCollection(DirectoryInfo directory)
+        {
+            _directory = directory;
+            Update();
+        }
+
+      
         private void Update()
         {
             this.Clear();
             try
             {
-                //Parallel.ForEach
-                foreach (FileInfo f in _directory.GetFiles("*.jpg"))
-                    Add(new Photo(f.FullName));
+                var allFiles = _directory.GetFiles("*.jpg");
+                var filesToAdd = allFiles.Where(f => this.Filter == null || this.Filter(f.Name)).Select(f => f.FullName).ToList();
+                
+                foreach (var f in filesToAdd)
+                {
+                    Add(new Photo(f));
+                }
 
             }
             catch (DirectoryNotFoundException)

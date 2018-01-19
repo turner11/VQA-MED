@@ -2,43 +2,123 @@ import json
 import sys
 import argparse
 import os
+import logging 
+
+ERROR_KEY = "error"
+logname = "vqa.log"
+logging.basicConfig(filename=logname,
+                            filemode='a',
+                            format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+                            datefmt='%H:%M:%S',
+                            level=logging.DEBUG)
 
 
-def get_caption(file_name,image_name ):    
+
+logger = logging.getLogger('pythonVQA')
+CAPTION_KEY = 'caption'
+
+def get_all_data(file_name):
     with open(file_name) as f:
         t = json.load(f)
     #t.keys()
-    a = t["annotations"]   
-   
-    try:
-        image_id = int(os.path.basename(image_name).split("_")[-1].split(".")[0])
-        image_an = next(an for an in a if an['image_id'] == image_id)
-        caption = image_an['caption']
-    except Exception as ex:
-        caption = "Failed to get caption"
+    annot_dict = t["annotations"]   
+    images_dict = t["images"]
+    return annot_dict, images_dict
 
-    return caption
+def get_image_data(file_name,image_path):    
+    annot_dict, images_dict = get_all_data(file_name) 
+    
+    caption = ""
+    image_info = {}
+    try:
+        image_id = int(os.path.basename(image_path).split("_")[-1].split(".")[0])
+        image_folder, image_name = os.path.split(image_path)
+        image_an = [an for an in annot_dict if an.get('image_id',-999) == image_id]
+         
+        logger.debug(image_path)
+        image_info = next((im_data for im_data in images_dict if im_data.get('file_name',"NO-NAME") == image_name),{})
+        logger.debug("image info was: {0}".format(image_info))
+        #caption = ";\n\n".join([an[CAPTION_KEY] for an in image_an]) or "FAILED TO GET CAPTION"
+        caption = [an[CAPTION_KEY] for an in image_an] or ["FAILED TO GET CAPTION"]
+    except Exception as ex:
+        logger.warn("@@@@@@@@@@@@@ Error @@@@@@@@@:\n{0}".format(ex))
+        caption = caption or "Failed to get caption"
+        image_info = image_info or {}
+        image_info[ERROR_KEY] = str(ex)
+
+    image_info.update({CAPTION_KEY:caption})    
+    return image_info
+
+
+def query_data(file_name, query):    
+    annot_dict, images_dict = get_all_data(file_name) 
+    
+    caption = ""
+    q_results = {}
+    try:                
+        image_an = (an for an in annot_dict if query in an.get(CAPTION_KEY,""))
+        captions_by_id = {an['image_id']: an[CAPTION_KEY] for an in image_an}
+
+        relevant_ids = set(captions_by_id.keys())
+        filename_by_id = { d['id']:d['file_name'] for d in images_dict if d['id'] in relevant_ids}
+        
+        mutual_keys = relevant_ids.intersection(set(filename_by_id.keys()))
+        q_results = {filename_by_id[id]: captions_by_id[id] for id in mutual_keys}
+        #image_info = next((im_data for im_data in images_dict if im_data.get('file_name',"NO-NAME") == image_name),{})
+        #logger.debug("image info was: {0}".format(image_info))
+        #caption = image_an['caption']        
+    except Exception as ex:        
+        q_results = q_results or {}
+        q_results[ERROR_KEY] = str(ex)
+
+    return q_results
         
 
-if __name__ == "__main__":
+def main(args):
     try:
-        parser = argparse.ArgumentParser(description='Extracts caption for a COCO image.')    
-        parser.add_argument('-p', dest='path', help='path of annotation file')
-        parser.add_argument('-n', dest='imag_name', help='name_of_image')
+    
+        # args.path =  "C:\\Users\\Public\\Documents\\Data\\2014 Train\\annotations\\captions_train2014.json"
+        #args.imag_name = "COCO_train2014_000000318495.jpg"
 
-        args = parser.parse_args()
+        #args.imag_name = None
+        #args.query = 'amazing'#'zebra'
 
         file_name = args.path
         image_name = args.imag_name
-    
-        #file_name =  "C:\\Users\\Public\\Documents\\Data\\2014 Train\\annotations\\captions_train2014.json"
-        #image_name = "COCO_train2014_000000318495.jpg"
+        query = args.query
+        if not file_name or not os.path.isfile(file_name):
+            ret_val = {ERROR_KEY: "Got a non valid path: {0}".format(file_name)}
+        elif args.imag_name:
+            image_info = get_image_data(file_name,image_name)        
+            ret_val = image_info
+        elif query:
+            ret_val = query_data(file_name,query)
+            #ret_val = {"Testing": "query was: {0}".format(query)}
+        elif args.question:
+            ret_val = {ERROR_KEY: "Asking a question was not implemented yet..."}
+        else:
+             ret_val = {ERROR_KEY: "Could not figure out what you want me to do..."}
+    except Exception as ex:
+         ret_val = {ERROR_KEY: "Got a non expected error: {0}".format(ex)}
+    finally: 
+        pass
+    return ret_val
 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Extracts caption for a COCO image.')    
+    parser.add_argument('-p', dest='path', help='path of annotation file')
+    parser.add_argument('-n', dest='imag_name', help='name_of_image',default=None)
+    parser.add_argument('-q', dest='query', help='query to look for',default=None)
+    parser.add_argument('-a', dest='question', help='question to ask',default=None)
 
-        caption = get_caption(file_name,image_name)
-        print(caption)
-    finally:
-        raw_input()
+    args = parser.parse_args()  
+
+    ret_val = main(args)
+    json_string = json.dumps(ret_val)
+    print(json_string)
+        #raw_input()
 
     #sys.exit(int(main(file_name) or 0))
 
+    #python C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\VQA.Python.py -p "C:\Users\Public\Documents\Data\2014 Train\annotations\captions_train2014.json" -n "C:\Users\Public\Documents\Data\2014 Train\train2014\COCO_train2014_000000000061.jpg"
+    #"C:\Program Files (x86)\Microsoft Visual Studio\Shared\Anaconda3_64\python.exe" "C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\VQA.Python.py" -p "C:\Users\Public\Documents\Data\2014 Train\annotations\captions_train2014.json" -n "C:\Users\Public\Documents\Data\2014 Train\train2014\COCO_train2014_000000000061.jpg"

@@ -11,11 +11,15 @@ using System.IO;
 using System.Diagnostics;
 using System.Linq;
 using System.Collections.Generic;
+using System.Windows.Navigation;
+using System.Threading.Tasks;
+using VQA.GUI;
 
 namespace SDKSamples.ImageSample
 {
     public sealed partial class MainWindow : Window
     {
+
         public PhotoCollection Photos;
         public static List<(string Images, string Captions)> KnownDataLocations
         {
@@ -28,9 +32,14 @@ namespace SDKSamples.ImageSample
             }
         }
 
+        internal UIElementGenerator UiElementGenerator { get; }
+
+        private VqaLogics logics;
+
         public MainWindow()
         {
             InitializeComponent();
+            this.UiElementGenerator = new UIElementGenerator(this);
 
             this.SetNextFolder();
             
@@ -53,14 +62,22 @@ namespace SDKSamples.ImageSample
 
         private void OnImagesDirChangeClick(object sender, RoutedEventArgs e)
         {
+            this.setCurrnetDataPaths();
+        }
+
+        private void setCurrnetDataPaths()
+        {
             var captionFile = KnownDataLocations.Where(tpl => String.Equals(tpl.Images, ImagesDir.Text, StringComparison.InvariantCulture)).FirstOrDefault().Captions ?? "";
             this.Photos.Path = ImagesDir.Text;
             this.Photos.Captions = captionFile;
+            this.logics = new VqaLogics(captionFile);
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            SetNextFolder();
+            //SetNextFolder();
+
+            this.setCurrnetDataPaths();
         }
 
         internal void SetNextFolder()
@@ -85,24 +102,51 @@ namespace SDKSamples.ImageSample
 
         }
 
-        private void btnAsk_Click(object sender, RoutedEventArgs e)
+        private async void btnAsk_Click(object sender, RoutedEventArgs e)
+        {
+         
+
+            bool query = true;
+            if (query)
+            {
+                await this.QueryImaeghs();
+            }
+            else
+                await this.Ask();
+           
+
+        }
+
+        private async Task Ask()
         {
             var question = this.txbQuestion.Text;
             var imagePath = (this.lstPhotos.SelectedItem as Photo)?.Path ?? "";
             var imagesDirectory = this.ImagesDir.Text;
-
             var hasData = !String.IsNullOrWhiteSpace(question) && File.Exists(imagePath) && Directory.Exists(imagesDirectory);
             string responce;
-            if (!hasData)
-            {
+            if (!hasData)            
                 responce = "Got invalid data to query";
-                Debug.WriteLine(responce);
-            }
-            else
-                responce = VqaLogics.Ask(question, new FileInfo(imagePath));
+            
+            else            
+                responce = await this.logics.Ask(question, new FileInfo(imagePath));
+            
 
+            Debug.WriteLine(responce);
             this.txbResponce.Text = responce;
+        }
 
+        private async Task QueryImaeghs()
+        {
+            var question = this.txbQuestion.Text;
+            if (question.Length == 0)
+            {
+                this.Photos.Filter = null;
+                return;
+            }
+
+            var match_images = await this.logics.Query(question);            
+            this.Photos.Filter = fn => match_images.Contains(fn);
+            
         }
 
         private void txbQuestion_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
@@ -122,22 +166,31 @@ namespace SDKSamples.ImageSample
             var caption = "";
             try
             {
-                caption = await VqaLogics.GetImageCaptions(this.Photos.Captions, photo.Path);
+                
+                this.spImageData.Children.Clear();
+                var dataDict = await this.logics.GetImageData(photo.Path);
+                this.spImageData.Children.Clear(); //Clearing again because maybe we got a new request in the meanwhile
+                var allitems = dataDict.OrderBy(pair => pair.Key.ToLower() == "caption").ToList();
+                foreach (var pair in allitems)
+                {
+                    (var headerItem, var contentItem) = this.UiElementGenerator.GetDataItemsControls(pair.Key, pair.Value);
+                    this.spImageData.Children.Add(headerItem);
+                    this.spImageData.Children.Add(contentItem);
+                }
+                //caption = await VqaLogics.GetImageCaptions(this.Photos.Captions, photo.Path);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 caption = ex.Message;
             }
-
+            
             this.txbResponce.Text = caption;
-        }
+        }        
+
+       
 
         private void Window_Activated(object sender, EventArgs e)
         {
-            this.Photos.Path = this.ImagesDir.Text;
-
-            var captionFile = KnownDataLocations.Where(tpl => String.Equals(tpl.Images, this.ImagesDir.Text, StringComparison.InvariantCulture)).FirstOrDefault().Captions ?? "";
-            this.Photos.Captions = captionFile;
         }
     }
 }

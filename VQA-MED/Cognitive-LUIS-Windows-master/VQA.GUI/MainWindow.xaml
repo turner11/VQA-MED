@@ -5,6 +5,7 @@
     Loaded="OnLoaded"
     xmlns:er="clr-namespace:SDKSamples.ImageSample" 
         Activated="Window_Activated"
+        
     xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase">
 
     <!-- Styles and Templates -->
@@ -303,7 +304,7 @@
             <!--Metadata Panel-->
             <GroupBox>
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                    <StackPanel>
+                    <StackPanel Name="spImageData">
                         <Label Style="{StaticResource MetadataHeader}">Source:</Label>
                         <Label Content="{Binding Path=Source}" />
                         <Label Style="{StaticResource MetadataHeader}">Size:</Label>
