@@ -72,6 +72,8 @@ namespace SDKSamples.ImageSample
     /// </summary>
     public class PhotoCollection : ObservableCollection<Photo>
     {
+        public string PixelMaps { get; internal set; }
+
         private Predicate<string> _filter;
         public Predicate<string> Filter
         {

@@ -21,13 +21,14 @@ namespace SDKSamples.ImageSample
     {
 
         public PhotoCollection Photos;
-        public static List<(string Images, string Captions)> KnownDataLocations
+        public static List<(string Images, string Captions, string PixelMaps)> KnownDataLocations
         {
             get
             {
-                return new List<(string, string )> { (@"C:\Users\Public\Documents\Data\2014 Train\train2014", @"C:\Users\Public\Documents\Data\2014 Train\annotations\captions_train2014.json"),
-                                               // (@"C:\Users\Public\Documents\Data\2017\val2017", @"C:\Users\Public\Documents\Data\2017\annotations\stuff_val2017.json"),
-                                               // (Environment.CurrentDirectory + "\\images","")
+                return new List<(string, string, string )>
+                                {(@"C:\Users\Public\Documents\Data\2017\val2017", @"C:\Users\Public\Documents\Data\2017\annotations\stuff_val2017.json",@"C:\Users\Public\Documents\Data\2017\annotations\stuff_val2017_pixelmaps"),
+                                 (@"C:\Users\Public\Documents\Data\2014 Train\train2014", @"C:\Users\Public\Documents\Data\2014 Train\annotations\captions_train2014.json",""),
+                                 // (Environment.CurrentDirectory + "\\images","","")
                                     };
             }
         }
@@ -67,10 +68,11 @@ namespace SDKSamples.ImageSample
 
         private void setCurrnetDataPaths()
         {
-            var captionFile = KnownDataLocations.Where(tpl => String.Equals(tpl.Images, ImagesDir.Text, StringComparison.InvariantCulture)).FirstOrDefault().Captions ?? "";
-            this.Photos.Path = ImagesDir.Text;
-            this.Photos.Captions = captionFile;
-            this.logics = new VqaLogics(captionFile);
+            (string Images, string Captions, string PixelMaps) = KnownDataLocations.Where(tpl => String.Equals(tpl.Images, ImagesDir.Text, StringComparison.InvariantCulture)).FirstOrDefault();
+            this.logics = new VqaLogics(Captions, PixelMaps);
+            this.Photos.Path = Images;
+            this.Photos.Captions = Captions;
+            this.Photos.PixelMaps = PixelMaps;
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)
@@ -82,11 +84,11 @@ namespace SDKSamples.ImageSample
 
         internal void SetNextFolder()
         {
-            (string Images, string Captions) = this.GetNextFolder();
+            (string Images, string Captions, string PixelMap) = this.GetNextFolder();
             ImagesDir.Text = Images;
         }
 
-        private (string Images, string Captions) GetNextFolder()
+        private (string Images, string Captions, string PixelMap) GetNextFolder()
         {
             var allItems = KnownDataLocations;
             var currImagesFolder = this.ImagesDir.Text;
@@ -159,18 +161,18 @@ namespace SDKSamples.ImageSample
 
         private async void lstPhotos_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            this.spImageData.Children.Clear();
             var photo = lstPhotos.SelectedItem as Photo;
-            if (photo == null)
+            if (photo == null || this.logics == null)
                 return;
 
             var caption = "";
             try
             {
                 
-                this.spImageData.Children.Clear();
                 var dataDict = await this.logics.GetImageData(photo.Path);
                 this.spImageData.Children.Clear(); //Clearing again because maybe we got a new request in the meanwhile
-                var allitems = dataDict.OrderBy(pair => pair.Key.ToLower() == "caption").ToList();
+                var allitems = dataDict.OrderByDescending(pair => pair.Key.ToLower() == "caption" || pair.Key.ToLower() == "pixel map").ToList();
                 foreach (var pair in allitems)
                 {
                     (var headerItem, var contentItem) = this.UiElementGenerator.GetDataItemsControls(pair.Key, pair.Value);

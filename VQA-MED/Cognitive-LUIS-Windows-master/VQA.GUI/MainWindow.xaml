@@ -283,8 +283,7 @@
         <GridSplitter Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Stretch" Width="15" Background="Transparent" ShowsPreview="True"/>
 
         <!-- Right Hand Panel -->
-        <DockPanel Grid.Row="0" Grid.Column="2" Grid.RowSpan="2"
-        Margin="15,0,0,0">
+        <DockPanel Grid.Row="0" Grid.Column="2" Grid.RowSpan="2" Margin="15,0,0,0">
 
             <!--Zoom Control-->
             <DockPanel DockPanel.Dock="Bottom" Margin="5">
@@ -302,10 +301,10 @@
             </DockPanel>
 
             <!--Metadata Panel-->
-            <GroupBox>
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <GroupBox >
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" >
                     <StackPanel Name="spImageData">
-                        <Label Style="{StaticResource MetadataHeader}">Source:</Label>
+                        <!--<Label Style="{StaticResource MetadataHeader}">Source:</Label>
                         <Label Content="{Binding Path=Source}" />
                         <Label Style="{StaticResource MetadataHeader}">Size:</Label>
                         <Label>
@@ -337,7 +336,7 @@
                         <Label Style="{StaticResource MetadataHeader}">White Balance Mode:</Label>
                         <Label Content="{Binding Path=Metadata.WhiteBalanceMode}" />
                         <Label Style="{StaticResource MetadataHeader}">Color Representation:</Label>
-                        <Label Content="{Binding Path=Metadata.ColorRepresentation}" />
+                        <Label Content="{Binding Path=Metadata.ColorRepresentation}" />-->
                     </StackPanel>
                 </ScrollViewer>
             </GroupBox>

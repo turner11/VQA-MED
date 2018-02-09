@@ -12,12 +12,16 @@ namespace VQA.Logic
     {
         private const string PYTHON_INTERP_PATH = "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\Anaconda3_64\\python.exe\"";
         public const string ERROR_KEY = "error"; //this is also impelemnted on python's side
+
         public readonly string jsonPath;
-        public VqaLogics(string jsonPath)
+        public readonly string pixalMapPath;
+
+        public VqaLogics(string jsonPath, string pixalMapPath)
         {
             if (String.IsNullOrWhiteSpace(jsonPath))
                 throw new ArgumentException("Cannot work without a json path", nameof(jsonPath));
             this.jsonPath = jsonPath;
+            this.pixalMapPath = pixalMapPath;
 
         }
         public async Task<string> Ask(string question, FileInfo imagePath)
@@ -48,7 +52,14 @@ namespace VQA.Logic
 
         public async Task<Dictionary<string, object>> GetImageData(string imageName)
         {
-            return await this.QueryPython("n", imageName);
+            var data =  await this.QueryPython("n", imageName);
+            var fi = new FileInfo(imageName);
+            var pixelMapImage = new FileInfo(Path.Combine(this.pixalMapPath, fi.Name).ToLower().Replace(".jpg",".png"));
+            if (pixelMapImage.Exists)
+            {
+                data["Pixel Map"] = pixelMapImage.FullName;
+            }
+            return data;
            
         }
 
@@ -57,12 +68,20 @@ namespace VQA.Logic
             Dictionary<string, object>  values = null;
             if (!String.IsNullOrWhiteSpace(option) && !String.IsNullOrWhiteSpace(value))
             {
+                try
+                {
+                    var args = $"-{option} \"{value}\"";
+                    var rawData = await ExecutePython(args);
+                    values = JsonConvert.DeserializeObject<Dictionary<string, object>>(rawData);
+                    //var valuesAAAA = JsonConvert.DeserializeObject<Dictionary<string, string>>(rawData);
+                }
+                catch (Exception e)
+                {
 
+                    values = new Dictionary<string, object>() { { ERROR_KEY, $"Got an error while quering python:\n{e}" } };
+                }
 
-                var args = $"-{option} \"{value}\"";
-                var rawData = await ExecutePython(args);
-                values = JsonConvert.DeserializeObject<Dictionary<string, object>>(rawData);
-                //var valuesAAAA = JsonConvert.DeserializeObject<Dictionary<string, string>>(rawData);
+               
 
             }
 
@@ -89,6 +108,8 @@ namespace VQA.Logic
             p.StartInfo.RedirectStandardOutput = true;
             p.StartInfo.FileName = PYTHON_INTERP_PATH;
             p.StartInfo.CreateNoWindow = true;
+            Debug.Print($"JSON path:\n{this.jsonPath}");
+            Debug.Print($"args:\n{args}");
             var argStr = $"C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\Cognitive-LUIS-Windows-master\\Sample\\VQA.Python\\VQA.Python.py -p \"{this.jsonPath}\" {args}";
             p.StartInfo.Arguments = argStr;
             p.Start();
