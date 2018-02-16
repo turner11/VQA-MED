@@ -21,13 +21,20 @@ namespace SDKSamples.ImageSample
     {
 
         public PhotoCollection Photos;
-        public static List<(string Images, string Captions, string PixelMaps)> KnownDataLocations
+        public static List<(string Images, string Captions, string PixelMaps, string pythonHandler)> KnownDataLocations
         {
             get
             {
-                return new List<(string, string, string )>
-                                {(@"C:\Users\Public\Documents\Data\2017\val2017", @"C:\Users\Public\Documents\Data\2017\annotations\stuff_val2017.json",@"C:\Users\Public\Documents\Data\2017\annotations\stuff_val2017_pixelmaps"),
-                                 (@"C:\Users\Public\Documents\Data\2014 Train\train2014", @"C:\Users\Public\Documents\Data\2014 Train\annotations\captions_train2014.json",""),
+                return new List<(string, string, string,string )>
+                                {(@"C:\Users\Public\Documents\Data\2017\val2017", 
+                                 @"C:\Users\Public\Documents\Data\2017\annotations\stuff_val2017.json",
+                                  @"C:\Users\Public\Documents\Data\2017\annotations\stuff_val2017_pixelmaps",
+                                  @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\VQA.Python.py"),
+
+                                    (@"C:\Users\Public\Documents\Data\2014 Train\train2014", 
+                                    @"C:\Users\Public\Documents\Data\2014 Train\annotations\captions_train2014.json",
+                                    "",
+                                    @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\VQA14.py"),
                                  // (Environment.CurrentDirectory + "\\images","","")
                                     };
             }
@@ -68,8 +75,8 @@ namespace SDKSamples.ImageSample
 
         private void setCurrnetDataPaths()
         {
-            (string Images, string Captions, string PixelMaps) = KnownDataLocations.Where(tpl => String.Equals(tpl.Images, ImagesDir.Text, StringComparison.InvariantCulture)).FirstOrDefault();
-            this.logics = new VqaLogics(Captions, PixelMaps);
+            (string Images, string Captions, string PixelMaps,string pythonHandler) = KnownDataLocations.Where(tpl => String.Equals(tpl.Images, ImagesDir.Text, StringComparison.InvariantCulture)).FirstOrDefault();
+            this.logics = new VqaLogics(Captions, PixelMaps, pythonHandler);
             this.Photos.Path = Images;
             this.Photos.Captions = Captions;
             this.Photos.PixelMaps = PixelMaps;
@@ -84,11 +91,11 @@ namespace SDKSamples.ImageSample
 
         internal void SetNextFolder()
         {
-            (string Images, string Captions, string PixelMap) = this.GetNextFolder();
+            (string Images, string Captions, string PixelMap, string pythonHandler) = this.GetNextFolder();
             ImagesDir.Text = Images;
         }
 
-        private (string Images, string Captions, string PixelMap) GetNextFolder()
+        private (string Images, string Captions, string PixelMap, string pythonHandler) GetNextFolder()
         {
             var allItems = KnownDataLocations;
             var currImagesFolder = this.ImagesDir.Text;

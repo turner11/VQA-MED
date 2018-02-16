@@ -15,13 +15,15 @@ namespace VQA.Logic
 
         public readonly string jsonPath;
         public readonly string pixalMapPath;
+        public readonly string pythonHandler;
 
-        public VqaLogics(string jsonPath, string pixalMapPath)
+        public VqaLogics(string jsonPath, string pixalMapPath, string pythonHandler)
         {
             if (String.IsNullOrWhiteSpace(jsonPath))
                 throw new ArgumentException("Cannot work without a json path", nameof(jsonPath));
             this.jsonPath = jsonPath;
             this.pixalMapPath = pixalMapPath;
+            this.pythonHandler = pythonHandler;
 
         }
         public async Task<string> Ask(string question, FileInfo imagePath)
@@ -110,7 +112,8 @@ namespace VQA.Logic
             p.StartInfo.CreateNoWindow = true;
             Debug.Print($"JSON path:\n{this.jsonPath}");
             Debug.Print($"args:\n{args}");
-            var argStr = $"C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\Cognitive-LUIS-Windows-master\\Sample\\VQA.Python\\VQA.Python.py -p \"{this.jsonPath}\" {args}";
+            Debug.Print($"Python file :\n{this.pythonHandler}");
+            var argStr = $"{this.pythonHandler} -p \"{this.jsonPath}\" {args}";
             p.StartInfo.Arguments = argStr;
             p.Start();
             // Do not wait for the child process to exit before
