@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>f8cc0e7b-d2e3-4551-bf5a-5d869c7d4776</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>VQA.Python.py</StartupFile>
+    <StartupFile>VQA14_multiple.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>

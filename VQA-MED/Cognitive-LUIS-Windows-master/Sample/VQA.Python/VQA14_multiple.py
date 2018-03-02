@@ -115,8 +115,8 @@ if __name__ == "__main__":
     args = parser.parse_args()  
 
     #args.path = "D:\\GitHub\\VQA-Keras-Visual-Question-Answering\\data\\Questions_Train_mscoco\\MultipleChoice_mscoco_train2014_questions.json"
-    ##args.imag_name = "COCO_train2014_000000487025"
-    #args.query = "umbrela"
+    #args.imag_name = "COCO_train2014_000000487025"
+    #args.query = "polo"
     #args.imag_name = ""
 
     with Timer() as t:

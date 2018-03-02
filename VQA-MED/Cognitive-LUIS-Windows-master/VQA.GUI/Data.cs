@@ -132,7 +132,7 @@ namespace SDKSamples.ImageSample
             {
                 var allFiles = _directory.GetFiles("*.jpg");
                 var filesToAdd = allFiles.Where(f => this.Filter == null || this.Filter(f.Name)).Select(f => f.FullName).ToList();
-                
+                filesToAdd.Sort();
                 foreach (var f in filesToAdd)
                 {
                     Add(new Photo(f));
@@ -525,18 +525,25 @@ namespace SDKSamples.ImageSample
 
     public class VqaData
     {
+        public string Description { get; }
         public string Images { get; private set; }
         public string Captions { get; private set; }
         public string PixelMaps { get; private set; }
         public string PythonHandler { get; private set; }
 
-        public VqaData(string images, string captions, string pixelMaps, string pythonHandler)
+        public VqaData(string description, string images, string captions, string pixelMaps, string pythonHandler)
         {
+            this.Description = description;
             this.Images = images;
             this.Captions = captions;
             this.PixelMaps = pixelMaps;
             this.PythonHandler = pythonHandler;
         }
-        
+
+        public override string ToString()
+        {
+            return $"{this.Description} ({Path.GetFileName(this.PythonHandler)})";
+        }
+
     }
 }

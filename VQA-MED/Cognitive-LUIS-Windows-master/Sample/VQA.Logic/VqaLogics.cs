@@ -87,13 +87,20 @@ namespace VQA.Logic
 
             }
 
-            if (values == null || values.Count == 0)
+            if (values == null)
             {
                 values = new Dictionary<string, object>
                                 {
                                     { ERROR_KEY, $"Got an empty response for parameters: option: {option}; value: {value}"}
                                 };
+            }else if (values.Count == 0)
+            {
+                values = new Dictionary<string, object>
+                                {
+                                    { "0 length response", $"Got an response containing  no items for parameters: option: {option}; value: {value}"}
+                                };
             }
+
 
             return values;
 

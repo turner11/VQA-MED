@@ -48,7 +48,7 @@ class VqaDataParser(object):
             # Query annotations:
             an_query_fields = ['image_id','id']
             image_an = list((an['image_id'], an) for an in annotations if any([query in str(an[k]) for k in an_query_fields]))
-            
+
             # Query categories:
             cat_query_fields = ['name','supercategory',"id"]
             cat_ids = [c['id'] for c in categories if any([query in str(c[k]) for k in cat_query_fields])]
@@ -64,7 +64,7 @@ class VqaDataParser(object):
             annotations = [an for an in annotations if an['image_id'] in relevant_img_ids]
             all_relevant_categories = [an[ 'category_id'] for an in annotations]
             categories = [c for c in categories if c['id']in all_relevant_categories]
-        
+
             #mutual_keys = relevant_ids.intersection(set(filename_by_id.keys()))
             #q_results = {filename_by_id[id]: captions_by_id[id] for id in mutual_keys}
 
@@ -96,10 +96,11 @@ class VqaDataParser(object):
        
 
         return image_info, relevant_annotations, relevant_ctegories
+        
 
 
     def get_image_data(self, image_path):    
-        image_info, annotations, categories = self.get_image_data_items(image_path=image_path) 
+        image_info, annotations, categories = self.get_image_data_items(image_path=image_path)         
     
         caption = ""
         ret_image_info = {}
@@ -164,8 +165,8 @@ def main(args):
         # args.path =  "C:\\Users\\Public\\Documents\\Data\\2014 Train\\annotations\\captions_train2014.json"
         #args.imag_name = "COCO_train2014_000000318495.jpg"
 
-        args.imag_name = None
-        args.query = 'amazing'#'zebra'
+        #args.imag_name = None
+        #args.query = 'amazing'#'zebra'
 
         file_name = args.path
         image_name = args.imag_name
@@ -217,7 +218,7 @@ if __name__ == "__main__":
     
     #args.path = "C:\\Users\\Public\\Documents\\Data\\2017\\annotations\\stuff_val2017.json"
     #args.imag_name= None
-    #args.query = "13"
+    #args.query = "dishes"
     
     
     ret_val = main(args)

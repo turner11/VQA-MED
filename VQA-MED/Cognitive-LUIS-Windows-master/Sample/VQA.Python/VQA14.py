@@ -34,17 +34,46 @@ class Vqa14DataParser(object):
         return "{0}({1})".format(self.__class__.__name__,self.json_path)
 
 
-
-    def get_all_data(self):
+    def get_all_data(self, query=None):
+        json_data = self.json_data
         
-        t = self.json_data
-        #t.keys()
-        annot_dict = t["annotations"]   
-        images_dict = t["images"]
-        return annot_dict, images_dict
+        annotations = json_data["annotations"]   
+        images = json_data["images"]
+        #categories = json_data["categories"]
+
+        if query:
+            # Query images:
+            img_query_fields = ['file_name','id']
+            images_by_images_id = list((img['id'], img) for img in images if any([query in str(img[k]) for k in img_query_fields]))
+
+            # Query annotations:
+            an_query_fields = ['image_id','id','caption']
+            image_an = list((an['image_id'], an) for an in annotations if any([query in str(an[k]) for k in an_query_fields]))
+            
+            ## Query categories:
+            #cat_query_fields = ['name','supercategory',"id"]
+            #cat_ids = [c['id'] for c in categories if any([query in str(c[k]) for k in cat_query_fields])]
+            #relevant_images_with_category = set(an['image_id'] for an in annotations if an['category_id'] in cat_ids)
+
+            
+            relevant_img_ids = set([tpl[0] for tpl in image_an]).union(set([tpl[0] for tpl in images_by_images_id]))#.union(relevant_images_with_category )
+            relevant_img_ids = sorted(relevant_img_ids)
+            
+            filename_by_id = { img_data['id']:img_data['file_name'] for img_data in images if img_data['id'] in relevant_img_ids}
+
+            images = [img for img in images if img['id'] in relevant_img_ids]
+            annotations = [an for an in annotations if an['image_id'] in relevant_img_ids]
+            #all_relevant_categories = [an[ 'category_id'] for an in annotations]
+            #categories = [c for c in categories if c['id']in all_relevant_categories]
+        
+            #mutual_keys = relevant_ids.intersection(set(filename_by_id.keys()))
+            #q_results = {filename_by_id[id]: captions_by_id[id] for id in mutual_keys}
+
+        return images, annotations#, categories
+    
 
     def get_image_data(self, image_path):    
-        annot_dict, images_dict = self.get_all_data() 
+        images_dict, annot_dict = self.get_all_data() 
     
         caption = ""
         image_info = {}
@@ -69,7 +98,7 @@ class Vqa14DataParser(object):
 
 
     def query_data(self, query):    
-        annot_dict, images_dict = self.get_all_data() 
+        images_dict, annot_dict = self.get_all_data(query=query) 
     
         caption = ""
         q_results = {}
@@ -95,7 +124,7 @@ class Vqa14DataParser(object):
 def main(args):
     try:
     
-        # args.path =  "C:\\Users\\Public\\Documents\\Data\\2014 Train\\annotations\\captions_train2014.json"
+        #args.path =  "C:\\Users\\Public\\Documents\\Data\\2014 Train\\annotations\\captions_train2014.json"
         #args.imag_name = "COCO_train2014_000000318495.jpg"
 
         #args.imag_name = None

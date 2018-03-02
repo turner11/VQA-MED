@@ -26,17 +26,20 @@ namespace SDKSamples.ImageSample
             get
             {
              
-                var vqa2017 = new VqaData(images: @"C:\Users\Public\Documents\Data\2017\val2017"
+                var vqa2017 = new VqaData(description:"VQA 2017"
+                                 ,images: @"C:\Users\Public\Documents\Data\2017\val2017"
                                  , captions: @"C:\Users\Public\Documents\Data\2017\annotations\stuff_val2017.json"
                                  , pixelMaps: @"C:\Users\Public\Documents\Data\2017\annotations\stuff_val2017_pixelmaps"
                                  , pythonHandler: @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\VQA.Python.py");
 
-                var vqa2014 = new VqaData(images: @"C:\Users\Public\Documents\Data\2014 Train\train2014"
+                var vqa2014 = new VqaData(description: "VQA 2014"
+                                 , images: @"C:\Users\Public\Documents\Data\2014 Train\train2014"
                                     , captions: @"C:\Users\Public\Documents\Data\2014 Train\annotations\captions_train2014.json"
                                     , pixelMaps: ""
                                     , pythonHandler: @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\VQA14.py");
 
-                var vqa2015 = new VqaData(images: vqa2014.Images
+                var vqa2015 = new VqaData(description: "VQA 2015 (2014 rev 2)"
+                                 , images: vqa2014.Images
                                          , captions: "D:\\GitHub\\VQA-Keras-Visual-Question-Answering\\data\\Questions_Train_mscoco\\MultipleChoice_mscoco_train2014_questions.json"
                                          , pixelMaps: ""
                                          , pythonHandler: @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\VQA14_multiple.py");
@@ -60,8 +63,8 @@ namespace SDKSamples.ImageSample
         {
             var data_locations = KnownDataLocations;
             this.ImagesDir.ItemsSource = data_locations;
-            var dummy = new VqaData("", "", "", "");
-            this.ImagesDir.DisplayMemberPath = nameof(dummy.Images);
+            var dummy = new VqaData("","", "", "", "");
+            // this.ImagesDir.DisplayMemberPath = nameof(dummy.Images);
             this.ImagesDir.SelectedIndex = 0;
         }
 
@@ -149,9 +152,18 @@ namespace SDKSamples.ImageSample
                 return;
             }
 
-            var match_images = await this.logics.Query(question);    
+            var match_images = await this.logics.Query(question);
+            match_images.Sort();
             //HACK: some python handlers return a path, and some, returns an ID
-            this.Photos.Filter = fn => match_images.Contains(fn);
+            var isFileNames = this.Photos.Any(fName => match_images.Contains(System.IO.Path.GetFileName(fName.Path)));
+            Predicate<string> pred;
+            if (isFileNames)
+                pred = fn => match_images.Contains(fn);
+            else
+                match_images = match_images.Select(id => id.PadLeft(12,'0') + ".").ToList();
+                pred = fn => match_images.Any(m => fn.Contains(m));
+
+            this.Photos.Filter = fn => pred(fn);
             
         }
 
