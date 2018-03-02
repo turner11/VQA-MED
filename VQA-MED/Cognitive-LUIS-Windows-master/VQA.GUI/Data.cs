@@ -522,4 +522,21 @@ namespace SDKSamples.ImageSample
 
         }
     }
+
+    public class VqaData
+    {
+        public string Images { get; private set; }
+        public string Captions { get; private set; }
+        public string PixelMaps { get; private set; }
+        public string PythonHandler { get; private set; }
+
+        public VqaData(string images, string captions, string pixelMaps, string pythonHandler)
+        {
+            this.Images = images;
+            this.Captions = captions;
+            this.PixelMaps = pixelMaps;
+            this.PythonHandler = pythonHandler;
+        }
+        
+    }
 }

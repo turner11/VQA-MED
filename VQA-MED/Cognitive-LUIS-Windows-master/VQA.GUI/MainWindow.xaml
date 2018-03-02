@@ -200,10 +200,9 @@
         </Grid.RowDefinitions>
 
         <!-- Photo Management Canvas -->
-        <DockPanel Grid.Column="0" Grid.Row="0" Margin="0,0,0,10">
-            <Button DockPanel.Dock="Right" Width="80" Click="OnImagesDirChangeClick">Change</Button>
+        <DockPanel Grid.Column="0" Grid.Row="0" Margin="0,0,0,10" Grid.ColumnSpan="2">            
             <Label DockPanel.Dock="Left" Margin="0,0,10,0">Path:</Label>
-            <TextBox Name="ImagesDir" Margin="10,0" MouseDoubleClick="ImagesDir_MouseDoubleClick"/>
+            <ComboBox Name="ImagesDir" Margin="10,0" SelectionChanged="ImagesDir_SelectionChanged" HorizontalAlignment="Stretch"/>
         </DockPanel>
 
         <GroupBox Grid.Column="0" Grid.Row="1" >

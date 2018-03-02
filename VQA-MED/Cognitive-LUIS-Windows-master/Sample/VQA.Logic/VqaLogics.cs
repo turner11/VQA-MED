@@ -40,7 +40,7 @@ namespace VQA.Logic
             var data = await this.QueryPython("q", query);
 
 
-            var match_images = data.Select(pair =>  pair.Key).ToList();
+            var match_images = data.Select(pair =>  pair.Key).ToList();            
             return match_images;
             
         }

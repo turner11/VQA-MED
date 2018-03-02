@@ -164,8 +164,9 @@ def main(args):
         # args.path =  "C:\\Users\\Public\\Documents\\Data\\2014 Train\\annotations\\captions_train2014.json"
         #args.imag_name = "COCO_train2014_000000318495.jpg"
 
-        #args.imag_name = None
-        #args.query = 'amazing'#'zebra'
+        args.imag_name = None
+        args.query = 'amazing'#'zebra'
+
         file_name = args.path
         image_name = args.imag_name
         query = args.query

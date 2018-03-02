@@ -21,22 +21,26 @@ namespace SDKSamples.ImageSample
     {
 
         public PhotoCollection Photos;
-        public static List<(string Images, string Captions, string PixelMaps, string pythonHandler)> KnownDataLocations
+        public static List<VqaData> KnownDataLocations
         {
             get
             {
-                return new List<(string, string, string,string )>
-                                {(@"C:\Users\Public\Documents\Data\2017\val2017", 
-                                 @"C:\Users\Public\Documents\Data\2017\annotations\stuff_val2017.json",
-                                  @"C:\Users\Public\Documents\Data\2017\annotations\stuff_val2017_pixelmaps",
-                                  @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\VQA.Python.py"),
+             
+                var vqa2017 = new VqaData(images: @"C:\Users\Public\Documents\Data\2017\val2017"
+                                 , captions: @"C:\Users\Public\Documents\Data\2017\annotations\stuff_val2017.json"
+                                 , pixelMaps: @"C:\Users\Public\Documents\Data\2017\annotations\stuff_val2017_pixelmaps"
+                                 , pythonHandler: @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\VQA.Python.py");
 
-                                    (@"C:\Users\Public\Documents\Data\2014 Train\train2014", 
-                                    @"C:\Users\Public\Documents\Data\2014 Train\annotations\captions_train2014.json",
-                                    "",
-                                    @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\VQA14.py"),
-                                 // (Environment.CurrentDirectory + "\\images","","")
-                                    };
+                var vqa2014 = new VqaData(images: @"C:\Users\Public\Documents\Data\2014 Train\train2014"
+                                    , captions: @"C:\Users\Public\Documents\Data\2014 Train\annotations\captions_train2014.json"
+                                    , pixelMaps: ""
+                                    , pythonHandler: @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\VQA14.py");
+
+                var vqa2015 = new VqaData(images: vqa2014.Images
+                                         , captions: "D:\\GitHub\\VQA-Keras-Visual-Question-Answering\\data\\Questions_Train_mscoco\\MultipleChoice_mscoco_train2014_questions.json"
+                                         , pixelMaps: ""
+                                         , pythonHandler: @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\VQA14_multiple.py");
+                return new List<VqaData>{ vqa2015,vqa2017, vqa2014};
             }
         }
 
@@ -49,8 +53,16 @@ namespace SDKSamples.ImageSample
             InitializeComponent();
             this.UiElementGenerator = new UIElementGenerator(this);
 
-            this.SetNextFolder();
             
+        }
+
+        private void Init_CmbImages()
+        {
+            var data_locations = KnownDataLocations;
+            this.ImagesDir.ItemsSource = data_locations;
+            var dummy = new VqaData("", "", "", "");
+            this.ImagesDir.DisplayMemberPath = nameof(dummy.Images);
+            this.ImagesDir.SelectedIndex = 0;
         }
 
         private void OnPhotoClick(object sender, RoutedEventArgs e)
@@ -70,46 +82,30 @@ namespace SDKSamples.ImageSample
 
         private void OnImagesDirChangeClick(object sender, RoutedEventArgs e)
         {
-            this.setCurrnetDataPaths();
+            //this.setCurrnetDataPaths();
         }
 
         private void setCurrnetDataPaths()
         {
-            (string Images, string Captions, string PixelMaps,string pythonHandler) = KnownDataLocations.Where(tpl => String.Equals(tpl.Images, ImagesDir.Text, StringComparison.InvariantCulture)).FirstOrDefault();
-            this.logics = new VqaLogics(Captions, PixelMaps, pythonHandler);
-            this.Photos.Path = Images;
-            this.Photos.Captions = Captions;
-            this.Photos.PixelMaps = PixelMaps;
+            if (this.ImagesDir.SelectedItem is VqaData vqaData)
+            {
+                this.logics = new VqaLogics(vqaData.Captions, vqaData.PixelMaps, vqaData.PythonHandler);
+                this.Photos.Path = vqaData.Images;
+                this.Photos.Captions = vqaData.Captions;
+                this.Photos.PixelMaps = vqaData.PixelMaps;
+            }
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
+            this.Init_CmbImages();
+
             //SetNextFolder();
 
-            this.setCurrnetDataPaths();
+            //this.setCurrnetDataPaths();
         }
 
-        internal void SetNextFolder()
-        {
-            (string Images, string Captions, string PixelMap, string pythonHandler) = this.GetNextFolder();
-            ImagesDir.Text = Images;
-        }
 
-        private (string Images, string Captions, string PixelMap, string pythonHandler) GetNextFolder()
-        {
-            var allItems = KnownDataLocations;
-            var currImagesFolder = this.ImagesDir.Text;
-            var currIdx = allItems.FindIndex(tpl => tpl.Images == currImagesFolder);
-            var nextIdx = currIdx + 1;
-            var nextItem = allItems[nextIdx % allItems.Count];
-            return nextItem;
-        }
-
-        private void ImagesDir_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            SetNextFolder();
-
-        }
 
         private async void btnAsk_Click(object sender, RoutedEventArgs e)
         {
@@ -153,7 +149,8 @@ namespace SDKSamples.ImageSample
                 return;
             }
 
-            var match_images = await this.logics.Query(question);            
+            var match_images = await this.logics.Query(question);    
+            //HACK: some python handlers return a path, and some, returns an ID
             this.Photos.Filter = fn => match_images.Contains(fn);
             
         }
@@ -200,6 +197,11 @@ namespace SDKSamples.ImageSample
 
         private void Window_Activated(object sender, EventArgs e)
         {
+        }
+
+        private void ImagesDir_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            this.setCurrnetDataPaths();            
         }
     }
 }
