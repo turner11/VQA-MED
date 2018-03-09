@@ -64,6 +64,7 @@ class Vqa18(object):
     def query_data(self, query):
         df = self.get_all_data()
 
+        #self.plot_data_info(df)
         match = None
         for col in self.ALL_COLLS:
             try:
@@ -81,6 +82,19 @@ class Vqa18(object):
         # ret = filtered.to_json()
         # j = json.loads(ret)
         # return j
+
+    def plot_data_info(self, data):
+        import matplotlib.pyplot as plt
+        # df[self.COL_ANSWER].value_counts().plot(kind='bar')
+        cols = [self.COL_QUESTION,self.COL_ANSWER]
+        for col in cols:
+            df = data[col].value_counts()
+            plt.figure(col)
+            f = df[df > 9]
+            ax = plt.barh(range(len(f.index)), f.values)
+            plt.yticks(range(len(f.index)), f.index.values)
+            plt.gca().invert_yaxis()
+            plt.show()
 
 
 def main(args):
