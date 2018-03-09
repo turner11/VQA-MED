@@ -33,6 +33,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="VQA.Python.py" />
+    <Compile Include="VQA18.Python.py" />
     <Compile Include="VQA14_multiple.py" />
     <Compile Include="VQA14.py">
       <SubType>Code</SubType>

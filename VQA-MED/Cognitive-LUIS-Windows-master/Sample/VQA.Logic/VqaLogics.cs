@@ -120,7 +120,10 @@ namespace VQA.Logic
             Debug.Print($"JSON path:\n{this.jsonPath}");
             Debug.Print($"args:\n{args}");
             Debug.Print($"Python file :\n{this.pythonHandler}");
-            var argStr = $"{this.pythonHandler} -p \"{this.jsonPath}\" {args}";
+
+            var processArgs = $"-p \"{this.jsonPath}\" {args}";
+            Debug.Print($"Process Args:\n{processArgs}");
+            var argStr = $"{this.pythonHandler} {processArgs}";
             p.StartInfo.Arguments = argStr;
             p.Start();
             // Do not wait for the child process to exit before

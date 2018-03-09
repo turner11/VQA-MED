@@ -39,7 +39,7 @@ class Vqa14DataParser(object):
         
         annotations = json_data["annotations"]   
         images = json_data["images"]
-        #categories = json_data["categories"]
+        #categories = csv_data["categories"]
 
         if query:
             # Query images:

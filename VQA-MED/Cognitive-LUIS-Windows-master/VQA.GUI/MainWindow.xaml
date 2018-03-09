@@ -39,6 +39,8 @@
         </DataTemplate>
 
 
+        <!-- Main photo catalog view -->
+
         <Style TargetType="{x:Type ListBox}" x:Key="PhotoListBoxStyle">
             <Setter Property="Foreground" Value="White" />            
             <Setter Property="Template">
@@ -67,32 +69,6 @@
             </Setter>
         </Style>
 
-
-        <!-- Main photo catalog view -->
-        <Style TargetType="{x:Type ListBox}" x:Key="PhotoListBoxStyleaaa">
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type ListBox}" >
-                        <!--WrapPanel-->
-                        <WrapPanel
-                        ItemHeight="{Binding ElementName=ZoomSlider, Path='Value'}" 
-                            ItemWidth="{Binding ElementName=ZoomSlider, Path='Value'}">
-                        </WrapPanel>
-
-                        <!--VirtualizingPanel.IsContainerVirtualizable="True"
-                            VirtualizingPanel.IsVirtualizing="True"
-                            VirtualizingPanel.VirtualizationMode="Recycling"
-                            VirtualizingPanel.CacheLengthUnit="Page"
-                            VirtualizingPanel.CacheLength="2,2"-->
-
-
-
-
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
 
 
 
@@ -191,7 +167,7 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="250" />
+            <ColumnDefinition Width="350" />
         </Grid.ColumnDefinitions>
 
         <Grid.RowDefinitions>
@@ -242,7 +218,7 @@
             <!--<ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">-->
 
             <!--IsSynchronizedWithCurrentItem="True"-->
-           
+           <!--IsSynchronizedWithCurrentItem="False"-->
             <ListBox 
                 Name="lstPhotos"                     
                 ItemsSource="{Binding}" 
@@ -257,7 +233,7 @@
                 VirtualizingPanel.IsVirtualizing="True"
                 VirtualizingPanel.VirtualizationMode="Recycling"
                 VirtualizingPanel.CacheLengthUnit="Item"
-                VirtualizingPanel.CacheLength="20,20"
+                VirtualizingPanel.CacheLength="25,25"
                 
                 Style="{StaticResource PhotoListBoxStyle}">
 
@@ -272,6 +248,12 @@
                         <MenuItem Header="Edit" Click="editPhoto"/>
                     </ContextMenu>
                 </ListBox.ContextMenu>
+
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <EventSetter Event="RequestBringIntoView" Handler="ListBoxItem_RequestBringIntoView"/>
+                    </Style>
+                </ListBox.ItemContainerStyle>
 
             </ListBox>
             <!--</VirtualizingStackPanel>-->

@@ -36,6 +36,9 @@
   <PropertyGroup>
     <RootNamespace>VQA.GUI</RootNamespace>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>virus.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\Sample\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
@@ -91,6 +94,8 @@
     <Compile Include="Data.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Resource Include="virus.ico" />
+    <Resource Include="images\icon_virus.png" />
     <Content Include="images\market 031.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

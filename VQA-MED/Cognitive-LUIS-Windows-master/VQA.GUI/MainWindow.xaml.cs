@@ -4,7 +4,6 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Media;
-using System.Windows.Shapes;
 using System.Drawing.Imaging;
 using VQA.Logic;
 using System.IO;
@@ -43,7 +42,20 @@ namespace SDKSamples.ImageSample
                                          , captions: "D:\\GitHub\\VQA-Keras-Visual-Question-Answering\\data\\Questions_Train_mscoco\\MultipleChoice_mscoco_train2014_questions.json"
                                          , pixelMaps: ""
                                          , pythonHandler: @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\VQA14_multiple.py");
-                return new List<VqaData>{ vqa2015,vqa2017, vqa2014};
+
+                var vqa2018_train = new VqaData(description: "VQA 2018 train"
+                                 , images: @"C:\Users\Public\Documents\Data\2018\VQAMed2018Train\VQAMed2018Train-images"
+                                 , captions: @"C:\Users\Public\Documents\Data\2018\VQAMed2018Train\VQAMed2018Train-QA.csv"
+                                 , pixelMaps: @""
+                                 , pythonHandler: @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\VQA18.Python.py");
+
+                var vqa2018_validation = new VqaData(description: "VQA 2018 validation"
+                                , images: @"C:\Users\Public\Documents\Data\2018\VQAMed2018Valid\VQAMed2018Valid-images"
+                                , captions: @"C:\Users\Public\Documents\Data\2018\VQAMed2018Valid\VQAMed2018Valid-QA.csv"
+                                , pixelMaps: @""
+                                , pythonHandler: @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\VQA18.Python.py");
+
+                return new List<VqaData>{ vqa2018_train, vqa2018_validation, vqa2015, vqa2017, vqa2014};
             }
         }
 
@@ -155,13 +167,18 @@ namespace SDKSamples.ImageSample
             var match_images = await this.logics.Query(question);
             match_images.Sort();
             //HACK: some python handlers return a path, and some, returns an ID
-            var isFileNames = this.Photos.Any(fName => match_images.Contains(System.IO.Path.GetFileName(fName.Path)));
+            var isFileNames = this.Photos.Any(fName => match_images.Contains(Path.GetFileName(fName.Path)));
+            var hasFileNamesWithoutExt = this.Photos.Any(fName => match_images.Contains(Path.GetFileNameWithoutExtension(fName.Path)));
             Predicate<string> pred;
             if (isFileNames)
                 pred = fn => match_images.Contains(fn);
+            else if (hasFileNamesWithoutExt)
+                pred = fn => match_images.Contains(Path.GetFileNameWithoutExtension(fn));
             else
-                match_images = match_images.Select(id => id.PadLeft(12,'0') + ".").ToList();
+            {
+                match_images = match_images.Select(id => id.PadLeft(12, '0') + ".").ToList();
                 pred = fn => match_images.Any(m => fn.Contains(m));
+            }
 
             this.Photos.Filter = fn => pred(fn);
             
@@ -214,6 +231,11 @@ namespace SDKSamples.ImageSample
         private void ImagesDir_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             this.setCurrnetDataPaths();            
+        }
+
+        private void ListBoxItem_RequestBringIntoView(object sender, RequestBringIntoViewEventArgs e)
+        {
+            e.Handled = true;
         }
     }
 }

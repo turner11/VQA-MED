@@ -542,7 +542,7 @@ namespace SDKSamples.ImageSample
 
         public override string ToString()
         {
-            return $"{this.Description} ({Path.GetFileName(this.PythonHandler)})";
+            return $"{this.Description} ({Path.GetFileName(this.PythonHandler)} :   {Path.GetDirectoryName(this.Images)})";
         }
 
     }
