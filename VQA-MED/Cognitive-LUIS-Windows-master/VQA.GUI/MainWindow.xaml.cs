@@ -83,9 +83,11 @@ namespace SDKSamples.ImageSample
         private void OnPhotoClick(object sender, RoutedEventArgs e)
         {
             PhotoView pvWindow = new PhotoView();
-            var photo = (Photo)lstPhotos.SelectedItem;
-            pvWindow.SelectedPhoto = photo;
-            pvWindow.Show();
+            if (lstPhotos.SelectedItem is Photo photo)
+            {
+                pvWindow.SelectedPhoto = photo;
+                pvWindow.Show();
+            }
         }
 
         private void editPhoto(object sender, RoutedEventArgs e)
@@ -163,25 +165,37 @@ namespace SDKSamples.ImageSample
                 this.Photos.Filter = null;
                 return;
             }
-
-            var match_images = await this.logics.Query(question);
-            match_images.Sort();
-            //HACK: some python handlers return a path, and some, returns an ID
-            var isFileNames = this.Photos.Any(fName => match_images.Contains(Path.GetFileName(fName.Path)));
-            var hasFileNamesWithoutExt = this.Photos.Any(fName => match_images.Contains(Path.GetFileNameWithoutExtension(fName.Path)));
-            Predicate<string> pred;
-            if (isFileNames)
-                pred = fn => match_images.Contains(fn);
-            else if (hasFileNamesWithoutExt)
-                pred = fn => match_images.Contains(Path.GetFileNameWithoutExtension(fn));
-            else
+            var bg = this.txbQuestion.Background;
+            try
             {
-                match_images = match_images.Select(id => id.PadLeft(12, '0') + ".").ToList();
-                pred = fn => match_images.Any(m => fn.Contains(m));
+                this.txbQuestion.Background = Brushes.BlueViolet;
+                this.txbQuestion.IsEnabled = false;
+
+
+                var match_images = await this.logics.Query(question);
+                match_images.Sort();
+                //HACK: some python handlers return a path, and some, returns an ID
+                var isFileNames = this.Photos.Any(fName => match_images.Contains(Path.GetFileName(fName.Path)));
+                var hasFileNamesWithoutExt = this.Photos.Any(fName => match_images.Contains(Path.GetFileNameWithoutExtension(fName.Path)));
+                Predicate<string> pred;
+                if (isFileNames)
+                    pred = fn => match_images.Contains(fn);
+                else if (hasFileNamesWithoutExt)
+                    pred = fn => match_images.Contains(Path.GetFileNameWithoutExtension(fn));
+                else
+                {
+                    match_images = match_images.Select(id => id.PadLeft(12, '0') + ".").ToList();
+                    pred = fn => match_images.Any(m => fn.Contains(m));
+                }
+
+                this.Photos.Filter = fn => pred(fn);
+            }
+            finally
+            {
+                this.txbQuestion.Background = bg;                
+                this.txbQuestion.IsEnabled = true;
             }
 
-            this.Photos.Filter = fn => pred(fn);
-            
         }
 
         private void txbQuestion_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
