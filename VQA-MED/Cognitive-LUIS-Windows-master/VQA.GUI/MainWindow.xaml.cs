@@ -29,31 +29,31 @@ namespace SDKSamples.ImageSample
                                  ,images: @"C:\Users\Public\Documents\Data\2017\val2017"
                                  , captions: @"C:\Users\Public\Documents\Data\2017\annotations\stuff_val2017.json"
                                  , pixelMaps: @"C:\Users\Public\Documents\Data\2017\annotations\stuff_val2017_pixelmaps"
-                                 , pythonHandler: @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\VQA.Python.py");
+                                 , pythonHandler: @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\parsers\VQA.Python.py");
 
                 var vqa2014 = new VqaData(description: "VQA 2014"
                                  , images: @"C:\Users\Public\Documents\Data\2014 Train\train2014"
                                     , captions: @"C:\Users\Public\Documents\Data\2014 Train\annotations\captions_train2014.json"
                                     , pixelMaps: ""
-                                    , pythonHandler: @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\VQA14.py");
+                                    , pythonHandler: @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\parsers\VQA14.py");
 
                 var vqa2015 = new VqaData(description: "VQA 2015 (2014 rev 2)"
                                  , images: vqa2014.Images
                                          , captions: "D:\\GitHub\\VQA-Keras-Visual-Question-Answering\\data\\Questions_Train_mscoco\\MultipleChoice_mscoco_train2014_questions.json"
                                          , pixelMaps: ""
-                                         , pythonHandler: @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\VQA14_multiple.py");
+                                         , pythonHandler: @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\parsers\VQA14_multiple.py");
 
                 var vqa2018_train = new VqaData(description: "VQA 2018 train"
                                  , images: @"C:\Users\Public\Documents\Data\2018\VQAMed2018Train\VQAMed2018Train-images"
                                  , captions: @"C:\Users\Public\Documents\Data\2018\VQAMed2018Train\VQAMed2018Train-QA.csv"
                                  , pixelMaps: @""
-                                 , pythonHandler: @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\VQA18.Python.py");
+                                 , pythonHandler: @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\parsers\VQA18.Python.py");
 
                 var vqa2018_validation = new VqaData(description: "VQA 2018 validation"
                                 , images: @"C:\Users\Public\Documents\Data\2018\VQAMed2018Valid\VQAMed2018Valid-images"
                                 , captions: @"C:\Users\Public\Documents\Data\2018\VQAMed2018Valid\VQAMed2018Valid-QA.csv"
                                 , pixelMaps: @""
-                                , pythonHandler: @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\VQA18.Python.py");
+                                , pythonHandler: @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\parsers\VQA18.Python.py");
 
                 return new List<VqaData>{ vqa2018_train, vqa2018_validation, vqa2015, vqa2017, vqa2014};
             }
