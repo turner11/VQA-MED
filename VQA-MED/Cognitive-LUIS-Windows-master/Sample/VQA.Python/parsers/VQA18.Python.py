@@ -1,9 +1,11 @@
 import json
-from utils import Timer, suppress_func_stdout
+from parsers.utils import Timer, suppress_func_stdout
 import argparse
 import os
 import logging
 import pandas as pd
+
+from pre_processing.pre_process_excel_utils import process_excel
 
 ERROR_KEY = "error"
 logname = "vqa.log"
@@ -18,13 +20,15 @@ logger = logging.getLogger('pythonVQA')
 QUESTIONS_INFO = 'questions info'
 
 
+TOLENIZED_COL_PREFIX = 'tokenized_'
 class Vqa18Base(object):
+
     COL_ROW_ID = 'row_id'
     COL_IMAGE_NAME = "image_name"
     COL_QUESTION = "question"
     COL_ANSWER = "answer"
-    COL_TOK_Q = 'tokenized_question'
-    COL_TOK_A = 'tokenized_answer'
+    COL_TOK_Q = TOLENIZED_COL_PREFIX + COL_QUESTION
+    COL_TOK_A = TOLENIZED_COL_PREFIX + COL_ANSWER
 
     @property
     def ALL_RAW_COLS(self):
@@ -45,8 +49,8 @@ class Vqa18Base(object):
     @classmethod
     def get_instance(cls, data_path=None):
         ctors = iter([
-            lambda: Vqa18_from_excel(data_path),
-            lambda: Vqa18_from_excel(Vqa18_from_raw_csv.csv_path_2_excel_path(data_path)),
+            # lambda excel_path=data_path: Vqa18_from_excel(excel_path),
+            # lambda: Vqa18_from_excel(Vqa18_from_raw_csv.csv_path_2_excel_path(data_path)),
             lambda csv_path=data_path: Vqa18_from_raw_csv(csv_path),
                       ])
         instance = None
@@ -127,9 +131,13 @@ class Vqa18_from_raw_csv(Vqa18Base):
     def __init__(self, csv_path, **kwargs):
         super().__init__(csv_path,**kwargs)
 
-        # self.add_tokenized_column(self.data, self.COL_QUESTION, self.COL_TOK_Q)
-        # self.add_tokenized_column(self.data, self.COL_ANSWER, self.COL_TOK_A)
-        self.dump_to_excel()
+        excel_path = self.csv_path_2_excel_path(csv_path)
+
+        self.add_tokenized_column(self.data, self.COL_QUESTION, self.COL_TOK_Q)
+        self.add_tokenized_column(self.data, self.COL_ANSWER, self.COL_TOK_A)
+        # self.dump_to_excel(excel_path)
+        # process_excel(excel_path, excel_path)
+        # excel_data = pd.read_excel(excel_path)
 
     def _read_data(self, data_path):
         # self.data = df = pd.read_csv(data_path)
@@ -137,12 +145,11 @@ class Vqa18_from_raw_csv(Vqa18Base):
 
     @suppress_func_stdout
     def add_tokenized_column(self, df, source_col, dest_col):
-        from token_utils import Preprocessor
+        from parsers.token_utils import Preprocessor
         df[dest_col] = df[source_col].apply(lambda s: " ".join(Preprocessor.tokeniz(s)))
 
-    def dump_to_excel(self):
+    def dump_to_excel(self, path):
         from pandas import ExcelWriter
-        path = self.csv_path_2_excel_path(self.data_path)
         writer = ExcelWriter(path)
         self.data.to_excel(writer, 'vqa_data')
         writer.save()
@@ -194,6 +201,29 @@ def main(args):
 
 
 if __name__ == "__main__":
+    # from pre_processing.pre_process_excel_utils import process_excel
+    # import itertools as it
+    #
+    # # csv_path = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-QA.csv'
+    # # a = Vqa18_from_raw_csv(csv_path)
+    # ep = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-QA.xlsx'
+    # # a.dump_to_excel(ep)
+    # # print(ep)
+    #
+    # epp = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-QA_processed.xlsx'
+    # # process_excel(ep, epp)
+    # inst = Vqa18_from_excel(epp)
+    # d = inst.data
+    # cols_to_check = [inst.COL_TOK_A, inst.COL_ANSWER]
+    # for c in cols_to_check:
+    #     dd = d[c]
+    #     results = set()
+    #     dd.str.lower().str.split().apply(results.update)
+    #     print("{0}: {1}".format(c,len(results)))
+    # l = list(it.chain(dd))
+    # raise Exception("Some test code...")
+
+
     parser = argparse.ArgumentParser(description='Extracts caption for a COCO image.')
     parser.add_argument('-p', dest='path', help='path of annotation file')
     parser.add_argument('-n', dest='imag_name', help='name_of_image', default=None)

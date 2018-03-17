@@ -33,9 +33,13 @@ class Preprocessor():
     def tokeniz(cls,str):
         # tokenizers - spllitting the text by white spaces and punctuation marks
         # lemmatizers - linking the different forms of the same word (for example, price and prices, is and are)
-        res = [WordNetLemmatizer.lemmatize(cls._lemmatizer,word.lower()) for word in word_tokenize(str)
-                 if 2 < len(word) < 50
+        res = [WordNetLemmatizer.lemmatize(cls._lemmatizer,word.lower())
+               #if 2 < len(word) < 50 else word.lower()
+               for word in word_tokenize(str)
+               #  if 2 < len(word) < 50
                 ]
+        if not res:
+            res = str
         return res
         #return [WordNetLemmatizer.lemmatize("Hello World".lower()) for word in word_tokenize(str)]
 

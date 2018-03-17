@@ -30,17 +30,15 @@
     <InterpreterReference Include="Global|ContinuumAnalytics|Anaconda_4.1.1_64-bit" />
     <InterpreterReference Include="Global|PythonCore|3.6" />
   </ItemGroup>
+
   <ItemGroup>
-    <Content Include="dumped_data\~%24vqa_data.xlsx" />
+    <Folder Include="dumped_data\" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="captions_daemon.py" />
-    <Compile Include="token_utils.py" />
-    <Compile Include="utils.py" />
-    <Compile Include="VQA.Python.py" />
-    <Compile Include="VQA14.py" />
-    <Compile Include="VQA14_multiple.py" />
-    <Compile Include="VQA18.Python.py" />
+    <Folder Include="pre_processing\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="parsers\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
