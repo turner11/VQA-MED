@@ -24,6 +24,8 @@ find_and_replace_collection = [FindAndReplaceData('magnetic resonance imaging', 
                                FindAndReplaceData('reveal', 'show'),
                                FindAndReplaceData('reveals', 'show'),
                                FindAndReplaceData('lesion', 'tumor'),
+                               FindAndReplaceData('Cerebral', 'brain'),
+                               FindAndReplaceData('  ', ' '),
                                #
 
 
@@ -32,4 +34,8 @@ find_and_replace_collection = [FindAndReplaceData('magnetic resonance imaging', 
                                ]
 
 
-#
+imaging_devices = ['ct', 'mri']
+diagnosis = ['tumor']
+locations = ['brain', 'abdomen','stomach','neck', 'lung']
+
+

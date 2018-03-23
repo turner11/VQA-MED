@@ -38,8 +38,8 @@ class Vqa18Base(object):
     @classmethod
     def get_instance(cls, data_path=None):
         ctors = iter([
-            # lambda excel_path=data_path: Vqa18_from_excel(excel_path),
-            # lambda: Vqa18_from_excel(Vqa18_from_raw_csv.csv_path_2_excel_path(data_path)),
+            lambda excel_path=data_path: Vqa18_from_excel(excel_path),
+            lambda: Vqa18_from_excel(Vqa18_from_raw_csv.csv_path_2_excel_path(data_path)),
             lambda csv_path=data_path: Vqa18_from_raw_csv(csv_path),
                       ])
         instance = None
@@ -189,7 +189,7 @@ if __name__ == "__main__":
     parser.add_argument('-a', dest='question', help='question to ask', default=None)
 
     args = parser.parse_args()
-    args.path = 'C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\Cognitive-LUIS-Windows-master\\Sample\\VQA.Python\\dumped_data\\vqa_data.xlsx'
+    # args.path = 'C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\Cognitive-LUIS-Windows-master\\Sample\\VQA.Python\\dumped_data\\vqa_data.xlsx'
 
     # args.path = "D:\\GitHub\\VQA-Keras-Visual-Question-Answering\\data\\Questions_Train_mscoco\\MultipleChoice_mscoco_train2014_questions.json"
     # args.image_name = "COCO_train2014_000000487025"

@@ -47,13 +47,13 @@ namespace SDKSamples.ImageSample
                                  , images: @"C:\Users\Public\Documents\Data\2018\VQAMed2018Train\VQAMed2018Train-images"
                                  , captions: @"C:\Users\Public\Documents\Data\2018\VQAMed2018Train\VQAMed2018Train-QA.csv"
                                  , pixelMaps: @""
-                                 , pythonHandler: @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\parsers\VQA18.Python.py");
+                                 , pythonHandler: @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\parsers\VQA18.py");
 
                 var vqa2018_validation = new VqaData(description: "VQA 2018 validation"
                                 , images: @"C:\Users\Public\Documents\Data\2018\VQAMed2018Valid\VQAMed2018Valid-images"
                                 , captions: @"C:\Users\Public\Documents\Data\2018\VQAMed2018Valid\VQAMed2018Valid-QA.csv"
                                 , pixelMaps: @""
-                                , pythonHandler: @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\parsers\VQA18.Python.py");
+                                , pythonHandler: @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\parsers\VQA18.py");
 
                 return new List<VqaData>{ vqa2018_train, vqa2018_validation, vqa2015, vqa2017, vqa2014};
             }

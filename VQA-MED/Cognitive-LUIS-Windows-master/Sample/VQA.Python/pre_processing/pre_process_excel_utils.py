@@ -3,10 +3,11 @@ import openpyxl
 import shutil
 import os
 import re
+import pandas as pd
 
-
-from parsers.utils import suppress_func_stdout
-from pre_processing.known_find_and_replace_items import find_and_replace_collection
+from parsers.utils import suppress_func_stdout, has_word
+from pre_processing.known_find_and_replace_items import find_and_replace_collection, locations, diagnosis, \
+    imaging_devices
 from parsers.VQA18 import Vqa18_from_excel, Vqa18_from_raw_csv, Vqa18Base, TOKENIZED_COL_PREFIX
 from vqa_logger import logger
 
@@ -57,9 +58,64 @@ class ExcelPreProcessor(object):
         col_filter = lambda col_name: TOKENIZED_COL_PREFIX in (col_name or '')
         cls._find_and_replace(path, find_and_replace_data, columns_filter=col_filter)
 
+        df = pd.read_excel(path)
+        cls.add_imaging_columns(df)
+        cls.add_diagnostics_columns(df)
+        cls.add_locations_columns(df)
 
+        writer = pd.ExcelWriter(path)
+        df.to_excel(writer, 'vqa_data')
+        writer.save()
 
+        # df = pd.DataFrame({'Data': [10, 20, 30, 20, 15, 30, 45]})
 
+        # # Create a Pandas Excel writer using XlsxWriter as the engine.
+        # writer = pd.ExcelWriter('pandas_conditional.xlsx', engine='xlsxwriter')
+        #
+        # # Convert the dataframe to an XlsxWriter Excel object.
+        # df.to_excel(writer, sheet_name='Sheet1')
+        #
+        # # Get the xlsxwriter workbook and worksheet objects.
+        # workbook = writer.book
+        # worksheet = writer.sheets['Sheet1']
+        #
+        # # Apply a conditional format to the cell range.
+        # worksheet.conditional_format('B2:B8', {'type': '3_color_scale'})
+        #
+        # # Close the Pandas Excel writer and output the Excel file.
+        # writer.save()
+
+    @classmethod
+    def add_locations_columns(cls, df):
+        cls.add_columns_by_search(df
+                                  , indicator_words=locations
+                                  , search_columns=[Vqa18Base.COL_TOK_Q, Vqa18Base.COL_TOK_A, Vqa18Base.COL_QUESTION, Vqa18Base.COL_ANSWER])
+
+    @classmethod
+    def add_diagnostics_columns(cls, df):
+        cls.add_columns_by_search(df
+                                  , indicator_words=diagnosis
+                                  , search_columns=[Vqa18Base.COL_TOK_Q, Vqa18Base.COL_TOK_A, Vqa18Base.COL_QUESTION, Vqa18Base.COL_ANSWER])
+
+    @classmethod
+    def add_imaging_columns(cls, df):
+        cls.add_columns_by_search(df
+                                  , indicator_words=imaging_devices
+                                  , search_columns=[Vqa18Base.COL_TOK_Q, Vqa18Base.COL_TOK_A])
+
+    @classmethod
+    def add_columns_by_search(cls, df, indicator_words, search_columns):
+        for word in indicator_words:
+            res = None
+            for col in search_columns:
+                curr_res = df[col].apply(lambda s: has_word(word,s))
+                if res is None:
+                    res = curr_res
+                res = res | curr_res
+            if any(res):
+                df[word] = res
+            else:
+                logger.warn("found no matching for '{0}'".format(word))
 
 
 
@@ -138,6 +194,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     dbg_file_xls = 'C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\Cognitive-LUIS-Windows-master\\Sample\\VQA.Python\\dumped_data\\vqa_data.xlsx'
     dbg_file_csv = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-QA.csv'
+
     args.path = args.path or dbg_file_csv
 
     args.destination = args.destination or os.path.splitext(args.path)[0] + '_post_pre_process.xlsx'

@@ -28,6 +28,18 @@ def timeit(func):
     return timed
 
 
+def get_word_match(word, string):
+    import re
+    k= re.compile(r'\b%s\b' % word, re.I)
+    try:
+        res = k.search(string)
+    except TypeError as ex:
+        return None
+    return res
+
+def has_word(word, string):
+    return get_word_match(word, string) is not None
+
 
 @contextmanager
 def suppress_stdout():
