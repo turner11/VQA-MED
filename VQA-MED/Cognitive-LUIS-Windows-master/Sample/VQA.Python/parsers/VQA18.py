@@ -1,34 +1,23 @@
 import json
-from parsers.utils import Timer, suppress_func_stdout
+from parsers.utils import Timer
 import argparse
 import os
-import logging
+
 import pandas as pd
 
-from pre_processing.pre_process_excel_utils import process_excel
+from vqa_logger import logger
 
 ERROR_KEY = "error"
-logname = "vqa.log"
-logging.basicConfig(filename=logname,
-                    filemode='a',
-                    format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
-                    datefmt='%H:%M:%S',
-                    level=logging.DEBUG)
-
-logger = logging.getLogger('pythonVQA')
-
 QUESTIONS_INFO = 'questions info'
-
-
-TOLENIZED_COL_PREFIX = 'tokenized_'
+TOKENIZED_COL_PREFIX = 'tokenized_'
 class Vqa18Base(object):
 
     COL_ROW_ID = 'row_id'
     COL_IMAGE_NAME = "image_name"
     COL_QUESTION = "question"
     COL_ANSWER = "answer"
-    COL_TOK_Q = TOLENIZED_COL_PREFIX + COL_QUESTION
-    COL_TOK_A = TOLENIZED_COL_PREFIX + COL_ANSWER
+    COL_TOK_Q = TOKENIZED_COL_PREFIX + COL_QUESTION
+    COL_TOK_A = TOKENIZED_COL_PREFIX + COL_ANSWER
 
     @property
     def ALL_RAW_COLS(self):
@@ -66,44 +55,7 @@ class Vqa18Base(object):
                 pass
         return instance
 
-    @classmethod
-    def raw_csv_to_processed_excel(cls, raw_csv_path, output_excel_path):
-        inst = Vqa18_from_raw_csv(raw_csv_path)
-        data = inst.data
-        cols_to_tokenize = [
-            (cls.COL_QUESTION, cls.COL_TOK_Q),
-            (cls.COL_ANSWER, cls.COL_TOK_A)
-        ]
-        for col, new_tok_col in cols_to_tokenize:
-            cls.add_tokenized_column(data, col, new_tok_col)
 
-        def append_id(filename, suffix):
-            name, ext = os.path.splitext(filename)
-            return "{name}_{uid}{ext}".format(name=name, uid=suffix, ext=ext)
-        intermediate_excel_path = append_id(output_excel_path,"intermediate")
-        cls.dump_to_excel(data, intermediate_excel_path)
-
-        return cls._pre_process_excel_file(intermediate_excel_path, output_excel_path)
-
-    @classmethod
-    def _pre_process_excel_file(cls, intermediate_excel_path, output_excel_path):
-        # This will do all the find&replace...
-        process_excel(intermediate_excel_path, output_excel_path)
-        # excel_data = pd.read_excel(excel_path)
-        return Vqa18_from_excel(output_excel_path)
-
-    @classmethod
-    def dump_to_excel(cls, df, path):
-        from pandas import ExcelWriter
-        writer = ExcelWriter(path)
-        df.to_excel(writer, 'vqa_data')
-        writer.save()
-
-    @suppress_func_stdout
-    @classmethod
-    def add_tokenized_column(cls, df, source_col, dest_col):
-        from parsers.token_utils import Preprocessor
-        df[dest_col] = df[source_col].apply(lambda s: " ".join(Preprocessor.tokeniz(s)))
 
     def __repr__(self, **kwargs):
         return "{0}({1})".format(self.__class__.__name__, self.data_path)
@@ -170,10 +122,10 @@ class Vqa18_from_raw_csv(Vqa18Base):
     def __init__(self, csv_path, **kwargs):
         super().__init__(csv_path,**kwargs)
 
-        excel_path = self.csv_path_2_excel_path(csv_path)
-
-        self.add_tokenized_column(self.data, self.COL_QUESTION, self.COL_TOK_Q)
-        self.add_tokenized_column(self.data, self.COL_ANSWER, self.COL_TOK_A)
+        # excel_path = self.csv_path_2_excel_path(csv_path)
+        #
+        # self.add_tokenized_column(self.data, self.COL_QUESTION, self.COL_TOK_Q)
+        # self.add_tokenized_column(self.data, self.COL_ANSWER, self.COL_TOK_A)
         # self.dump_to_excel(self.data, excel_path)
         # process_excel(excel_path, excel_path)
         # excel_data = pd.read_excel(excel_path)
@@ -206,12 +158,12 @@ def main(args):
     try:
 
         file_name = args.path
-        image_name = args.imag_name
+        image_name = args.image_name
 
         parser = Vqa18Base.get_instance(file_name)
         query = args.query
 
-        if args.imag_name:
+        if args.image_name:
             image_info = parser.get_image_data(image_name)
             ret_val = image_info
         elif query:
@@ -229,32 +181,10 @@ def main(args):
 
 
 if __name__ == "__main__":
-    # from pre_processing.pre_process_excel_utils import process_excel
-    # import itertools as it
-    #
-    # # csv_path = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-QA.csv'
-    # # a = Vqa18_from_raw_csv(csv_path)
-    # ep = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-QA.xlsx'
-    # # a.dump_to_excel(ep)
-    # # print(ep)
-    #
-    # epp = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-QA_processed.xlsx'
-    # # process_excel(ep, epp)
-    # inst = Vqa18_from_excel(epp)
-    # d = inst.data
-    # cols_to_check = [inst.COL_TOK_A, inst.COL_ANSWER]
-    # for c in cols_to_check:
-    #     dd = d[c]
-    #     results = set()
-    #     dd.str.lower().str.split().apply(results.update)
-    #     print("{0}: {1}".format(c,len(results)))
-    # l = list(it.chain(dd))
-    # raise Exception("Some test code...")
-
 
     parser = argparse.ArgumentParser(description='Extracts caption for a COCO image.')
     parser.add_argument('-p', dest='path', help='path of annotation file')
-    parser.add_argument('-n', dest='imag_name', help='name_of_image', default=None)
+    parser.add_argument('-n', dest='image_name', help='name_of_image', default=None)
     parser.add_argument('-q', dest='query', help='query to look for', default=None)
     parser.add_argument('-a', dest='question', help='question to ask', default=None)
 
@@ -262,9 +192,9 @@ if __name__ == "__main__":
     args.path = 'C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\Cognitive-LUIS-Windows-master\\Sample\\VQA.Python\\dumped_data\\vqa_data.xlsx'
 
     # args.path = "D:\\GitHub\\VQA-Keras-Visual-Question-Answering\\data\\Questions_Train_mscoco\\MultipleChoice_mscoco_train2014_questions.json"
-    # args.imag_name = "COCO_train2014_000000487025"
+    # args.image_name = "COCO_train2014_000000487025"
     # args.query = "polo"
-    # args.imag_name = ""
+    # args.image_name = ""
 
     with Timer() as t:
         ret_val = main(args)

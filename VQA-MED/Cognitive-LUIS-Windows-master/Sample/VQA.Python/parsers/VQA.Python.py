@@ -6,17 +6,10 @@ import os
 import logging 
 from collections import OrderedDict
 
+from vqa_logger import logger
+
 ERROR_KEY = "error"
-logname = "vqa.log"
-logging.basicConfig(filename=logname,
-                            filemode='a',
-                            format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
-                            datefmt='%H:%M:%S',
-                            level=logging.DEBUG)
 
-
-
-logger = logging.getLogger('pythonVQA')
 CAPTION_KEY = 'caption'
 class VqaDataParser(object):
     
