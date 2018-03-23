@@ -66,6 +66,45 @@ class Vqa18Base(object):
                 pass
         return instance
 
+    @classmethod
+    def raw_csv_to_processed_excel(cls, raw_csv_path, output_excel_path):
+        inst = Vqa18_from_raw_csv(raw_csv_path)
+        data = inst.data
+        cols_to_tokenize = [
+            (cls.COL_QUESTION, cls.COL_TOK_Q),
+            (cls.COL_ANSWER, cls.COL_TOK_A)
+        ]
+        for col, new_tok_col in cols_to_tokenize:
+            cls.add_tokenized_column(data, col, new_tok_col)
+
+        def append_id(filename, suffix):
+            name, ext = os.path.splitext(filename)
+            return "{name}_{uid}{ext}".format(name=name, uid=suffix, ext=ext)
+        intermediate_excel_path = append_id(output_excel_path,"intermediate")
+        cls.dump_to_excel(data, intermediate_excel_path)
+
+        return cls._pre_process_excel_file(intermediate_excel_path, output_excel_path)
+
+    @classmethod
+    def _pre_process_excel_file(cls, intermediate_excel_path, output_excel_path):
+        # This will do all the find&replace...
+        process_excel(intermediate_excel_path, output_excel_path)
+        # excel_data = pd.read_excel(excel_path)
+        return Vqa18_from_excel(output_excel_path)
+
+    @classmethod
+    def dump_to_excel(cls, df, path):
+        from pandas import ExcelWriter
+        writer = ExcelWriter(path)
+        df.to_excel(writer, 'vqa_data')
+        writer.save()
+
+    @suppress_func_stdout
+    @classmethod
+    def add_tokenized_column(cls, df, source_col, dest_col):
+        from parsers.token_utils import Preprocessor
+        df[dest_col] = df[source_col].apply(lambda s: " ".join(Preprocessor.tokeniz(s)))
+
     def __repr__(self, **kwargs):
         return "{0}({1})".format(self.__class__.__name__, self.data_path)
 
@@ -135,24 +174,13 @@ class Vqa18_from_raw_csv(Vqa18Base):
 
         self.add_tokenized_column(self.data, self.COL_QUESTION, self.COL_TOK_Q)
         self.add_tokenized_column(self.data, self.COL_ANSWER, self.COL_TOK_A)
-        # self.dump_to_excel(excel_path)
+        # self.dump_to_excel(self.data, excel_path)
         # process_excel(excel_path, excel_path)
         # excel_data = pd.read_excel(excel_path)
 
     def _read_data(self, data_path):
         # self.data = df = pd.read_csv(data_path)
         return pd.read_csv(data_path, sep='\t', header=None, names=self.ALL_RAW_COLS)
-
-    @suppress_func_stdout
-    def add_tokenized_column(self, df, source_col, dest_col):
-        from parsers.token_utils import Preprocessor
-        df[dest_col] = df[source_col].apply(lambda s: " ".join(Preprocessor.tokeniz(s)))
-
-    def dump_to_excel(self, path):
-        from pandas import ExcelWriter
-        writer = ExcelWriter(path)
-        self.data.to_excel(writer, 'vqa_data')
-        writer.save()
 
     @classmethod
     def csv_path_2_excel_path(self, csv_path):

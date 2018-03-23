@@ -23,6 +23,9 @@ find_and_replace_collection = [FindAndReplaceData('magnetic resonance imaging', 
                                FindAndReplaceData('of', ''),
                                FindAndReplaceData('reveal', 'show'),
                                FindAndReplaceData('reveals', 'show'),
+                               FindAndReplaceData('lesion', 'tumor'),
+                               #
+
 
 
                                # FindAndReplaceData('', ''),
