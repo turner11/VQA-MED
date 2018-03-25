@@ -7,7 +7,7 @@ import pandas as pd
 
 from parsers.utils import suppress_func_stdout, has_word
 from pre_processing.known_find_and_replace_items import find_and_replace_collection, locations, diagnosis, \
-    imaging_devices
+    imaging_devices, dbg_file_xls
 from parsers.VQA18 import Vqa18_from_excel, Vqa18_from_raw_csv, Vqa18Base, TOKENIZED_COL_PREFIX
 from vqa_logger import logger
 
@@ -192,10 +192,9 @@ if __name__ == '__main__':
     parser.add_argument('-d', dest='destination', help='destination of processed file', default='')
 
     args = parser.parse_args()
-    dbg_file_xls = 'C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\Cognitive-LUIS-Windows-master\\Sample\\VQA.Python\\dumped_data\\vqa_data.xlsx'
-    dbg_file_csv = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-QA.csv'
 
-    args.path = args.path or dbg_file_csv
+
+    args.path = args.path or dbg_file_xls  #dbg_file_csv
 
     args.destination = args.destination or os.path.splitext(args.path)[0] + '_post_pre_process.xlsx'
     DataPreProcessor.preprocessed_data__to_processed_excel(args.path, args.destination)

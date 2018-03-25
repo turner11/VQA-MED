@@ -11,6 +11,7 @@ namespace VQA.Logic
     public class VqaLogics
     {
         private const string PYTHON_INTERP_PATH = "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\Anaconda3_64\\python.exe\"";
+                                                //"\"C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\Anaconda3_64\\python.exe\"";
         public const string ERROR_KEY = "error"; //this is also impelemnted on python's side
 
         public readonly string jsonPath;

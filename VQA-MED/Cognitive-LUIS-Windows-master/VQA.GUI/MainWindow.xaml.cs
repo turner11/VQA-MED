@@ -45,7 +45,7 @@ namespace SDKSamples.ImageSample
 
                 var vqa2018_train = new VqaData(description: "VQA 2018 train"
                                  , images: @"C:\Users\Public\Documents\Data\2018\VQAMed2018Train\VQAMed2018Train-images"
-                                 , captions: @"C:\Users\Public\Documents\Data\2018\VQAMed2018Train\VQAMed2018Train-QA.csv"
+                                 , captions: @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\dumped_data\vqa_data_post_pre_process.xlsx"//@"C:\Users\Public\Documents\Data\2018\VQAMed2018Train\VQAMed2018Train-QA.csv"
                                  , pixelMaps: @""
                                  , pythonHandler: @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\Cognitive-LUIS-Windows-master\Sample\VQA.Python\parsers\VQA18.py");
 

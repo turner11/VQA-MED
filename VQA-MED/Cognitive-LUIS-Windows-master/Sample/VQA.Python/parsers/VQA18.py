@@ -6,6 +6,7 @@ import os
 import pandas as pd
 
 from vqa_logger import logger
+from pre_processing.known_find_and_replace_items import all_tags
 
 ERROR_KEY = "error"
 QUESTIONS_INFO = 'questions info'
@@ -38,6 +39,7 @@ class Vqa18Base(object):
     @classmethod
     def get_instance(cls, data_path=None):
         ctors = iter([
+            lambda excel_path=data_path: Vqa18_from_processed_excel(excel_path),
             lambda excel_path=data_path: Vqa18_from_excel(excel_path),
             lambda: Vqa18_from_excel(Vqa18_from_raw_csv.csv_path_2_excel_path(data_path)),
             lambda csv_path=data_path: Vqa18_from_raw_csv(csv_path),
@@ -153,6 +155,15 @@ class Vqa18_from_excel(Vqa18Base):
         df = df[self.ALL_RAW_COLS]
         return df
 
+class Vqa18_from_processed_excel(Vqa18_from_excel):
+    @property
+    def ALL_RAW_COLS(self):
+        return list(set(super().ALL_RAW_COLS + all_tags))
+    def __init__(self, excel_path, **kwargs):
+        super().__init__(excel_path,**kwargs)
+
+
+
 
 def main(args):
     try:
@@ -166,6 +177,13 @@ def main(args):
         if args.image_name:
             image_info = parser.get_image_data(image_name)
             ret_val = image_info
+
+            # import matplotlib.pyplot as plt
+            # ax = parser.data[all_tags].plot(kind='bar', title="V comp", figsize=(15, 10), legend=True, fontsize=12)
+            # ax.set_xlabel("Hour", fontsize=12)
+            # ax.set_ylabel("V", fontsize=12)
+            # plt.show()
+
         elif query:
             ret_val = parser.query_data(query)
             # ret_val = {"Testing": "query was: {0}".format(query)}
@@ -190,7 +208,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     # args.path = 'C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\Cognitive-LUIS-Windows-master\\Sample\\VQA.Python\\dumped_data\\vqa_data.xlsx'
-
     # args.path = "D:\\GitHub\\VQA-Keras-Visual-Question-Answering\\data\\Questions_Train_mscoco\\MultipleChoice_mscoco_train2014_questions.json"
     # args.image_name = "COCO_train2014_000000487025"
     # args.query = "polo"
