@@ -25,6 +25,7 @@ namespace VQA.Logic
             this.jsonPath = jsonPath;
             this.pixalMapPath = pixalMapPath;
             this.pythonHandler = pythonHandler;
+            
 
         }
         public async Task<string> Ask(string question, FileInfo imagePath)
@@ -126,12 +127,18 @@ namespace VQA.Logic
             Debug.Print($"Process Args:\n{processArgs}");
             var argStr = $"{this.pythonHandler} {processArgs}";
             p.StartInfo.Arguments = argStr;
+            p.StartInfo.WorkingDirectory = new DirectoryInfo(Path.GetDirectoryName(this.pythonHandler)).Parent.FullName;
             p.Start();
             // Do not wait for the child process to exit before
             // reading to the end of its redirected stream.
             // p.WaitForExit();
             // Read the output stream first and then wait.
             string output = await Task.Run(() => p.StandardOutput.ReadToEnd().Trim());
+            if (String.IsNullOrWhiteSpace(output))
+            {
+                Debug.Print($"Got an empty output for \n{p.StartInfo.FileName} {p.StartInfo.Arguments}");
+
+            }
             p.WaitForExit();
 
             if (String.IsNullOrWhiteSpace(output))

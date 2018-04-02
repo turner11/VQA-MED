@@ -26,7 +26,7 @@ class Vqa18Base(object):
 
 
     def __init__(self, data_path, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__()
         if not data_path or not os.path.isfile(data_path):
             raise Exception("Got a non valid path: {0}".format(data_path))
 
@@ -216,9 +216,9 @@ if __name__ == "__main__":
     with Timer() as t:
         ret_val = main(args)
     ret_val['time elapsed'] = str(t)
-    # print(str(t))
+    # logger.debug(str(t))
     json_string = json.dumps(ret_val)
-    print(json_string)
+    logger.info(json_string)
     # raw_input()
 
     # sys.exit(int(main(file_name) or 0))
