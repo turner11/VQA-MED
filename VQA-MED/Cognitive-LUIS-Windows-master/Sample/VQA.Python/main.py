@@ -1,10 +1,12 @@
 # import keras
-import sys
+#import sys
+#import h5py
 import os
 from collections import defaultdict
-from keras.layers import Embedding, LSTM, Dense, Dropout, Merge
+
+from keras import models, layers, optimizers
+from keras.layers import Embedding, LSTM, Dense, Dropout, Merge, Flatten
 from keras.models import Sequential
-import h5py
 import numpy as np
 import logging
 
@@ -187,41 +189,155 @@ def images_to_embedded(images_path):
     df.to_hdf(dump_path, key='image')
     return dump_path
 
+def train_nn(train_features, train_labels,validation_features, validation_labels, batch_size=20,epochs=20):
+
+    input_shape = train_features[0].shape#train_features.shape + train_features[0].shape #(train_features.shape[0],train_features[0].shape)
+    #-------------------------------------------------------------------------------------
+    model = models.Sequential()
+    # model.add(layers.Dense(512, activation='relu', input_dim=7 * 7 * 512))
+    model.add(layers.Dense(512, activation='relu', input_shape=input_shape))
+    model.add(layers.Dropout(0.5))
+    model.add(layers.Dense(3, activation='softmax'))
+
+
+
+    #-------------------------------------------------------------------------------------------
+    # define the architecture of the network
+    model = Sequential()
+    model.add(Flatten(input_shape=input_shape ,name='flatten'))
+    model.add(Dense(768, activation="relu",name='dense_1'))#init="uniform",input_dim=3072
+    # model.add(Dense(384, activation="relu",name='dense_2'))#init="uniform",
+    # model.add(Dense(1,name='dense_3'))
+    model.add(layers.Activation("relu",name='activation_out_layer'))# model.add(layers.Activation("softmax"))
+
+
+    # -------------------------------------------------------------------------------------------
+    model.compile(optimizer=optimizers.RMSprop(lr=2e-4),loss='sparse_categorical_crossentropy',metrics=['acc'])#,loss='categorical_crossentropy'
+
+
+    # import itertools
+    # a = list(itertools.chain.from_iterable(train_features))
+    history = model.fit(train_features,
+                        train_labels,
+                        epochs=epochs,
+                        batch_size=batch_size,
+                        validation_data=(validation_features, validation_labels))
+
+    # print(history)
+    # raise Exception("success!:\n\n{0}".format(str(history))
+    # )
+    return model, history
+
+def train_tag(tag):
+    from pre_processing.known_find_and_replace_items import all_tags
+    assert tag in all_tags, "{0} is not a valid tag\n(Valid Tags:\t{1})".format(tag, all_tags)
+
+    from parsers.VQA18 import Vqa18Base
+    from pre_processing.known_find_and_replace_items import train_data, validation_data, test_data
+
+    data_locations = [train_data, validation_data, test_data][:2]
+
+    nn_train_data = []
+    for dl in data_locations:
+        logger.debug("Getting data for: {0}".format(dl.data_tag))
+        test_inst = Vqa18Base.get_instance(dl.processed_xls)
+        data = test_inst.data
+        embedding = pd.read_hdf(dl.embedding)
+        embedding[Vqa18Base.COL_IMAGE_NAME] = embedding['image'].apply(lambda s: s.rstrip('.jpg'))
+
+        # data.set_index(Vqa18Base.COL_IMAGE_NAME)
+        # embedding.set_index(Vqa18Base.COL_IMAGE_NAME)
+
+        data.reset_index(inplace=True)
+        embedding.reset_index(inplace=True)
+        dfMerged = pd.merge(data, embedding,
+                            left_on=[Vqa18Base.COL_IMAGE_NAME],
+                            right_on=[Vqa18Base.COL_IMAGE_NAME],
+                            how='inner')
+
+        # logger.debug("data colums:\n{0}".format(data.columns))
+        # logger.debug("merged colums:\n{0}".format(dfMerged.columns))
+        features = dfMerged['embedded']
+        labels = dfMerged[tag]
+
+        features = np.concatenate(np.asanyarray(features),axis=0)
+        labels = np.asanyarray(labels)
+
+        nn_train_data.append((features,labels))
+
+    logger.debug("Got data for training NN")
+
+    train_features , train_labels = nn_train_data[0]
+    validation_features, validation_labels = nn_train_data[1]
+
+
+
+
+    model, history = train_nn(train_features=train_features
+                              ,train_labels=train_labels
+                              ,validation_features=validation_features
+                              ,validation_labels=validation_labels)#.tolist()
+
+    model_fn = '{0}_model.h5'.format(tag)
+    logger.debug("saving model for: {0}".format(tag))
+    model.save(model_fn)  # creates a HDF5 file 'my_model.h5'
+    logger.debug("model saved")
+    # # returns a compiled model
+    # # identical to the previous one
+    # model = load_model('my_model.h5')
+    str()
+
+
+
+
+
+
 def main():
-
-
+    train_tags, do_images_to_embedded, words_2_embedded = [True, False, False]
+    #### Train tags ----------------------------------------------------------------------------------------------------
+    if train_tags:
+        from pre_processing.known_find_and_replace_items import all_tags
+        for t in all_tags:
+            try:
+                logger.warning("Train tag {0}.".format(t))
+                train_tag(t)
+                logger.warning("Done train tag {0}.".format(t))
+            except Exception as ex:
+                logger.warning("Failed to train tag {0}:\n{1}".format(t,ex))
+    #### END OF Train tags ----------------------------------------------------------------------------------------------------
 
     #### Images to embedded --------------------------------------------------------------------------------------------
-    return
-    images_path_train = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-images'
-    images_path_validation ='C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Valid\\VQAMed2018Valid-images'
-    images_path_test = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Test\\VQAMed2018Test-images'
-    dump_path = images_to_embedded(images_path_test)
+    if do_images_to_embedded:
+        images_path_train = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-images'
+        images_path_validation ='C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Valid\\VQAMed2018Valid-images'
+        images_path_test = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Test\\VQAMed2018Test-images'
+        dump_path = images_to_embedded(images_path_test)
     #### END OF Images to embedded--------------------------------------------------------------------------------------
-    str()
+
     #### words to embedded ---------------------------------------------------------------------------------------------
-    return
-    # path_to_weights = "C:\\Users\\Public\\Documents\\Data\\2017\\model_weights.h5"
-    # with h5py.File(path_to_weights, "r") as f:
-    #     embedding_matrix = f['/embedding_1/embedding_1_W']
-    # #     for item in f.attrs.keys():
-    # #         print("{0}: {1}\n".format(item ,f.attrs[item]))
-    #     # str()
-    #
-    #     num_words = 12602#45185 #arbitraraly chose number of words in clef captions 2014 competition
-    #     embedding_dim = 300#1000 # preaty much arbitrary
-    #     seq_length = 5 # !!!!!! Not sure what is that...
-    #     dropout_rate = 0.5 #picked up as naive default from an SO answer...
-    #
-    #     logger.debug("embedding_matrix shape: {0}".format(embedding_matrix.shape))
-    #
-    #     lstm_model = Word2VecModel(embedding_matrix=embedding_matrix, num_words=num_words, embedding_dim=embedding_dim,
-    #                            seq_length=seq_length, dropout_rate=dropout_rate)
-    #
-    #
-    #     results = try_run_lstm_model(lstm_model, seq_length)
-    #     for k,v in results.items():
-    #         print("{0}:\n\t{1}\n\n".format(k,"\n".join([s for s in v])))
+    if words_2_embedded:
+        pass
+        # path_to_weights = "C:\\Users\\Public\\Documents\\Data\\2017\\model_weights.h5"
+        # with h5py.File(path_to_weights, "r") as f:
+        #     embedding_matrix = f['/embedding_1/embedding_1_W']
+        # #     for item in f.attrs.keys():
+        # #         print("{0}: {1}\n".format(item ,f.attrs[item]))
+        #     # str()
+        #
+        #     num_words = 12602#45185 #arbitraraly chose number of words in clef captions 2014 competition
+        #     embedding_dim = 300#1000 # preaty much arbitrary
+        #     seq_length = 5 # !!!!!! Not sure what is that...
+        #     dropout_rate = 0.5 #picked up as naive default from an SO answer...
+        #
+        #     logger.debug("embedding_matrix shape: {0}".format(embedding_matrix.shape))
+        #
+        #     lstm_model = Word2VecModel(embedding_matrix=embedding_matrix, num_words=num_words, embedding_dim=embedding_dim,
+        #                            seq_length=seq_length, dropout_rate=dropout_rate)
+        #
+        #
+        #     results = try_run_lstm_model(lstm_model, seq_length)
+        #     for k,v in results.items():
+        #         print("{0}:\n\t{1}\n\n".format(k,"\n".join([s for s in v])))
     #### END OF words to embedded---------------------------------------------------------------------------------------
 
 
@@ -249,4 +365,4 @@ if __name__ == '__main__':
     except Exception as e:
         print("Got an error:\n{0}".format(e))
         raise
-        sys.exit(1)
+        # sys.exit(1)

@@ -1,7 +1,7 @@
 import os
 import matplotlib.pyplot as plt
 from parsers.VQA18 import Vqa18Base
-from pre_processing.known_find_and_replace_items import all_tags, dbg_file_xls, dbg_file_csv, dbg_file_xls_processed
+from pre_processing.known_find_and_replace_items import all_tags, dbg_file_xls_train, dbg_file_csv_train, dbg_file_xls_processed_train
 from utils.os_utils import File
 
 dump_plots_dir = os.path.abspath(os.path.join(".","dumped_plots\\"))
@@ -34,7 +34,7 @@ def main():
     # parser.add_argument('-p', dest='path', help='')
     # args = parser.parse_args()
 
-    fn = dbg_file_xls_processed# dbg_file_xls#  dbg_file_csv
+    fn = dbg_file_xls_processed_train# dbg_file_xls_train#  dbg_file_csv_train
     plot(fn)
 
 

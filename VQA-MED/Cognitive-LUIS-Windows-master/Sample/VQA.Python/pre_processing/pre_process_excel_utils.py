@@ -7,7 +7,7 @@ import pandas as pd
 
 from parsers.utils import suppress_func_stdout, has_word
 from pre_processing.known_find_and_replace_items import find_and_replace_collection, locations, diagnosis, \
-    imaging_devices, dbg_file_xls
+    imaging_devices, dbg_file_xls_train, dbg_file_csv_validation, dbg_file_csv_test
 from parsers.VQA18 import Vqa18_from_excel, Vqa18_from_raw_csv, Vqa18Base, TOKENIZED_COL_PREFIX
 from vqa_logger import logger
 
@@ -194,7 +194,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
 
-    args.path = args.path or dbg_file_xls  #dbg_file_csv
+    path = args.path or dbg_file_csv_test #dbg_file_csv_validation  #dbg_file_csv_train
 
-    args.destination = args.destination or os.path.splitext(args.path)[0] + '_post_pre_process.xlsx'
-    DataPreProcessor.preprocessed_data__to_processed_excel(args.path, args.destination)
+    destination = args.destination or os.path.splitext(path)[0] + '_post_pre_process.xlsx'
+    DataPreProcessor.preprocessed_data__to_processed_excel(path, destination )

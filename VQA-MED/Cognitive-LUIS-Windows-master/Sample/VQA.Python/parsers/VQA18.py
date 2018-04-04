@@ -152,7 +152,8 @@ class Vqa18_from_excel(Vqa18Base):
     def _read_data(self, data_path):
         # df =  pd.read_excel(data_path, names=self.ALL_RAW_COLS)
         df = pd.read_excel(data_path)
-        df = df[self.ALL_RAW_COLS]
+        cols = [c for c in self.ALL_RAW_COLS if c in df.columns]
+        df = df[cols]
         return df
 
 class Vqa18_from_processed_excel(Vqa18_from_excel):
