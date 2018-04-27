@@ -9,6 +9,8 @@ import imutils
 import matplotlib.pyplot as plt
 import pandas as pd
 import cv2
+
+from data_access.data import DAL
 from parsers.VQA18 import Vqa18Base
 from pre_processing.known_find_and_replace_items import models_folder
 from utils.os_utils import File
@@ -86,7 +88,7 @@ class TagClassifier(object):
     def train_tags_model(self, train_arg, validation_arg):
         # from pre_processing.known_find_and_replace_items import train_data, validation_data, test_data
         def get_nn_inputs(data_arg):
-            df = self.get_df(data_arg)
+            df = DAL.get_df(data_arg)
             df_tags = df[self.classes]
 
             # Use only rows that has exactly 1 tag
@@ -117,20 +119,6 @@ class TagClassifier(object):
         self.save_tags_model(model, history)
         return model, history
 
-    @staticmethod
-    def get_df(data_arg):
-        from pre_processing.known_find_and_replace_items import DataLocations
-        if isinstance(data_arg, pd.DataFrame):
-            df = data_arg
-        elif isinstance(data_arg, DataLocations):
-            inst = Vqa18Base.get_instance(data_arg.processed_xls)
-            df = inst.data
-        elif os.path.isfile(str(data_arg)):
-            inst = Vqa18Base.get_instance(data_arg)
-            df = inst.data
-        else:
-            raise Exception('Unrecognized data arg: {0}'.format(data_arg))
-        return df
 
     def train_nn(self, train_features, train_labels, validation_features, validation_labels):
         # Making sure to release memory from previous session, in case they did not end properly....

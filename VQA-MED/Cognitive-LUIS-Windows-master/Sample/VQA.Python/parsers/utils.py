@@ -19,6 +19,19 @@ class Timer:
     def __str__(self):
         return str(timedelta(seconds=self.interval))
 
+
+class VerboseTimer(Timer):
+    def __init__(self, title):
+        """"""
+        super().__init__()
+        self.title = title
+
+    def __exit__(self, *args):
+        super().__exit__()
+        print("{0}: {1}".format(self.title, str(self)))
+
+
+
 def timeit(func):
     def timed(*args, **kw):
         with Timer() as t:

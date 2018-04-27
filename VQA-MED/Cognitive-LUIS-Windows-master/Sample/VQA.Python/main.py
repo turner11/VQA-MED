@@ -1,36 +1,32 @@
-import os, sys
-import tensorflow as tf
+import argparse
 
-def test_gpu():
-    # test tf
-    hello = tf.constant('Hello, TensorFlow!')
-    sess = tf.Session()
-    print(sess.run(hello))
+from utils.gpu_utils import test_gpu
+from vqa_flow.main import main as main_flow
 
 
-    sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
-    from tensorflow.python.client import device_lib
+def main():
+    func_dicts = {
+        'flow':main_flow,
+        'gpu':test_gpu,
 
+    }
+    parser = argparse.ArgumentParser(description='')
+    help_txt = 'The main function to call. Expecting: {0}'.format("/".join([str(k) for k in list(func_dicts.keys())]))
+    parser.add_argument('-f', dest='func', help=help_txt)
+    args = parser.parse_args()
 
-    print(device_lib.list_local_devices())
-    # test keras
-    from keras import backend as K
-    K.tensorflow_backend._get_available_gpus()
-
+    func = func_dicts[args.func]
+    func()
 
 if __name__ == '__main__':
-    from vqa_flow.main import main as main_flow
-    from utils.describing import describe_models
     try:
-        # os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
-        # test_gpu()
-        # sys.exit(0)
-
-        # models_folder = 'C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\Cognitive-LUIS-Windows-master\\Sample\\VQA.Python\\models'
-        # describe_models(models_folder)
-        # sys.exit(0)
-        main_flow()
+        main()
     except Exception as e:
         print("Got an error:\n{0}".format(e))
         raise
         # sys.exit(1)
+
+
+
+
+

@@ -6,8 +6,7 @@ log_level = logging.DEBUG
 format = '%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s'
 logname = "vqa.log"
 
-logging.basicConfig(filename=logname,
-                    filemode='a',
+logging.basicConfig(filemode='a',
                     format=format,
                     datefmt='%H:%M:%S',
                     level=log_level)

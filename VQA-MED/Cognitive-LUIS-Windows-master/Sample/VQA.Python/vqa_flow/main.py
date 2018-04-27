@@ -1,12 +1,20 @@
 # import keras
 # import h5py
+from data_access.data import DAL
 from pre_processing.known_find_and_replace_items import all_tags, locations as locations_tags, diagnosis, \
     imaging_devices, locations
 from vqa_flow.tags_classifier import TagClassifier
+from vqa_flow.vqa_predictor import VqaPredictor
 from vqa_logger import logger
+from pre_processing.known_find_and_replace_items import train_data, validation_data
 
 
 def main():
+    df = DAL.get_df(train_data)
+    VqaPredictor.get_embedding_matrix()
+    p = VqaPredictor()
+    p.get_vqa_model()
+
     # model_path = "C:\\Users\\Public\\Documents\\Data\\2018\\models\\diagnosis_20180421_2056_09\\diagnosis_model.h5"
     # image_path_tumor ='C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-images\\0392-100X-30-209-g002.jpg'
     # image_path_hematoma = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-images\\13017_2015_52_Fig2_HTML.jpg'
@@ -16,7 +24,6 @@ def main():
     train_tags, do_images_to_embedded, words_2_embedded = [True, False, False]
     #### Train tags ----------------------------------------------------------------------------------------------------
     if train_tags:
-        from pre_processing.known_find_and_replace_items import train_data, validation_data
         from utils.describing import main as d_main  # describe_models
         tag_sets = [('locations', locations), ('diagnosis',diagnosis), ('imaging_devices', imaging_devices)]
 

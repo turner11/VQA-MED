@@ -1,19 +1,37 @@
+import os
+import random
+import string
+
+import pandas as pd
+import json
+import h5py
+import numpy as np
+
+from parsers.utils import VerboseTimer
+from utils.os_utils import File, print_progress
+from vqa_flow.constatns import embedding_matrix_filename, data_prepo_meta, embedding_dim, glove_path
+from vqa_flow.image_models import ImageModelGenerator
 from vqa_logger import logger
 from keras.layers import Dense, Dropout, Embedding, LSTM, Merge#, Flatten
-from keras.models import Model, Sequential
+from keras.models import Sequential #Model
+import itertools
 
 class VqaPredictor(object):
     """"""
 
-    def __init__(self):
+    def __init__(self, embedding_matrix_path=None, image_model_initial_weights=None, merge_strategy='mul'):
         """"""
+        assert callable(merge_strategy) or merge_strategy in ['mul','sum', 'concat', 'ave', 'cos', 'dot', 'max']
+
         super(VqaPredictor, self).__init__()
-        pass
+        self.image_model_initial_weights = image_model_initial_weights
+        self.merge_strategy = merge_strategy
+        self.embedding_matrix_path = embedding_matrix_path or embedding_matrix_filename
 
     def __repr__(self):
         return super(VqaPredictor, self).__repr__()
 
-    def Word2VecModel(self, embedding_matrix, num_words, embedding_dim, seq_length, dropout_rate):
+    def word_2_vec_model(self, embedding_matrix, num_words, embedding_dim, seq_length, dropout_rate):
         # notes:
         # num works: scalar represents size of original corpus
         # embedding_dim : dim reduction. every input string will be encoded in a binary fashion using a vector of this length
@@ -22,6 +40,7 @@ class VqaPredictor(object):
         LSTM_UNITS = 512
         DENSE_UNITS = 1024
         DENSE_ACTIVATION = 'relu'
+
 
         logger.debug("Creating Text model")
         model = Sequential()
@@ -57,21 +76,28 @@ class VqaPredictor(object):
     #     model.add(dense)
     #     return model
     #
-    def vqa_model(self, embedding_matrix, num_words, embedding_dim, seq_length, dropout_rate, num_classes):
-        MERGE_MODE = 'mul'
+    def get_vqa_model(self, embedding_dim, seq_length, dropout_rate, num_classes, embedding_matrix=None, meta_file_location=None):
+        metadata = self.get_metadata(meta_file_location)
+        embedding_matrix = embedding_matrix or self.get_embedding_matrix(meta_file_location=meta_file_location)
+
+        # TODO: ix_to_ans
+        num_classes = len(metadata['ix_to_ans'].keys())
+        num_words = len(metadata['ix_to_word'].keys())
+
         DENSE_UNITS = 1000
         DENSE_ACTIVATION = 'relu'
 
         OPTIMIZER = 'rmsprop'
         LOSS = 'categorical_crossentropy'
         METRICS = 'accuracy'
-        vgg_model = img_model(dropout_rate=dropout_rate)
-        lstm_model = Word2VecModel(embedding_matrix=embedding_matrix, num_words=num_words, embedding_dim=embedding_dim,
-                                   seq_length=seq_length, dropout_rate=dropout_rate)
+        vgg_model = ImageModelGenerator.get_image_model(self.image_model_initial_weights)
+
+        lstm_model = self.word_2_vec_model(embedding_matrix=embedding_matrix, num_words=num_words, embedding_dim=embedding_dim,
+                                           seq_length=seq_length, dropout_rate=dropout_rate)
         logger.debug("merging final model")
         fc_model = Sequential()
 
-        merge = Merge([vgg_model, lstm_model], mode=MERGE_MODE)
+        merge = Merge([vgg_model, lstm_model], mode=self.merge_strategy)
         fc_model.add(merge)
 
         dropout1 = Dropout(dropout_rate)
@@ -191,3 +217,119 @@ class VqaPredictor(object):
     #     x = image_to_preprocess_input(image_path)
     #     block4_pool_features = model.predict(x)
     #     return block4_pool_features
+
+
+    @staticmethod
+    def create_meta(meta_file_location, df):
+        logger.debug("Creating meta data ('{0}')".format(meta_file_location))
+        def get_unique_words(col):
+            single_string = " ".join(df[col])
+            exclude = set(string.punctuation)
+            s_no_panctuation = ''.join(ch for ch in single_string if ch not in exclude)
+            unique_words = set(s_no_panctuation.split(" ")).difference({'',' '})
+            print("{0}: {1}".format(col,len(unique_words)))
+            return unique_words
+
+        cols = ['question', 'answer']
+        unique_words = set(itertools.chain.from_iterable([get_unique_words(col) for col in cols]))
+        print("total unique words: {0}".format(len(unique_words)))
+
+        metadata = {}
+        metadata['ix_to_word'] = {str(word): int(i) for i, word in enumerate(unique_words)}
+        # {int(i):str(word) for i, word in enumerate(unique_words)}
+
+        File.dump_json(metadata,meta_file_location)
+        return meta_file_location
+
+
+
+
+
+    @staticmethod
+    def get_metadata(meta_file_location=None, df=None):
+        meta_file_location = meta_file_location or data_prepo_meta
+        if not os.path.isfile(meta_file_location):
+            logger.debug("Meta data does not exists.")
+            assert df is not None, "Cannot create meta with a None data frame"
+            VqaPredictor.create_meta(meta_file_location, df)
+        meta_data = File.load_json(meta_file_location)
+        # meta_data['ix_to_word'] = {str(word): int(i) for i, word in meta_data['ix_to_word'].items()}
+        return meta_data
+
+
+    @staticmethod
+    def prepare_embeddings(embedding_filename=None, meta_file_location=None):
+        embedding_filename = embedding_filename or embedding_matrix_filename
+        metadata = VqaPredictor.get_metadata(meta_file_location)
+        num_words = len(metadata['ix_to_word'].keys())
+        dim_embedding = embedding_dim
+
+
+
+        logger.debug("Embedding Data...")
+        # texts = df['question']
+
+        embeddings_index = {}
+        i = -1
+        line = "NO DATA"
+
+
+        glove_line_count = File.file_len(glove_path, encoding="utf8")
+        def process_line(i, line):
+            print_progress(i, glove_line_count)
+            try:
+                values = line.split()
+                word = values[0]
+                coefs = np.asarray(values[1:], dtype='float32')
+                embeddings_index[word] = coefs
+                print_progress(i+1, glove_line_count)
+            except Exception as ex:
+                logger.error(
+                    "An error occurred while working on glove file [line {0}]:\n"
+                    "Line text:\t{1}\nGlove path:\t{2}\n"
+                    "{3}".format(
+                        i, line, glove_path, ex))
+                raise
+
+
+        # with open(glove_path, 'r') as glove_file:
+        with VerboseTimer("Embedding"):
+            with open(glove_path, 'r', encoding="utf8") as glove_file:
+                [process_line(i=i, line=line)for i, line in enumerate(glove_file)]
+
+
+
+        embedding_matrix = np.zeros((num_words, dim_embedding))
+        word_index = metadata['ix_to_word']
+
+        with VerboseTimer("Creating matrix"):
+            embedding_tupl = ((word, i, embeddings_index.get(word)) for word, i in word_index.items())
+            embedded_with_values = [(word, i, embedding_vector) for word, i, embedding_vector in embedding_tupl if embedding_vector is not None]
+
+            for word, i, embedding_vector in embedded_with_values:
+                embedding_matrix[i] = embedding_vector
+
+
+        e = {tpl[0] for tpl in embedded_with_values}
+        w = set(word_index.keys())
+        words_with_no_embedding = w-e
+        rnd = random.sample(words_with_no_embedding , 5)
+        logger.debug("{0} words did not have embedding. e.g.:\n{1}".format(len(words_with_no_embedding),rnd))
+
+        with VerboseTimer("Dumping matrix"):
+            with h5py.File(embedding_filename, 'w') as f:
+                f.create_dataset('embedding_matrix', data=embedding_matrix)
+
+        return embedding_matrix
+
+    @staticmethod
+    def get_embedding_matrix(embedding_filename=None, meta_file_location=None):
+        embedding_filename = embedding_filename or embedding_matrix_filename
+        if os.path.exists(embedding_filename ):
+            logger.debug("Embedding Data already exists. Loading...")
+            with h5py.File(embedding_filename ) as f:
+                embedding_matrix = np.array(f['embedding_matrix'])
+        else:
+            embedding_matrix = VqaPredictor.prepare_embeddings(embedding_filename=embedding_filename,
+                                                               meta_file_location=meta_file_location)
+        return embedding_matrix
