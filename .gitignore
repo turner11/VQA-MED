@@ -297,3 +297,4 @@ __pycache__/
 *.btm.cs
 *.odx.cs
 *.xsd.cs
+VQA-MED/Cognitive-LUIS-Windows-master/Sample/VQA.Python/models/*
