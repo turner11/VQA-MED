@@ -15,12 +15,12 @@ from utils.os_utils import File
 from sklearn.utils import class_weight as sk_learn_class_weight
 from keras import callbacks, optimizers, backend as keras_backend, models
 from keras.utils import to_categorical
-from keras.applications.vgg19 import VGG19
 from keras.preprocessing import image
 from keras.applications.vgg19 import preprocess_input
-from keras.models import Model, Sequential
+from keras.models import Sequential#, Model
 from keras.layers import Dense, Dropout, Flatten  # , Embedding, LSTM, Merge
 
+from vqa_flow.image_models import ImageModelGenerator
 from vqa_logger import logger
 
 
@@ -31,14 +31,14 @@ class TagClassifier(object):
     def class_count(self):
         return len(self.classes)
 
-    def __init__(self, classes_to_clasify, name, batch_size=20, epochs=25, base_image_model_weights='imagenet'):
+    def __init__(self, classes_to_clasify, name, batch_size=20, epochs=25, image_model_initial_weights=None):
         """"""
         self.metrics = "accuracy"
         self.name = name
-        self.base_image_model_weights = base_image_model_weights
         self.batch_size = batch_size
         self.epochs = epochs
         self.classes = classes_to_clasify
+        self.image_model_initial_weights = image_model_initial_weights
 
     @classmethod
     def test_model(cls, model_arg, image_path, labels):
@@ -178,7 +178,7 @@ class TagClassifier(object):
             #                     validation_data=validation_data)
         except Exception as ex:
             logger.error("Got an error training model: {0}".format(ex))
-            logger.error(model.summary())
+            model.summary(print_fn=logger.error)
             raise
         return model, history
 
@@ -199,9 +199,7 @@ class TagClassifier(object):
 
         # initialize the model
         model = Sequential()
-
-        base_model = VGG19(weights=self.base_image_model_weights)
-        image_model = self.get_image_model(base_model)
+        image_model = ImageModelGenerator.get_image_model(self.image_model_initial_weights)
         model.add(image_model)
         # -----------------------------------------------------
         model.add(Dropout(rate=dropout_rate, name="dropout_1"))
@@ -235,7 +233,7 @@ class TagClassifier(object):
             File.validate_dir_exists(now_folder)
             model.save(model_fn)  # creates a HDF5 file 'my_model.h5'
             logger.debug("model saved")
-            File.write_text(summary_fn, model.summary())
+            File.write_text(summary_fn, model.summary(print_fn=logger.debug()))
         except Exception as ex:
             logger.error("Failed to save model:\n{0}".format(ex))
 
@@ -282,9 +280,5 @@ class TagClassifier(object):
             except Exception as ex:
                 logger.warning("Failed to save history:\n{0}".format(ex))
 
-    def get_image_model(self, base_model):
-        base_model = base_model or VGG19(weights='imagenet')
-        base_model.trainable = False
-        model = Model(inputs=base_model.input, outputs=base_model.get_layer('block4_pool').output, name="VGG_19")
-        model.trainable = False
-        return model
+
+
