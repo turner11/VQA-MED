@@ -8,13 +8,16 @@ from vqa_flow.vqa_predictor import VqaPredictor
 from vqa_logger import logger
 from pre_processing.known_find_and_replace_items import train_data, validation_data
 
+from vqa_flow.constatns import embedding_dim, seq_length
+
 
 def main():
-    df = DAL.get_df(train_data)
-    VqaPredictor.get_embedding_matrix()
-    p = VqaPredictor()
-    p.get_vqa_model()
-
+    # df = DAL.get_df(train_data)
+    # embedding_data = VqaPredictor.get_embedding_data()
+    # p = VqaPredictor()
+    # vqa_model = p.get_vqa_model(embedding_data=embedding_data)
+    #
+    # return
     # model_path = "C:\\Users\\Public\\Documents\\Data\\2018\\models\\diagnosis_20180421_2056_09\\diagnosis_model.h5"
     # image_path_tumor ='C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-images\\0392-100X-30-209-g002.jpg'
     # image_path_hematoma = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-images\\13017_2015_52_Fig2_HTML.jpg'

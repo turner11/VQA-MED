@@ -2,24 +2,31 @@ import os
 import random
 import string
 
+import datetime
+from functools import partial
+
 import pandas as pd
 import json
 import h5py
 import numpy as np
+import time
 
 from parsers.utils import VerboseTimer
+from pre_processing.known_find_and_replace_items import vqa_models_folder
 from utils.os_utils import File, print_progress
-from vqa_flow.constatns import embedding_matrix_filename, data_prepo_meta, embedding_dim, glove_path
+from vqa_flow.constatns import embedding_matrix_filename, data_prepo_meta, embedding_dim, glove_path, seq_length
+from vqa_flow.data_structures import EmbeddingData
 from vqa_flow.image_models import ImageModelGenerator
+from vqa_flow.keras_utils import print_model_summary_to_file
 from vqa_logger import logger
-from keras.layers import Dense, Dropout, Embedding, LSTM, Merge#, Flatten
+from keras.layers import Dense, Dropout, Embedding, LSTM, Merge, Flatten
 from keras.models import Sequential #Model
 import itertools
 
 class VqaPredictor(object):
     """"""
 
-    def __init__(self, embedding_matrix_path=None, image_model_initial_weights=None, merge_strategy='mul'):
+    def __init__(self, embedding_matrix_path=None, image_model_initial_weights=None, merge_strategy='concat'):
         """"""
         assert callable(merge_strategy) or merge_strategy in ['mul','sum', 'concat', 'ave', 'cos', 'dot', 'max']
 
@@ -31,7 +38,7 @@ class VqaPredictor(object):
     def __repr__(self):
         return super(VqaPredictor, self).__repr__()
 
-    def word_2_vec_model(self, embedding_matrix, num_words, embedding_dim, seq_length, dropout_rate):
+    def word_2_vec_model(self, embedding_matrix, num_words, embedding_dim, seq_length, dropout_rate=0.5):
         # notes:
         # num works: scalar represents size of original corpus
         # embedding_dim : dim reduction. every input string will be encoded in a binary fashion using a vector of this length
@@ -76,43 +83,61 @@ class VqaPredictor(object):
     #     model.add(dense)
     #     return model
     #
-    def get_vqa_model(self, embedding_dim, seq_length, dropout_rate, num_classes, embedding_matrix=None, meta_file_location=None):
-        metadata = self.get_metadata(meta_file_location)
-        embedding_matrix = embedding_matrix or self.get_embedding_matrix(meta_file_location=meta_file_location)
+    def get_vqa_model(self, embedding_data=None):
+        embedding_data = embedding_data or VqaPredictor.get_embedding_data()
+        embedding_matrix = embedding_data.embedding_matrix
+        num_words = embedding_data.num_words
+        num_classes = embedding_data.num_classes
 
-        # TODO: ix_to_ans
-        num_classes = len(metadata['ix_to_ans'].keys())
-        num_words = len(metadata['ix_to_word'].keys())
 
+
+
+        DROPOUT_RATE = 0.5
         DENSE_UNITS = 1000
         DENSE_ACTIVATION = 'relu'
 
         OPTIMIZER = 'rmsprop'
         LOSS = 'categorical_crossentropy'
         METRICS = 'accuracy'
-        vgg_model = ImageModelGenerator.get_image_model(self.image_model_initial_weights)
 
-        lstm_model = self.word_2_vec_model(embedding_matrix=embedding_matrix, num_words=num_words, embedding_dim=embedding_dim,
-                                           seq_length=seq_length, dropout_rate=dropout_rate)
-        logger.debug("merging final model")
-        fc_model = Sequential()
+        vgg_model, lstm_model, fc_model = None, None, None
+        try:
+            vgg_model = Sequential()
+            vgg = ImageModelGenerator.get_image_model(self.image_model_initial_weights)
+            vgg_model.add(vgg)
 
-        merge = Merge([vgg_model, lstm_model], mode=self.merge_strategy)
-        fc_model.add(merge)
+            lstm_model = self.word_2_vec_model(embedding_matrix=embedding_matrix, num_words=num_words, embedding_dim=embedding_dim,
+                                               seq_length=seq_length, dropout_rate=DROPOUT_RATE)
+            logger.debug("merging final model")
+            fc_model = Sequential()
 
-        dropout1 = Dropout(dropout_rate)
-        fc_model.add(dropout1)
+            vgg_model.add(Flatten())
+            merge = Merge([vgg_model, lstm_model], mode=self.merge_strategy)
+            fc_model.add(merge)
 
-        dense1 = Dense(units=DENSE_UNITS, activation=DENSE_ACTIVATION)
-        fc_model.add(dense1)
+            dropout1 = Dropout(DROPOUT_RATE)
+            fc_model.add(dropout1)
 
-        dropout2 = Dropout(dropout_rate)
-        fc_model.add(dropout2)
+            dense1 = Dense(units=DENSE_UNITS, activation=DENSE_ACTIVATION)
+            fc_model.add(dense1)
 
-        dense2 = Dense(units=num_classes, activation='softmax')
-        fc_model.add(dense2)
+            dropout2 = Dropout(DROPOUT_RATE)
+            fc_model.add(dropout2)
 
-        fc_model.compile(optimizer=OPTIMIZER, loss=LOSS, metrics=METRICS)
+            dense2 = Dense(units=num_classes, activation='softmax')
+            fc_model.add(dense2)
+
+            fc_model.compile(optimizer=OPTIMIZER, loss=LOSS, metrics=[METRICS])
+        except Exception as ex:
+            logger.error("Got an error while building vqa model:\n{0}".format(ex))
+            models = [(vgg_model, 'vgg_model'), (lstm_model, 'lstm_model'), (fc_model, 'lstm_model')]
+            for m, name in models:
+                if m is not None:
+                    logger.error("######################### {0} model details: ######################### ".format(name))
+                    m.summary(print_fn=logger.error)
+            raise
+
+        self.got_model(fc_model)
         return fc_model
     #
     # # segmentation: {'counts': 'j19[6h1ZNXNf1h1ZNYNe1g1[NYNf1f1YNZNh1e1YN^Nd1b1ZNbNd1^1ZNdNf1\\1ZNdNf1\\1ZNdNlKLo4_1UOBj0>kNNRLUNi4l1UO0RLUNh4k1UO;l0DTO<R1^OnNb0R1^OnNc0T1ZOlNg0X1TOhNm0V1SOkNm0T1TOlNl0T1TOjNbNmKZ2X5UOkNm0V1ROkNm0T1TOlNk0U1UOlNj0T1UOmNk0S1UOmNk0S1UOmNk0S1UOmNl0R1TOoNk0l0gMmJ01^1W4j0j0kMoJ[1W4j0j0kMoJ[1X4i0a0UNVKQ1Z4j0`0D@<`0D@<`0D@<`0D@<`0D@<`0D@=?CA=?BB>=CC==CB>:FF:?A@`0a0_O_Oa0b0^O_Ob0`0^O_Oc0a0]O@b0`0]OCa0<@D`0;AE?:BG=8DI;7EI<6DK;1I06OJ35MK35MK35MK35MK35MK45KK55KK55KK55KK64JK75IK75IK75IK75IK75IK84HL85GJ:6FJ:6FJ;5EK;5EK;5EK;5EK;5EK:7EI;7EH;9EG::FF9;GE9;GE9;GE9<EE:<FD:<FC;=EC=;CE=;CE<<DD<<DD=;CE=<BD?WNWKM5k1U41P1JPO6P1JoN7Q1IoN7Q1IoN7R1HnN8Q1JnN5S1KmN5S1KmN5S1KmN5T1JlN6T1JlN6T1JlN6S1KlN6P1SNkJg1U45n0WNmJe1T44o0XNlJd1U44o0XNkJe1V43o03QOMm0TNmJo1V4Mj08VOHi0:VOFk09UOGk09UOGk09UOFl0:SOGn08ROHn08ROHn08ROHn08UOEk0;WOCk0;VODk0<TOWNgKR1Y5c0ROYNeKT1Y5c0oNZNjKS1W5c0nNZNUMJn3k1nNZNb2f1aMWN_2j1aMSNeKOk6m1`40000002N1O2N01N10000O010O10002N001O000010O0000O10001M2L`D\\Nb;c1301VOZDMh;L_DEP<J`me33\\SZL5L4K5L4L5G8J8I4fNaNcF_1[9cNeF]1[9cNbF`1]9cNaELl0f1^9_NfELk0e1_9cNbF\\1^9dNaF]1_9dN`F\\1`9dN`F\\1`9dN`F\\1`9eN_F[1U8UORGTO<<=Z1Q8ZNVGQ1:]O?X1o7BaGTO`0Z1j7`0TH@i7R3000000000O100000001O0O2I7eNZ1ZNf10001O000001O01O00O11O3N0O000MRDkNm;U1TDjNm;U14O101M_Eb0Z7]OgHb0[7]OeHc0[7]OeHc0[7^OdHb0\\7^OdHb0]7]OcHc0]7]OcHc0]7]OcHb0b7YO_Hg0c7UO_Hl0a7UO]Hj0k7oNUHQ1l7nNTHQ1m7kNWHU1o900000O1O01000O10_NZD^10aNg;a10000O10000000001O000`dU1', 'size': [426, 640]}
@@ -250,7 +275,8 @@ class VqaPredictor(object):
         meta_file_location = meta_file_location or data_prepo_meta
         if not os.path.isfile(meta_file_location):
             logger.debug("Meta data does not exists.")
-            assert df is not None, "Cannot create meta with a None data frame"
+            assert df is not None, "Cannot create meta with a None data frame, You should first create one using a " \
+                                   "concrete data frame."
             VqaPredictor.create_meta(meta_file_location, df)
         meta_data = File.load_json(meta_file_location)
         # meta_data['ix_to_word'] = {str(word): int(i) for i, word in meta_data['ix_to_word'].items()}
@@ -333,3 +359,32 @@ class VqaPredictor(object):
             embedding_matrix = VqaPredictor.prepare_embeddings(embedding_filename=embedding_filename,
                                                                meta_file_location=meta_file_location)
         return embedding_matrix
+    @staticmethod
+    def get_embedding_data(embedding_filename=None, meta_file_location=None):
+        embedding_matrix = VqaPredictor.get_embedding_matrix(embedding_filename=embedding_filename, meta_file_location=meta_file_location)
+        dim = embedding_dim
+        s_length = seq_length
+        meta_data = VqaPredictor.get_metadata(meta_file_location)
+
+        return EmbeddingData(embedding_matrix=embedding_matrix,embedding_dim=dim, seq_length=s_length, meta_data=meta_data)
+
+    def got_model(self, model):
+        now = time.time()
+        ts = datetime.datetime.fromtimestamp(now).strftime('%Y%m%d_%H%M_%S')
+        now_folder = os.path.abspath('{0}\\{1}\\'.format(vqa_models_folder, ts))
+        model_fn = os.path.join(now_folder, 'vqa_model.h5')
+        summary_fn = os.path.join(now_folder, 'model_summary.txt')
+        logger.debug("saving model to: '{0}'".format(model_fn))
+
+        try:
+            File.validate_dir_exists(now_folder)
+            model.save(model_fn)  # creates a HDF5 file 'my_model.h5'
+            logger.debug("model saved")
+
+
+            print_model_summary_to_file(summary_fn, model)
+
+
+            File.write_text(summary_fn, model.summary(print_fn=logger.debug))
+        except Exception as ex:
+            logger.error("Failed to save model:\n{0}".format(ex))

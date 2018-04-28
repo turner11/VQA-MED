@@ -221,7 +221,7 @@ class TagClassifier(object):
             File.validate_dir_exists(now_folder)
             model.save(model_fn)  # creates a HDF5 file 'my_model.h5'
             logger.debug("model saved")
-            File.write_text(summary_fn, model.summary(print_fn=logger.debug()))
+            File.write_text(summary_fn, model.summary(print_fn=logger.debug))
         except Exception as ex:
             logger.error("Failed to save model:\n{0}".format(ex))
 

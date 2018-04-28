@@ -46,8 +46,8 @@ class File(object):
 
 
     @classmethod
-    def write_text(cls, fn, txt):
-        with open(fn, "w") as text_file:
+    def write_text(cls, fn, txt, mode='w'):
+        with open(fn, mode) as text_file:
             text_file.write(txt)
 
     @classmethod
