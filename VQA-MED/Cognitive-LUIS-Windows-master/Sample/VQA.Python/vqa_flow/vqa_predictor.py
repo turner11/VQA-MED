@@ -11,6 +11,9 @@ import h5py
 import numpy as np
 import time
 
+from keras import Model
+from keras.utils import plot_model
+
 from parsers.utils import VerboseTimer
 from pre_processing.known_find_and_replace_items import vqa_models_folder
 from utils.os_utils import File, print_progress
@@ -19,7 +22,7 @@ from vqa_flow.data_structures import EmbeddingData
 from vqa_flow.image_models import ImageModelGenerator
 from vqa_flow.keras_utils import print_model_summary_to_file
 from vqa_logger import logger
-from keras.layers import Dense, Dropout, Embedding, LSTM, Merge, Flatten
+from keras.layers import Dense, Dropout, Embedding, LSTM, Merge, Flatten, BatchNormalization, GlobalAveragePooling2D
 from keras.models import Sequential #Model
 import itertools
 
@@ -59,14 +62,14 @@ class VqaPredictor(object):
         lstm1 = LSTM(units=LSTM_UNITS, return_sequences=True, input_shape=(seq_length, embedding_dim))
         model.add(lstm1)
 
-        dropout1 = Dropout(rate=dropout_rate)
-        model.add(dropout1)
+        norm_barch1 = BatchNormalization()
+        model.add(norm_barch1)
 
         lstm2 = LSTM(units=LSTM_UNITS, return_sequences=False)
         model.add(lstm2)
 
-        dropout2 = Dropout(rate=dropout_rate)
-        model.add(dropout2)
+        norm_batch2 = BatchNormalization()
+        model.add(norm_batch2)
 
         dense = Dense(units=DENSE_UNITS, activation=DENSE_ACTIVATION)
         model.add(dense)
@@ -100,29 +103,33 @@ class VqaPredictor(object):
         LOSS = 'categorical_crossentropy'
         METRICS = 'accuracy'
 
-        vgg_model, lstm_model, fc_model = None, None, None
+        image_model, lstm_model, fc_model = None, None, None
         try:
-            vgg_model = Sequential()
-            vgg = ImageModelGenerator.get_image_model(self.image_model_initial_weights)
-            vgg_model.add(vgg)
 
+
+
+            logger.debug("Getting embedding (lstm model)")
             lstm_model = self.word_2_vec_model(embedding_matrix=embedding_matrix, num_words=num_words, embedding_dim=embedding_dim,
                                                seq_length=seq_length, dropout_rate=DROPOUT_RATE)
-            logger.debug("merging final model")
+
+            logger.debug("Getting image model")
+            out_put_dim = lstm_model.output_shape[-1]
+            image_model = ImageModelGenerator.get_image_model(self.image_model_initial_weights, out_put_dim=out_put_dim)
+
             fc_model = Sequential()
 
-            vgg_model.add(Flatten())
-            merge = Merge([vgg_model, lstm_model], mode=self.merge_strategy)
+            logger.debug("merging final model")
+            merge = Merge([image_model, lstm_model], mode=self.merge_strategy)
             fc_model.add(merge)
 
-            dropout1 = Dropout(DROPOUT_RATE)
-            fc_model.add(dropout1)
+            # batch_norm1 = BatchNormalization()
+            # fc_model.add(batch_norm1)
 
             dense1 = Dense(units=DENSE_UNITS, activation=DENSE_ACTIVATION)
             fc_model.add(dense1)
 
-            dropout2 = Dropout(DROPOUT_RATE)
-            fc_model.add(dropout2)
+            # batch_norm2 = BatchNormalization(DROPOUT_RATE)
+            # fc_model.add(batch_norm2)
 
             dense2 = Dense(units=num_classes, activation='softmax')
             fc_model.add(dense2)
@@ -130,7 +137,7 @@ class VqaPredictor(object):
             fc_model.compile(optimizer=OPTIMIZER, loss=LOSS, metrics=[METRICS])
         except Exception as ex:
             logger.error("Got an error while building vqa model:\n{0}".format(ex))
-            models = [(vgg_model, 'vgg_model'), (lstm_model, 'lstm_model'), (fc_model, 'lstm_model')]
+            models = [(image_model, 'image_model'), (lstm_model, 'lstm_model'), (fc_model, 'lstm_model')]
             for m, name in models:
                 if m is not None:
                     logger.error("######################### {0} model details: ######################### ".format(name))
@@ -373,6 +380,7 @@ class VqaPredictor(object):
         ts = datetime.datetime.fromtimestamp(now).strftime('%Y%m%d_%H%M_%S')
         now_folder = os.path.abspath('{0}\\{1}\\'.format(vqa_models_folder, ts))
         model_fn = os.path.join(now_folder, 'vqa_model.h5')
+        model_image_fn = os.path.join(now_folder, 'model_vqa.png5')
         summary_fn = os.path.join(now_folder, 'model_summary.txt')
         logger.debug("saving model to: '{0}'".format(model_fn))
 
@@ -383,8 +391,6 @@ class VqaPredictor(object):
 
 
             print_model_summary_to_file(summary_fn, model)
-
-
-            File.write_text(summary_fn, model.summary(print_fn=logger.debug))
+            plot_model(model, to_file=model_image_fn)
         except Exception as ex:
             logger.error("Failed to save model:\n{0}".format(ex))

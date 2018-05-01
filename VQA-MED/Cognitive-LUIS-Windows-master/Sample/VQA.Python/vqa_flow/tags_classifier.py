@@ -20,7 +20,7 @@ from keras.utils import to_categorical
 from keras.preprocessing import image
 from keras.applications.vgg19 import preprocess_input
 from keras.models import Sequential#, Model
-from keras.layers import Dense, Dropout, Flatten  # , Embedding, LSTM, Merge
+from keras.layers import Dense, Dropout, Flatten, BatchNormalization  # , Embedding, LSTM, Merge
 
 from vqa_flow.image_models import ImageModelGenerator
 from vqa_logger import logger
@@ -190,12 +190,11 @@ class TagClassifier(object):
         image_model = ImageModelGenerator.get_image_model(self.image_model_initial_weights)
         model.add(image_model)
         # -----------------------------------------------------
-        model.add(Dropout(rate=dropout_rate, name="dropout_1"))
+        model.add(BatchNormalization(name="batch_norm_1"))
         model.add(Dense(units=DENSE_UNITS, activation=DENSE_ACTIVATION, name='dense_2'))
-        model.add(Dropout(rate=dropout_rate, name="dropout_3"))
+        model.add(BatchNormalization(name="batch_norm_3"))
 
         # softmax classifier
-        model.add(Flatten())
         model.add(Dense(units=self.class_count, activation='softmax', name='output_dense_4'))
         # -----------------------------------------------------
         INIT_LR = 1e-3

@@ -1,21 +1,56 @@
 # import keras
 # import h5py
-from data_access.data import DAL
+import numpy as np
 from pre_processing.known_find_and_replace_items import all_tags, locations as locations_tags, diagnosis, \
     imaging_devices, locations
 from vqa_flow.tags_classifier import TagClassifier
 from vqa_flow.vqa_predictor import VqaPredictor
 from vqa_logger import logger
 from pre_processing.known_find_and_replace_items import train_data, validation_data
+import cv2
 
 from vqa_flow.constatns import embedding_dim, seq_length
 
 
+def get_image_features(image_file_name):
+    ''' Runs the given image_file to VGG 16 model and returns the
+    weights (filters) as a 1, 4096 dimension vector '''
+    from vqa_flow.image_models import ImageModelGenerator
+    from keras import backend as keras_backend
+
+    image_features = np.zeros((1, 4096))
+    image_model = ImageModelGenerator.get_image_model()
+
+    # Magic_Number = 4096  > Comes from last layer of VGG Model
+
+    # Since VGG was trained as a image of 224x224, every new image
+    # is required to go through the same transformation
+    im = cv2.resize(cv2.imread(image_file_name), ImageModelGenerator.IMAGE_SIZE)
+    if keras_backend.image_data_format() == "channels_first":
+        im = im.transpose((2, 0, 1))  # convert the image to RGBA
+
+    # this axis dimension is required because VGG was trained on a dimension
+    # of 1, 3, 224, 224 (first axis is for the batch size
+    # even though we are using only one image, we have to keep the dimensions consistent
+    im = np.expand_dims(im, axis=0)
+
+    image_features[0, :] = image_model.predict(im)[0]
+    return image_features
+
+
+
 def main():
-    # df = DAL.get_df(train_data)
+    # image_path_hematoma = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-images\\13017_2015_52_Fig2_HTML.jpg'
+    # get_image_features(image_path_hematoma)
+    # # df = DAL.get_df(train_data)
+
+
     # embedding_data = VqaPredictor.get_embedding_data()
     # p = VqaPredictor()
     # vqa_model = p.get_vqa_model(embedding_data=embedding_data)
+
+
+
     #
     # return
     # model_path = "C:\\Users\\Public\\Documents\\Data\\2018\\models\\diagnosis_20180421_2056_09\\diagnosis_model.h5"
