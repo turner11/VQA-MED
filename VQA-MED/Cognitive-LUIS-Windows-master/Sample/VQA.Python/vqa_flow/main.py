@@ -1,15 +1,17 @@
 # import keras
 # import h5py
 import numpy as np
+
+from data_access.data import DAL
 from pre_processing.known_find_and_replace_items import all_tags, locations as locations_tags, diagnosis, \
     imaging_devices, locations
 from vqa_flow.tags_classifier import TagClassifier
-from vqa_flow.vqa_predictor import VqaPredictor
+from vqa_flow.vqa_predictor import VqaPredictorFactory, VqaPredictor
 from vqa_logger import logger
 from pre_processing.known_find_and_replace_items import train_data, validation_data
 import cv2
 
-from vqa_flow.constatns import embedding_dim, seq_length
+from vqa_flow.constatns import embedding_dim, seq_length, data_prepo_meta
 
 
 def get_image_features(image_file_name):
@@ -42,12 +44,20 @@ def get_image_features(image_file_name):
 def main():
     # image_path_hematoma = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-images\\13017_2015_52_Fig2_HTML.jpg'
     # get_image_features(image_path_hematoma)
-    # # df = DAL.get_df(train_data)
+    str()
+    # df = DAL.get_df(train_data)
+    # VqaPredictorFactory.create_meta(data_prepo_meta, df)
+    # meta = VqaPredictorFactory.get_metadata()
+    # meta = VqaPredictorFactory.get_metadata(df=df)
+    embedding_data = VqaPredictorFactory.get_embedding_data()
+    p = VqaPredictorFactory()
+    vqa_model = p.get_vqa_model(embedding_data=embedding_data)
 
 
-    # embedding_data = VqaPredictor.get_embedding_data()
-    # p = VqaPredictor()
-    # vqa_model = p.get_vqa_model(embedding_data=embedding_data)
+    model_path = "C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180501_2315_52\\vqa_model.h5"
+    predictor = VqaPredictor(model_path)
+    df = DAL.get_df(train_data)
+    predictor.train(df)
 
 
 

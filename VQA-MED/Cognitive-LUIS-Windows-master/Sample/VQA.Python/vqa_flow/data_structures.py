@@ -3,10 +3,7 @@ class EmbeddingData(object):
 
     @property
     def num_classes(self):
-        from vqa_logger import logger
-        val = 4
-        logger.warning("using 4 just so I can keep going on. Fix this...")
-        return val#len(self.meta_data['ix_to_ans'].keys())
+        return len(self.meta_data['ix_to_ans'].keys())
 
     @property
     def num_words(self):

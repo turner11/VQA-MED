@@ -11,7 +11,7 @@ import h5py
 import numpy as np
 import time
 
-from keras import Model
+from keras import Model, models
 from keras.utils import plot_model
 
 from parsers.utils import VerboseTimer
@@ -26,20 +26,35 @@ from keras.layers import Dense, Dropout, Embedding, LSTM, Merge, Flatten, BatchN
 from keras.models import Sequential #Model
 import itertools
 
+
 class VqaPredictor(object):
+    def __init__(self, model_fn_path):
+        """"""
+        super().__init__()
+        self.model_fn_path = model_fn_path
+        self.model = self._load_vqa_model(model_fn_path)
+
+    def _load_vqa_model(self, file_name):
+        return models.load_model(file_name)
+
+    def train(self, df):
+        pass
+
+
+class VqaPredictorFactory(object):
     """"""
 
     def __init__(self, embedding_matrix_path=None, image_model_initial_weights=None, merge_strategy='concat'):
         """"""
         assert callable(merge_strategy) or merge_strategy in ['mul','sum', 'concat', 'ave', 'cos', 'dot', 'max']
 
-        super(VqaPredictor, self).__init__()
+        super(VqaPredictorFactory, self).__init__()
         self.image_model_initial_weights = image_model_initial_weights
         self.merge_strategy = merge_strategy
         self.embedding_matrix_path = embedding_matrix_path or embedding_matrix_filename
 
     def __repr__(self):
-        return super(VqaPredictor, self).__repr__()
+        return super(VqaPredictorFactory, self).__repr__()
 
     def word_2_vec_model(self, embedding_matrix, num_words, embedding_dim, seq_length, dropout_rate=0.5):
         # notes:
@@ -87,7 +102,7 @@ class VqaPredictor(object):
     #     return model
     #
     def get_vqa_model(self, embedding_data=None):
-        embedding_data = embedding_data or VqaPredictor.get_embedding_data()
+        embedding_data = embedding_data or VqaPredictorFactory.get_embedding_data()
         embedding_matrix = embedding_data.embedding_matrix
         num_words = embedding_data.num_words
         num_classes = embedding_data.num_classes
@@ -146,6 +161,8 @@ class VqaPredictor(object):
 
         self.got_model(fc_model)
         return fc_model
+
+
     #
     # # segmentation: {'counts': 'j19[6h1ZNXNf1h1ZNYNe1g1[NYNf1f1YNZNh1e1YN^Nd1b1ZNbNd1^1ZNdNf1\\1ZNdNf1\\1ZNdNlKLo4_1UOBj0>kNNRLUNi4l1UO0RLUNh4k1UO;l0DTO<R1^OnNb0R1^OnNc0T1ZOlNg0X1TOhNm0V1SOkNm0T1TOlNl0T1TOjNbNmKZ2X5UOkNm0V1ROkNm0T1TOlNk0U1UOlNj0T1UOmNk0S1UOmNk0S1UOmNk0S1UOmNl0R1TOoNk0l0gMmJ01^1W4j0j0kMoJ[1W4j0j0kMoJ[1X4i0a0UNVKQ1Z4j0`0D@<`0D@<`0D@<`0D@<`0D@<`0D@=?CA=?BB>=CC==CB>:FF:?A@`0a0_O_Oa0b0^O_Ob0`0^O_Oc0a0]O@b0`0]OCa0<@D`0;AE?:BG=8DI;7EI<6DK;1I06OJ35MK35MK35MK35MK35MK45KK55KK55KK55KK64JK75IK75IK75IK75IK75IK84HL85GJ:6FJ:6FJ;5EK;5EK;5EK;5EK;5EK:7EI;7EH;9EG::FF9;GE9;GE9;GE9<EE:<FD:<FC;=EC=;CE=;CE<<DD<<DD=;CE=<BD?WNWKM5k1U41P1JPO6P1JoN7Q1IoN7Q1IoN7R1HnN8Q1JnN5S1KmN5S1KmN5S1KmN5T1JlN6T1JlN6T1JlN6S1KlN6P1SNkJg1U45n0WNmJe1T44o0XNlJd1U44o0XNkJe1V43o03QOMm0TNmJo1V4Mj08VOHi0:VOFk09UOGk09UOGk09UOFl0:SOGn08ROHn08ROHn08ROHn08UOEk0;WOCk0;VODk0<TOWNgKR1Y5c0ROYNeKT1Y5c0oNZNjKS1W5c0nNZNUMJn3k1nNZNb2f1aMWN_2j1aMSNeKOk6m1`40000002N1O2N01N10000O010O10002N001O000010O0000O10001M2L`D\\Nb;c1301VOZDMh;L_DEP<J`me33\\SZL5L4K5L4L5G8J8I4fNaNcF_1[9cNeF]1[9cNbF`1]9cNaELl0f1^9_NfELk0e1_9cNbF\\1^9dNaF]1_9dN`F\\1`9dN`F\\1`9dN`F\\1`9eN_F[1U8UORGTO<<=Z1Q8ZNVGQ1:]O?X1o7BaGTO`0Z1j7`0TH@i7R3000000000O100000001O0O2I7eNZ1ZNf10001O000001O01O00O11O3N0O000MRDkNm;U1TDjNm;U14O101M_Eb0Z7]OgHb0[7]OeHc0[7]OeHc0[7^OdHb0\\7^OdHb0]7]OcHc0]7]OcHc0]7]OcHb0b7YO_Hg0c7UO_Hl0a7UO]Hj0k7oNUHQ1l7nNTHQ1m7kNWHU1o900000O1O01000O10_NZD^10aNg;a10000O10000000001O000`dU1', 'size': [426, 640]}
     # # area: 25483.0
@@ -250,7 +267,6 @@ class VqaPredictor(object):
     #     block4_pool_features = model.predict(x)
     #     return block4_pool_features
 
-
     @staticmethod
     def create_meta(meta_file_location, df):
         logger.debug("Creating meta data ('{0}')".format(meta_file_location))
@@ -268,6 +284,7 @@ class VqaPredictor(object):
 
         metadata = {}
         metadata['ix_to_word'] = {str(word): int(i) for i, word in enumerate(unique_words)}
+        metadata['ix_to_ans'] = {ans:i for ans, i in enumerate(set(df['answer']))}
         # {int(i):str(word) for i, word in enumerate(unique_words)}
 
         File.dump_json(metadata,meta_file_location)
@@ -284,7 +301,7 @@ class VqaPredictor(object):
             logger.debug("Meta data does not exists.")
             assert df is not None, "Cannot create meta with a None data frame, You should first create one using a " \
                                    "concrete data frame."
-            VqaPredictor.create_meta(meta_file_location, df)
+            VqaPredictorFactory.create_meta(meta_file_location, df)
         meta_data = File.load_json(meta_file_location)
         # meta_data['ix_to_word'] = {str(word): int(i) for i, word in meta_data['ix_to_word'].items()}
         return meta_data
@@ -293,7 +310,7 @@ class VqaPredictor(object):
     @staticmethod
     def prepare_embeddings(embedding_filename=None, meta_file_location=None):
         embedding_filename = embedding_filename or embedding_matrix_filename
-        metadata = VqaPredictor.get_metadata(meta_file_location)
+        metadata = VqaPredictorFactory.get_metadata(meta_file_location)
         num_words = len(metadata['ix_to_word'].keys())
         dim_embedding = embedding_dim
 
@@ -363,15 +380,15 @@ class VqaPredictor(object):
             with h5py.File(embedding_filename ) as f:
                 embedding_matrix = np.array(f['embedding_matrix'])
         else:
-            embedding_matrix = VqaPredictor.prepare_embeddings(embedding_filename=embedding_filename,
-                                                               meta_file_location=meta_file_location)
+            embedding_matrix = VqaPredictorFactory.prepare_embeddings(embedding_filename=embedding_filename,
+                                                                      meta_file_location=meta_file_location)
         return embedding_matrix
     @staticmethod
     def get_embedding_data(embedding_filename=None, meta_file_location=None):
-        embedding_matrix = VqaPredictor.get_embedding_matrix(embedding_filename=embedding_filename, meta_file_location=meta_file_location)
+        embedding_matrix = VqaPredictorFactory.get_embedding_matrix(embedding_filename=embedding_filename, meta_file_location=meta_file_location)
         dim = embedding_dim
         s_length = seq_length
-        meta_data = VqaPredictor.get_metadata(meta_file_location)
+        meta_data = VqaPredictorFactory.get_metadata(meta_file_location)
 
         return EmbeddingData(embedding_matrix=embedding_matrix,embedding_dim=dim, seq_length=s_length, meta_data=meta_data)
 
