@@ -11,7 +11,7 @@ import h5py
 import numpy as np
 import time
 
-from keras import Model, models
+from keras import Model, models, Input
 from keras.utils import plot_model
 
 from parsers.utils import VerboseTimer
@@ -24,6 +24,7 @@ from vqa_flow.keras_utils import print_model_summary_to_file
 from vqa_logger import logger
 from keras.layers import Dense, Dropout, Embedding, LSTM, Merge, Flatten, BatchNormalization, GlobalAveragePooling2D
 from keras.models import Sequential #Model
+import keras.layers as keras_layers
 import itertools
 
 
@@ -46,17 +47,31 @@ class VqaPredictorFactory(object):
 
     def __init__(self, embedding_matrix_path=None, image_model_initial_weights=None, merge_strategy='concat'):
         """"""
-        assert callable(merge_strategy) or merge_strategy in ['mul','sum', 'concat', 'ave', 'cos', 'dot', 'max']
+        assert callable(merge_strategy) or merge_strategy in ['mul','sum', 'concat', 'ave', 'dot', 'max']# 'cos',
+        if isinstance(merge_strategy, str):
+            strat_dict = {'mul': keras_layers.multiply,
+                             'sum':keras_layers.add,
+                            'concat':keras_layers.concatenate,
+                            'ave': keras_layers.average,
+                            # 'cos': keras_layers.co,
+                            'dot': keras_layers.dot,
+                            'max': keras_layers.maximum}
+            strat_func = strat_dict[merge_strategy]
+        else:
+            strat_func = merge_strategy
+
+
+
 
         super(VqaPredictorFactory, self).__init__()
         self.image_model_initial_weights = image_model_initial_weights
-        self.merge_strategy = merge_strategy
+        self.merge_strategy = strat_func
         self.embedding_matrix_path = embedding_matrix_path or embedding_matrix_filename
 
     def __repr__(self):
         return super(VqaPredictorFactory, self).__repr__()
 
-    def word_2_vec_model(self, embedding_matrix, num_words, embedding_dim, seq_length, dropout_rate=0.5):
+    def word_2_vec_model(self, embedding_matrix, num_words, embedding_dim, seq_length, input_tensor):
         # notes:
         # num works: scalar represents size of original corpus
         # embedding_dim : dim reduction. every input string will be encoded in a binary fashion using a vector of this length
@@ -67,50 +82,24 @@ class VqaPredictorFactory(object):
         DENSE_ACTIVATION = 'relu'
 
 
-        logger.debug("Creating Text model")
-        model = Sequential()
-
-        layer = Embedding(num_words, embedding_dim, weights=[embedding_matrix], input_length=seq_length,
-                          trainable=False)
-        model.add(layer)
-
-        lstm1 = LSTM(units=LSTM_UNITS, return_sequences=True, input_shape=(seq_length, embedding_dim))
-        model.add(lstm1)
-
-        norm_barch1 = BatchNormalization()
-        model.add(norm_barch1)
-
-        lstm2 = LSTM(units=LSTM_UNITS, return_sequences=False)
-        model.add(lstm2)
-
-        norm_batch2 = BatchNormalization()
-        model.add(norm_batch2)
-
-        dense = Dense(units=DENSE_UNITS, activation=DENSE_ACTIVATION)
-        model.add(dense)
+        logger.debug("Creating Embedding model")
+        x = Embedding(num_words, embedding_dim, weights=[embedding_matrix], input_length=seq_length,trainable=False)(input_tensor)
+        x = LSTM(units=LSTM_UNITS, return_sequences=True, input_shape=(seq_length, embedding_dim))(x)
+        x = BatchNormalization()(x)
+        x = LSTM(units=LSTM_UNITS, return_sequences=False)(x)
+        x = BatchNormalization()(x)
+        x = Dense(units=DENSE_UNITS, activation=DENSE_ACTIVATION)(x)
+        model = x
+        logger.debug("Done Creating Embedding model")
         return model
 
-    #
-    # def img_model(self, dropout_rate):
-    #     DENSE_UNITS = 1024
-    #     INPUT_DIM = 4096
-    #     DENSE_ACTIVATION = 'relu'
-    #     logger.debug("Creating image model")
-    #     model = Sequential()
-    #     dense = Dense(units=DENSE_UNITS, input_dim=INPUT_DIM, activation=DENSE_ACTIVATION)
-    #     model.add(dense)
-    #     return model
-    #
+
     def get_vqa_model(self, embedding_data=None):
         embedding_data = embedding_data or VqaPredictorFactory.get_embedding_data()
         embedding_matrix = embedding_data.embedding_matrix
         num_words = embedding_data.num_words
         num_classes = embedding_data.num_classes
 
-
-
-
-        DROPOUT_RATE = 0.5
         DENSE_UNITS = 1000
         DENSE_ACTIVATION = 'relu'
 
@@ -121,34 +110,25 @@ class VqaPredictorFactory(object):
         image_model, lstm_model, fc_model = None, None, None
         try:
 
-
+            lstm_input_tensor = Input(shape=(embedding_dim,), name='embedding_input')
 
             logger.debug("Getting embedding (lstm model)")
             lstm_model = self.word_2_vec_model(embedding_matrix=embedding_matrix, num_words=num_words, embedding_dim=embedding_dim,
-                                               seq_length=seq_length, dropout_rate=DROPOUT_RATE)
+                                               seq_length=seq_length, input_tensor=lstm_input_tensor)
 
             logger.debug("Getting image model")
-            out_put_dim = lstm_model.output_shape[-1]
-            image_model = ImageModelGenerator.get_image_model(self.image_model_initial_weights, out_put_dim=out_put_dim)
+            out_put_dim = lstm_model.shape[-1].value
+            image_input_tensor, image_model = ImageModelGenerator.get_image_model(self.image_model_initial_weights, out_put_dim=out_put_dim)
 
-            fc_model = Sequential()
 
             logger.debug("merging final model")
-            merge = Merge([image_model, lstm_model], mode=self.merge_strategy)
-            fc_model.add(merge)
+            fc_tensors = self.merge_strategy(inputs=[image_model, lstm_model])
+            fc_tensors = BatchNormalization()(fc_tensors)
+            fc_tensors = Dense(units=DENSE_UNITS, activation=DENSE_ACTIVATION)(fc_tensors)
+            fc_tensors = BatchNormalization()(fc_tensors)
+            fc_tensors = Dense(units=num_classes, activation='softmax')(fc_tensors)
 
-            # batch_norm1 = BatchNormalization()
-            # fc_model.add(batch_norm1)
-
-            dense1 = Dense(units=DENSE_UNITS, activation=DENSE_ACTIVATION)
-            fc_model.add(dense1)
-
-            # batch_norm2 = BatchNormalization(DROPOUT_RATE)
-            # fc_model.add(batch_norm2)
-
-            dense2 = Dense(units=num_classes, activation='softmax')
-            fc_model.add(dense2)
-
+            fc_model = Model(input=[lstm_input_tensor, image_input_tensor], output=fc_tensors)
             fc_model.compile(optimizer=OPTIMIZER, loss=LOSS, metrics=[METRICS])
         except Exception as ex:
             logger.error("Got an error while building vqa model:\n{0}".format(ex))
@@ -156,7 +136,10 @@ class VqaPredictorFactory(object):
             for m, name in models:
                 if m is not None:
                     logger.error("######################### {0} model details: ######################### ".format(name))
-                    m.summary(print_fn=logger.error)
+                    try:
+                        m.summary(print_fn=logger.error)
+                    except Exception as ex2:
+                        logger.warning("Failed to print summary for {0}:\n{1}".format(name, ex2))
             raise
 
         self.got_model(fc_model)
@@ -405,9 +388,15 @@ class VqaPredictorFactory(object):
             File.validate_dir_exists(now_folder)
             model.save(model_fn)  # creates a HDF5 file 'my_model.h5'
             logger.debug("model saved")
-
-
-            print_model_summary_to_file(summary_fn, model)
-            plot_model(model, to_file=model_image_fn)
         except Exception as ex:
             logger.error("Failed to save model:\n{0}".format(ex))
+
+        try:
+            logger.debug("Writing history")
+            print_model_summary_to_file(summary_fn, model)
+            logger.debug("Done Writing History")
+            logger.debug("Plotting model")
+            plot_model(model, to_file=model_image_fn)
+            logger.debug("Done Plotting")
+        except Exception as ex:
+            logger.warning("{0}".format(ex))
