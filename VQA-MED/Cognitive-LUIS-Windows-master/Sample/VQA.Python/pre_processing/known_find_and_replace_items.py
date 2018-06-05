@@ -42,7 +42,7 @@ locations = ['brain', 'abdomen','neck','liver']#,'stomach']#, 'lung']
 all_tags = list(itertools.chain(imaging_devices,diagnosis,locations ))
 
 models_folder = "C:\\Users\\Public\\Documents\\Data\\2018\\models"
-vqa_models_folder = "C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models"
+
 
 dbg_file_csv_train = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-QA.csv'
 dbg_file_xls_train = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-QA_post_pre_process_intermediate.xlsx'#"'C:\\\\Users\\\\avitu\\\\Documents\\\\GitHub\\\\VQA-MED\\\\VQA-MED\\\\Cognitive-LUIS-Windows-master\\\\Sample\\\\VQA.Python\\\\dumped_data\\\\vqa_data.xlsx'

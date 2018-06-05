@@ -1,5 +1,5 @@
 from keras.applications.vgg19 import VGG19
-from keras.layers import Dropout, Dense, GlobalAveragePooling2D, Input
+from keras.layers import Dense, GlobalAveragePooling2D, Input, Dropout
 from keras.models import Model, Sequential
 
 
@@ -39,6 +39,7 @@ class ImageModelGenerator(object):
         model = x
 
         return base_model.input , model
+
 
     def __repr__(self):
         return super().__repr__()

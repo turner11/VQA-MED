@@ -18,11 +18,11 @@ from sklearn.utils import class_weight as sk_learn_class_weight
 from keras import callbacks, optimizers, backend as keras_backend, models
 from keras.utils import to_categorical
 from keras.preprocessing import image
-from keras.applications.vgg19 import preprocess_input
 from keras.models import Sequential#, Model
 from keras.layers import Dense, Dropout, Flatten, BatchNormalization  # , Embedding, LSTM, Merge
 
 from vqa_flow.image_models import ImageModelGenerator
+from vqa_flow.image_utils import image_to_pre_process_input as pre_process_image
 from vqa_logger import logger
 
 
@@ -77,13 +77,7 @@ class TagClassifier(object):
         cv2.imshow("Output", output)
         cv2.waitKey(0)
 
-    @classmethod
-    def image_to_pre_process_input(cls, image_path):
-        img = image.load_img(image_path, target_size=cls.IMAGE_SIZE)
-        x = image.img_to_array(img)
-        # x = np.expand_dims(x, axis=0)
-        x = preprocess_input(x)  # x = np.array(data, dtype="float") / 255.0
-        return x
+
 
     def train_tags_model(self, train_arg, validation_arg):
         # from pre_processing.known_find_and_replace_items import train_data, validation_data, test_data
@@ -105,7 +99,7 @@ class TagClassifier(object):
             features = np.asanyarray(features_list)
 
             assert len(labels) == len(features), \
-                "Got different number of labels ({0}) and features ({1})".format(len(labels), len(features))
+                "Got different number of labels ({0}) and image_infos ({1})".format(len(labels), len(features))
             return features, labels
 
         validation_features, validation_labels = get_nn_inputs(validation_arg)
@@ -266,6 +260,10 @@ class TagClassifier(object):
 
             except Exception as ex:
                 logger.warning("Failed to save history:\n{0}".format(ex))
+
+    @classmethod
+    def image_to_pre_process_input(cls, fn):
+        return pre_process_image(fn, cls.IMAGE_SIZE)
 
 
 

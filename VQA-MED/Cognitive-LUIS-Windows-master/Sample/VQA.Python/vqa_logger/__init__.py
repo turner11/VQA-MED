@@ -2,7 +2,7 @@ import logging
 
 import sys
 
-import coloredlogs
+# import coloredlogs
 
 log_level = logging.DEBUG
 format = '%(asctime)s,%(msecs)d %(name)s %(levelname)s ## %(message)s'
@@ -12,7 +12,7 @@ logging.basicConfig(filemode='a',
                     format=format,
                     datefmt='%H:%M:%S',
                     level=log_level)
-coloredlogs.install()
+# coloredlogs.install()
 logger = logging.getLogger('pythonVQA')
 #
 # ch = logging.StreamHandler(sys.stdout)

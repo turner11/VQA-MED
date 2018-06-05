@@ -5,13 +5,15 @@ import numpy as np
 from data_access.data import DAL
 from pre_processing.known_find_and_replace_items import all_tags, locations as locations_tags, diagnosis, \
     imaging_devices, locations
+from vqa_flow.data_wrapper import EnrichedData
+from vqa_flow.image_models import ImageModelGenerator
 from vqa_flow.tags_classifier import TagClassifier
 from vqa_flow.vqa_predictor import VqaPredictorFactory, VqaPredictor
 from vqa_logger import logger
 from pre_processing.known_find_and_replace_items import train_data, validation_data
 import cv2
 
-from vqa_flow.constatns import embedding_dim, seq_length, data_prepo_meta
+from vqa_flow.constatns import embedding_dim, seq_length, data_prepo_meta, data_prepo_meta_validation
 
 
 def get_image_features(image_file_name):
@@ -47,16 +49,29 @@ def main():
     str()
     # df = DAL.get_df(train_data)
     # VqaPredictorFactory.create_meta(data_prepo_meta, df)
+
+    df = DAL.get_df(validation_data)
+    VqaPredictorFactory.create_meta(data_prepo_meta_validation, df)
+
     # meta = VqaPredictorFactory.get_metadata()
     # meta = VqaPredictorFactory.get_metadata(df=df)
-    embedding_data = VqaPredictorFactory.get_embedding_data()
-    p = VqaPredictorFactory()
-    vqa_model = p.get_vqa_model(embedding_data=embedding_data)
+    # embedding_data = VqaPredictorFactory.get_embedding_data()
+    # p = VqaPredictorFactory()
+    # vqa_model = p.get_vqa_model(embedding_data=embedding_data)
 
 
-    model_path = "C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180501_2315_52\\vqa_model.h5"
-    predictor = VqaPredictor(model_path)
+    model_path = "C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180504_1554_21\\vqa_model.h5"
     df = DAL.get_df(train_data)
+
+    image_size = ImageModelGenerator.image_size_by_base_models['imagenet']
+    training_data_object = EnrichedData.df_to_data(df, train_data.images_path,image_size, "training data", data_prepo_meta )
+
+
+    validation_df = DAL.get_df(validation_data)
+    validation_data_object = EnrichedData.df_to_data(validation_df, validation_data.images_path, image_size, 'validation data', data_prepo_meta_validation)
+    predictor = VqaPredictor(model_path, training_data_object, validation_data_object )
+
+
     predictor.train(df)
 
 

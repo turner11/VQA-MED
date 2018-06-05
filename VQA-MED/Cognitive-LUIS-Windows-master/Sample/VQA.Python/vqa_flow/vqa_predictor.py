@@ -1,45 +1,96 @@
 import os
 import random
 import string
-
 import datetime
-from functools import partial
 
-import pandas as pd
-import json
 import h5py
 import numpy as np
 import time
 
-from keras import Model, models, Input
-from keras.utils import plot_model
+from keras import Model, models, Input, callbacks
+from keras.utils import plot_model, to_categorical
 
 from parsers.utils import VerboseTimer
-from pre_processing.known_find_and_replace_items import vqa_models_folder
 from utils.os_utils import File, print_progress
-from vqa_flow.constatns import embedding_matrix_filename, data_prepo_meta, embedding_dim, glove_path, seq_length
+from vqa_flow.constatns import embedding_matrix_filename, data_prepo_meta, embedding_dim, glove_path, seq_length, \
+    vqa_models_folder
 from vqa_flow.data_structures import EmbeddingData
 from vqa_flow.image_models import ImageModelGenerator
 from vqa_flow.keras_utils import print_model_summary_to_file
 from vqa_logger import logger
-from keras.layers import Dense, Dropout, Embedding, LSTM, Merge, Flatten, BatchNormalization, GlobalAveragePooling2D
-from keras.models import Sequential #Model
+from keras.layers import Dense, Embedding, LSTM, BatchNormalization#, GlobalAveragePooling2D, Merge, Flatten
 import keras.layers as keras_layers
 import itertools
+from keras import backend as keras_backend
+# from keras.models import Sequential #Model
+# import pandas as pd
 
 
 class VqaPredictor(object):
-    def __init__(self, model_fn_path):
+
+
+
+    def __init__(self, model_fn_path, training_data_object, validation_data_object):
         """"""
         super().__init__()
-        self.model_fn_path = model_fn_path
+        self.__classes = None
+        self.__model_fn_path = model_fn_path
         self.model = self._load_vqa_model(model_fn_path)
+        self.training_data_object = training_data_object
+        self.validation_data_object = validation_data_object
+
+        self._meta = VqaPredictorFactory.get_metadata(self.training_data_object.meta_fn)
+        self._meta_validation = VqaPredictorFactory.get_metadata(self.validation_data_object.meta_fn)
+
+
+
+    def idx_to_class(self, idx):
+        ix_to_ans = self._meta['ix_to_ans']
+        class_ress = ix_to_ans[idx]
+        return class_ress
 
     def _load_vqa_model(self, file_name):
         return models.load_model(file_name)
 
     def train(self, df):
-        pass
+        keras_backend.clear_session()
+        model = self.model
+
+        get_labels_idx = lambda tags: [self.classes.index(v) for v in tags]
+        # convert the labels from integers to vectors
+        categorial_train_labels = to_categorical(self.classes_indices, num_classes=self.class_count)
+        categorial_validation_labels = to_categorical(get_labels_idx(validation_labels), num_classes=self.class_count)
+
+        validation_data = (validation_features, categorial_validation_labels)
+
+        ## construct the image generator for data augmentation
+        # aug = image.ImageDataGenerator(rotation_range=30, width_shift_range=0.1,
+        #                                height_shift_range=0.1, shear_range=0.2, zoom_range=0.2,
+        #                                horizontal_flip=True, fill_mode="nearest")
+        # train_generator = aug.flow(train_features, categorial_train_labels)
+
+        stop_callback = callbacks.EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=3, verbose=1,mode='auto')
+
+        try:
+            history = model.fit_generator(train_generator,
+                                          validation_data=validation_data,
+                                          steps_per_epoch=len(train_features) // self.batch_size,
+                                          epochs=self.epochs,
+                                          verbose=1,
+                                          callbacks=[stop_callback],
+                                          class_weight=class_weight
+                                          )
+            # verbose: Integer. 0, 1, or 2. Verbosity mode. 0 = silent, 1 = progress bar, 2 = one line per epoch.
+
+            # history = model.fit(train_features,train_labels,
+            #                     epochs=epochs,
+            #                     batch_size=batch_size,
+            #                     validation_data=validation_data)
+        except Exception as ex:
+            logger.error("Got an error training model: {0}".format(ex))
+            model.summary(print_fn=logger.error)
+            raise
+        return model, history
 
 
 class VqaPredictorFactory(object):
@@ -198,11 +249,11 @@ class VqaPredictorFactory(object):
     #         logger.debug("embedded {0}/{1}".format(embeded_idx + 1, length_df))
     #         embeded_idx += 1
     #         try:
-    #             features = Image2Features(fn, base_model=base_model)
+    #             image_infos = Image2Features(fn, base_model=base_model)
     #         except Exception as ex:
-    #             features = None
+    #             image_infos = None
     #             logger.warning("Failed on embedded {0}:\n{1}".format(embeded_idx + 1, ex))
-    #         return features
+    #         return image_infos
     #
     #     df['embedded'] = df['full_path'].apply(get_embedded)
     #     # length_df = len(df)
