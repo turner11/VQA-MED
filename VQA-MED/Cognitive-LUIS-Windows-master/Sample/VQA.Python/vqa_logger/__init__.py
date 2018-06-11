@@ -5,13 +5,17 @@ import sys
 # import coloredlogs
 
 log_level = logging.DEBUG
-format = '%(asctime)s,%(msecs)d %(name)s %(levelname)s ## %(message)s'
+# format = '%(asctime)s,%(msecs)d %(name)s %(levelname)s ## %(message)s'
+format = '[%(asctime)s][%(levelname)s] %(message)s'
 logname = "vqa.log"
 
 logging.basicConfig(filemode='a',
                     format=format,
                     datefmt='%H:%M:%S',
-                    level=log_level)
+                    level=log_level,
+                    stream=sys.stdout)
+
+ch = logging.StreamHandler(sys.stdout)
 # coloredlogs.install()
 logger = logging.getLogger('pythonVQA')
 #
