@@ -36,6 +36,7 @@ from parsers.utils import VerboseTimer
 from utils.os_utils import File, print_progress
 import time, datetime
 import pandas as pd
+import numpy as np
 
 import warnings
 warnings.filterwarnings('ignore',category=pd.io.pytables.PerformanceWarning)
@@ -56,7 +57,7 @@ from vqa_logger import logger
 #TODO: Add down loading for glove file
 
 
-# In[27]:
+# In[3]:
 
 import os
 import spacy
@@ -86,16 +87,20 @@ ckpt_model_weights_filename =   os.path.abspath('data/ckpts/model_weights.h5')
 spacy_emmbeding_dim = 384
 
 
+# input_dim : the vocabulary size. This is how many unique words are represented in your corpus.
+# output_dim : the desired dimension of the word vector. For example, if output_dim = 100, then every word will be mapped onto a vector with 100 elements, whereas if output_dim = 300, then every word will be mapped onto a vector with 300 elements.
+# input_length : the length of your sequences. For example, if your data consists of sentences, then this variable represents how many words there are in a sentence. As disparate sentences typically contain different number of words, it is usually required to pad your sequences such that all sentences are of equal length. The keras.preprocessing.pad_sequence method can be used for this (https://keras.io/preprocessing/sequence/).
+input_length = 256 # longest question / answer was 200 words. Rounding up to a nice round number
+
 DEFAULT_IMAGE_WIEGHTS = 'imagenet'
 #  Since VGG was trained as a image of 224x224, every new image
 # is required to go through the same transformation
 image_size_by_base_models = {'imagenet': (224, 224)}
 
 
-
 # ##### Set locations for pre-training items to-be created
 
-# In[5]:
+# In[4]:
 
 # Pre process results files
 data_prepo_meta            = os.path.abspath('data/my_data_prepro.json')
@@ -108,43 +113,7 @@ vqa_models_folder          = "C:\\Users\\Public\\Documents\\Data\\2018\\vqa_mode
 
 
 
-# ### Preprocessing and creating meta data
-
-# We will use this function for creating meta data:
-
-# In[6]:
-
-from vqa_logger import logger 
-import itertools
-import string
-from utils.os_utils import File #This is a simplehelper file of mine...
-
-def create_meta(meta_file_location, df):
-        logger.debug("Creating meta data ('{0}')".format(meta_file_location))
-        def get_unique_words(col):
-            single_string = " ".join(df[col])
-            exclude = set(string.punctuation)
-            s_no_panctuation = ''.join(ch for ch in single_string if ch not in exclude)
-            unique_words = set(s_no_panctuation.split(" ")).difference({'',' '})
-            print("column {0} had {1} unique words".format(col,len(unique_words)))
-            return unique_words
-
-        cols = ['question', 'answer']
-        unique_words = set(itertools.chain.from_iterable([get_unique_words(col) for col in cols]))
-        print("total unique words: {0}".format(len(unique_words)))
-
-        metadata = {}
-        metadata['ix_to_word'] = {str(word): int(i) for i, word in enumerate(unique_words)}
-        metadata['ix_to_ans'] = {ans:i for ans, i in enumerate(set(df['answer']))}
-        # {int(i):str(word) for i, word in enumerate(unique_words)}
-
-        File.dump_json(metadata,meta_file_location)
-        return metadata
-
-
-# And lets create meta data for training & validation sets:
-
-# In[7]:
+# In[47]:
 
 from collections import namedtuple
 dbg_file_csv_train = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-QA.csv'
@@ -173,13 +142,51 @@ validation_data = DataLocations('validation', dbg_file_csv_validation, dbg_file_
 test_data = DataLocations('test', dbg_file_csv_test, dbg_file_xls_test, dbg_file_xls_processed_test, images_path_test)
 
 
+# ### Preprocessing and creating meta data
+
+# We will use this function for creating meta data:
+
+# In[44]:
+
+from vqa_logger import logger 
+import itertools
+import string
+from utils.os_utils import File #This is a simplehelper file of mine...
+
+def create_meta(meta_file_location, df):
+        logger.debug("Creating meta data ('{0}')".format(meta_file_location))
+        def get_unique_words(col):
+            single_string = " ".join(df[col])
+            exclude = set(string.punctuation)
+            s_no_panctuation = ''.join(ch for ch in single_string if ch not in exclude)
+            unique_words = set(s_no_panctuation.split(" ")).difference({'',' '})
+            print("column {0} had {1} unique words".format(col,len(unique_words)))
+            return unique_words
+
+        cols = ['question', 'answer']
+        unique_words = set(itertools.chain.from_iterable([get_unique_words(col) for col in cols]))
+        print("total unique words: {0}".format(len(unique_words)))
+
+        metadata = {}
+        metadata['ix_to_word'] = {str(word): int(i) for i, word in enumerate(unique_words)}
+        metadata['ix_to_ans'] = {ans:i for ans, i in enumerate(set(df['answer']))}
+        # {int(i):str(word) for i, word in enumerate(unique_words)}
+        print("Number of answers: {0}".format(len(set(metadata['ix_to_ans'].values()))))
+        print("Number of questions: {0}".format(len(set(metadata['ix_to_ans'].values()))))
+
+        File.dump_json(metadata,meta_file_location)
+        return metadata
+
+
+# And lets create meta data for training & validation sets:
+
 # Get the data itself, Note the only things required in dataframe are:
 # 1. image_name
 # 2. question
 # 3. answer
 # 
 
-# In[8]:
+# In[45]:
 
 from parsers.VQA18 import Vqa18Base
 df_train = Vqa18Base.get_instance(train_data.processed_xls).data            
@@ -187,7 +194,7 @@ df_val = Vqa18Base.get_instance(validation_data.processed_xls).data
 # df_train.head(2)
 
 
-# In[9]:
+# In[46]:
 
 print("----- Creating training meta -----")
 meta_train = create_meta(data_prepo_meta, df_train)
@@ -202,7 +209,7 @@ meta_validation = create_meta(data_prepo_meta, df_val)
 
 # #### The functions the gets the model:
 
-# In[10]:
+# In[48]:
 
 from collections import namedtuple
 VqaSpecs = namedtuple('VqaSpecs',['embedding_dim', 'seq_length', 'meta_data'])
@@ -212,13 +219,15 @@ def get_vqa_specs(meta_data):
     return VqaSpecs(embedding_dim=dim, seq_length=s_length, meta_data=meta_data)
 
 vqa_specs = get_vqa_specs(meta_train)
+
+# Show waht we got...
 s = str(vqa_specs)
 s[:s.index('meta_data=')+10]
 
 
 # Define how to build the word-to vector branch:
 
-# In[ ]:
+# In[10]:
 
 def word_2_vec_model(input_tensor):
         # notes:
@@ -246,7 +255,7 @@ def word_2_vec_model(input_tensor):
 
 # In the same manner, define how to build the image representation branch:
 
-# In[ ]:
+# In[53]:
 
 from keras.applications.vgg19 import VGG19
 from keras.layers import Dense, GlobalAveragePooling2D#, Input, Dropout
@@ -256,6 +265,8 @@ def get_image_model(base_model_weights=DEFAULT_IMAGE_WIEGHTS, out_put_dim=1024):
     # base_model = VGG19(weights=base_model_weights,include_top=False)
     base_model = VGG19(weights=base_model_weights, include_top=False)
     base_model.trainable = False
+    for layer in base_model.layers:
+        layer.trainable = False
 
     x = base_model.output
     # add a global spatial average pooling layer
@@ -271,7 +282,7 @@ def get_image_model(base_model_weights=DEFAULT_IMAGE_WIEGHTS, out_put_dim=1024):
 
 # Before we start, just for making sure, lets clear the session:
 
-# In[ ]:
+# In[54]:
 
 from keras import backend as keras_backend
 keras_backend.clear_session()
@@ -279,7 +290,7 @@ keras_backend.clear_session()
 
 # And finally, building the model itself:
 
-# In[ ]:
+# In[55]:
 
 import keras.layers as keras_layers
 #Available merge strategies:
@@ -289,7 +300,7 @@ import keras.layers as keras_layers
 merge_strategy = keras_layers.concatenate
 
 
-# In[ ]:
+# In[93]:
 
 from keras import Model, models, Input, callbacks
 from keras.utils import plot_model, to_categorical
@@ -306,7 +317,9 @@ def get_vqa_model(meta):
         image_model, lstm_model, fc_model = None, None, None
         try:
 
-            lstm_input_tensor = Input(shape=(embedding_dim,), name='embedding_input')
+            ## ATTN:
+            lstm_input_tensor = Input(shape=(input_length * embedding_dim,), name='embedding_input')
+#             lstm_input_tensor = Input(shape=(embedding_dim,), name='embedding_input')
 
             logger.debug("Getting embedding (lstm model)")
             lstm_model = word_2_vec_model(input_tensor=lstm_input_tensor)
@@ -321,7 +334,7 @@ def get_vqa_model(meta):
             fc_tensors = BatchNormalization()(fc_tensors)
             fc_tensors = Dense(units=DENSE_UNITS, activation=DENSE_ACTIVATION)(fc_tensors)
             fc_tensors = BatchNormalization()(fc_tensors)
-            fc_tensors = Dense(units=num_classes, activation='softmax')(fc_tensors)
+            fc_tensors = Dense(units=num_classes, activation='softmax', name='model_output_sofmax_dense')(fc_tensors)
 
             fc_model = Model(inputs=[lstm_input_tensor, image_input_tensor], output=fc_tensors)
             fc_model.compile(optimizer=OPTIMIZER, loss=LOSS, metrics=[METRICS])
@@ -345,14 +358,28 @@ model
 
 # And the summary of our model:
 
-# In[ ]:
+# In[112]:
+
+import graphviz
+import pydot
+from keras.utils import plot_model
+# plot_model(model, to_file='model.png')
+
+from IPython.display import SVG
+from keras.utils.vis_utils import model_to_dot
+
+model_to_dot(model)
+# SVG(model_to_dot(model).create(prog='dot', format='svg'))
+
+
+# In[94]:
 
 model.summary()
 
 
 # We better save it:
 
-# In[ ]:
+# In[95]:
 
 def print_model_summary_to_file(fn, model):
     # Open the file
@@ -389,45 +416,28 @@ except Exception as ex:
 
 # ### Training the model
 
-# In[ ]:
+# In[96]:
 
-from keras.utils import to_categorical
-keras_backend.clear_session()
-
-def get_categorial_labels(df, meta):
-    classes = df['answer']
-    class_count = len(classes)
-    classes_indices = list(meta['ix_to_ans'].keys())
-    categorial_labels = to_categorical(classes_indices, num_classes=class_count)
-
-    return categorial_labels
-
-categorial_labels_train = get_categorial_labels(df_train, meta_train)
-categorial_labels_val = get_categorial_labels(df_val, meta_validation)
-
-
-# ### Experimental
-
-# In[ ]:
-
-from keras.utils import plot_model, to_categorical
 import cv2
-keras_backend.clear_session()
+def get_text_features(txt):
+    ''' For a given txt, a unicode string, returns the time series vector
+    with each word (token) transformed into a 300 dimension representation
+    calculated using Glove Vector '''
+    tokens = nlp(txt)    
+    text_features = np.zeros((1, input_length, spacy_emmbeding_dim))
+    
+    num_tokens_to_take = min([input_length, len(tokens)])
+    trimmed_tokens = tokens[:num_tokens_to_take]
+    
+    for j, token in enumerate(trimmed_tokens):
+        # print(len(token.vector))
+        text_features[0,j,:] = token.vector
+    # Bringing to shape of (1, input_length * spacy_emmbeding_dim)
+    ## ATTN:
+    text_features = np.reshape(text_features, (1, input_length * spacy_emmbeding_dim))
+    return text_features
 
-def get_categorial_labels(df, meta):
-    classes = df['answer']
-    class_count = len(classes)
-    classes_indices = list(meta['ix_to_ans'].keys())
-    categorial_labels = to_categorical(classes_indices, num_classes=class_count)
 
-    return categorial_labels
-
-categorial_labels_train = get_categorial_labels(df_train, meta_train)
-categorial_labels_val = get_categorial_labels(df_val, meta_validation)
-
-
-
-# image_model = get_image_model()
 def get_image(image_file_name):
     ''' Runs the given image_file to VGG 16 model and returns the
     weights (filters) as a 1, 4096 dimension vector '''
@@ -435,25 +445,41 @@ def get_image(image_file_name):
     im = cv2.resize(cv2.imread(image_file_name), image_size)
 
     # convert the image to RGBA
-    im = im.transpose((2, 0, 1))
+#     im = im.transpose((2, 0, 1))
     return im
 
+# from keras.utils import to_categorical
+# def get_categorial_labels(df, meta):
+#     classes = df['answer']
+#     class_count = len(classes)
+#     classes_indices = list(meta['ix_to_ans'].keys())
+#     categorial_labels = to_categorical(classes_indices, num_classes=class_count)
 
-def get_text_features(txt):
-    ''' For a given txt, a unicode string, returns the time series vector
-    with each word (token) transformed into a 300 dimension representation
-    calculated using Glove Vector '''
-    tokens = nlp(txt)    
-    text_features = np.zeros((1, len(tokens), spacy_emmbeding_dim))
+#     return categorial_labels
 
-    for j, token in enumerate(tokens):
-        # print(len(token.vector))
-        text_features[0,j,:] = token.vector
+# categorial_labels_train = get_categorial_labels(df_train, meta_train)
+# categorial_labels_val = get_categorial_labels(df_val, meta_validation)
 
-    return text_features
+
+# ### Preparing the data for training
+
+# Note:
+# This might take a while...
+
+# # Remove the Head! this is just for performance!
+
+# In[97]:
+
+from keras.utils import plot_model
+keras_backend.clear_session()
+
+
 logger.debug('Building input dataframe')
-
 image_name_question = df_train[['image_name', 'question', 'answer']].copy()
+image_name_question = image_name_question.head(5)
+
+
+# del df_train
 image_name_question['image_name'] = image_name_question['image_name']                                    .apply(lambda q: q if q.lower().endswith('.jpg') else q+'.jpg')
 
 image_name_question['path'] =  image_name_question['image_name']                                .apply(lambda name:os.path.join(train_data.images_path, name))
@@ -461,8 +487,6 @@ image_name_question['path'] =  image_name_question['image_name']                
 existing_files = [os.path.join(train_data.images_path, fn) for fn in os.listdir(train_data.images_path)]
 image_name_question = image_name_question.loc[image_name_question['path'].isin(existing_files)]
 
-logger.debug('Getting image features')
-image_name_question['image'] = image_name_question['path']                                .apply(lambda im_path: get_image(im_path))
 
 logger.debug('Getting questions embedding')
 image_name_question['question_embedding'] = image_name_question['question']                                            .apply(lambda q: get_text_features(q))
@@ -471,50 +495,104 @@ image_name_question['question_embedding'] = image_name_question['question']     
 logger.debug('Getting answers embedding')
 image_name_question['answer_embedding'] = image_name_question['answer']                                            .apply(lambda q: get_text_features(q))
 
+logger.debug('Getting image features')
+image_name_question['image'] = image_name_question['path']                                .apply(lambda im_path: get_image(im_path))
+
+logger.debug('Done')
+
+
+# #### Saving the data, so later on we don't need to compute it again
+
+# In[98]:
+
+# logger.debug("Save the data")
+
+# item_to_save = image_name_question
+# item_to_save = image_name_question.head(10)
+
+# item_to_save.to_hdf('model_input.h5', key='df')    
+# # store = HDFStore('model_input.h5')
+# logger.debug("Saved")
 
 
 
+# #### Loading the data after saved:
 
-# In[ ]:
-
-logger.debug("Save the data")
-image_name_question = image_name_question.head(2)
-image_name_question.to_hdf('model_input.h5', key='df')    
-# store = HDFStore('model_input.h5')
+# In[99]:
 
 
+# if image_name_question is None:
+#     logger.debug("Load the data")
+#     from pandas import HDFStore
+#     store = HDFStore('model_input.h5')
+#     image_name_question = store['df']  
 
-# In[ ]:
-
-
-if image_name_question is None:
-    logger.debug("Load the data")
-    from pandas import HDFStore
-    store = HDFStore('model_input.h5')
-    image_name_question = store['df']  
-
-logger.debug(f"Shape: {image_name_question.shape}")
-image_name_question.head(2)
+# logger.debug(f"Shape: {image_name_question.shape}")
+# image_name_question.head(2)
 
 
-# In[ ]:
+# #### Packaging the data to be in expected input shape
 
-epochs=20
+# In[100]:
+
+def concate_row(col):
+    return np.concatenate(image_name_question[col], axis=0)
 
 
-# In[ ]:
+image_features = np.asarray([np.array(im) for im in image_name_question['image']])
+# np.concatenate(image_features['question_embedding'], axis=0).shape
+question_features = concate_row('question_embedding') 
 
 
-categorial_labels_train
-categorial_labels_val
-model
-train_features = np.asanyarray(image_name_question['question_embedding'], image_name_question['image'])
-train_labels = image_name_question['answer_embedding']
+
+# train_features = np.asarray([np.array(f) for f in [question_features, image_features]])
+train_features = ([f for f in [question_features, image_features]])
+
+# Note: The shape of answer (for a single recored ) is (number of words, 384)
+train_labels =  concate_row('answer_embedding')
 validation_data = (train_features,train_labels)
 
 
+# In[101]:
+
+model.input_layers
+model.input_layers_node_indices
+model.input_layers_tensor_indices
+model.input_mask
+model.input_names
+
+
+model.inputs
+model.input
+model.input_spec
+print(f'Expectedt shape: {model.input_shape}')
+# print(f'Wrapper shape:{train_features.shape}')
+print(f'Actual shape:{train_features[0].shape, train_features[1].shape}')
+# model.input_shape, np.concatenate(train_features).shape
+# model.input_shape, train_features[0].shape,  train_features[1].shape
+print(f'Train Labels shape:{train_labels.shape}')
+
+
+
 # In[ ]:
 
+import graphviz
+import pydot
+from keras.utils import plot_model
+plot_model(model, to_file='model.png')
+
+# from IPython.display import SVG
+# from keras.utils.vis_utils import model_to_dot
+#
+# model_to_dot(model)
+# SVG(model_to_dot(model).create(prog='dot', format='svg'))
+
+
+# #### Performaing the actual training
+
+# In[102]:
+
+from keras.utils import plot_model
 # train_features = image_name_question
 # validation_data = (validation_features, categorial_validation_labels)
 
@@ -543,26 +621,16 @@ try:
                         validation_data=validation_data)
 except Exception as ex:
     logger.error("Got an error training model: {0}".format(ex))
-    model.summary(print_fn=logger.error)
+#     model.summary(print_fn=logger.error)
     raise
 # return model, history
 
 
-# In[ ]:
+# In[104]:
 
 
-model.input_layers
-model.input_layers_node_indices
-model.input_layers_tensor_indices
-model.input_mask
-model.input_names
+train_labels.shape
 
-
-model.inputs
-model.input
-model.input_spec
-model.input_shape, train_features.shape
-model.input_shape, np.concatenate(train_features).shape
-model.input_shape, train_features[0].shape,  train_features[1].shape
-image_name_question['question_embedding'][0].shape
+train_labels[0].shape, train_labels[0][0].shape
+model.summary()
 
