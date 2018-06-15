@@ -31,16 +31,20 @@
 # The following are just helpers & utils imports - feel free to skip...
 
 # In[1]:
-from pandas import HDFStore
 
 from parsers.utils import VerboseTimer
 from utils.os_utils import File, print_progress
 import time, datetime
+import pandas as pd
+
+import warnings
+warnings.filterwarnings('ignore',category=pd.io.pytables.PerformanceWarning)
 
 def get_time_stamp():
     now = time.time()
     ts = datetime.datetime.fromtimestamp(now).strftime('%Y%m%d_%H%M_%S')
     return ts
+from vqa_logger import logger
 
 
 # ### Collecting pre processing item
@@ -52,17 +56,34 @@ def get_time_stamp():
 #TODO: Add down loading for glove file
 
 
-# In[3]:
+# In[27]:
 
 import os
-seq_length =    26
-embedding_dim = 300
+import spacy
 
-glove_path =                    os.path.abspath('data/glove.6B.{0}d.txt'.format(embedding_dim))
-embedding_matrix_filename =     os.path.abspath('data/ckpts/embeddings_{0}.h5'.format(embedding_dim))
+seq_length =    26
+embedding_dim = 384
+
+vectors = ['en_core_web_lg','en_core_web_md', 'en_core_web_sm']#'en_vectors_web_lg'
+vector = vectors[2]
+logger.debug(f'using embedding vector: {vector}')
+nlp = spacy.load('en', vectors=vector)
+# logger.debug(f'vector "{vector}" loaded')
+# logger.debug(f'nlp creating pipe')
+# nlp.add_pipe(nlp.create_pipe('sentencizer'))
+# logger.debug(f'nlpgetting embedding')
+# word_embeddings = nlp.vocab.vectors.data
+logger.debug(f'Got embedding')
+
+
+
+
+# embedding_dim = 300
+# glove_path =                    os.path.abspath('data/glove.6B.{0}d.txt'.format(embedding_dim))
+# embedding_matrix_filename =     os.path.abspath('data/ckpts/embeddings_{0}.h5'.format(embedding_dim))
 ckpt_model_weights_filename =   os.path.abspath('data/ckpts/model_weights.h5')
 
-
+spacy_emmbeding_dim = 384
 
 
 DEFAULT_IMAGE_WIEGHTS = 'imagenet'
@@ -70,17 +91,6 @@ DEFAULT_IMAGE_WIEGHTS = 'imagenet'
 # is required to go through the same transformation
 image_size_by_base_models = {'imagenet': (224, 224)}
 
-
-# In[4]:
-
-import os
-# Fail fast...
-suffix = "Failing fast:\n"
-assert os.path.isfile(glove_path), suffix+"glove file does not exists:\n{0}".format(glove_path)
-# assert os.path.isfile(embedding_matrix_filename), suffix+"Embedding matrix file does not exist:\n{0}".format(embedding_matrix_filename)
-assert os.path.isfile(ckpt_model_weights_filename), suffix+"glove file does not exists:\n{0}".format(ckpt_model_weights_filename)
-
-print('Validated file locations')
 
 
 # ##### Set locations for pre-training items to-be created
@@ -192,120 +202,25 @@ meta_validation = create_meta(data_prepo_meta, df_val)
 
 # #### The functions the gets the model:
 
-# ##### Get Embedding:
-
 # In[10]:
 
-import numpy as np
-import random
-import h5py
-def prepare_embeddings(metadata):
-    embedding_filename = embedding_matrix_filename
-    num_words = len(metadata['ix_to_word'].keys())
-    dim_embedding = embedding_dim
-
-
-
-    logger.debug("Embedding Data...")
-    # texts = df['question']
-
-    embeddings_index = {}
-    i = -1
-    line = "NO DATA"
-
-
-    glove_line_count = File.file_len(glove_path, encoding="utf8")
-    def process_line(i, line):
-        print_progress(i, glove_line_count)
-        try:
-            values = line.split()
-            word = values[0]
-            coefs = np.asarray(values[1:], dtype='float32')
-            embeddings_index[word] = coefs
-            print_progress(i+1, glove_line_count)
-        except Exception as ex:
-            logger.error(
-                "An error occurred while working on glove file [line {0}]:\n"
-                "Line text:\t{1}\nGlove path:\t{2}\n"
-                "{3}".format(
-                    i, line, glove_path, ex))
-            raise
-
-
-    # with open(glove_path, 'r') as glove_file:
-    with VerboseTimer("Embedding"):
-        with open(glove_path, 'r', encoding="utf8") as glove_file:
-            [process_line(i=i, line=line)for i, line in enumerate(glove_file)]
-
-
-
-    embedding_matrix = np.zeros((num_words, dim_embedding))
-    word_index = metadata['ix_to_word']
-
-    with VerboseTimer("Creating matrix"):
-        embedding_tupl = ((word, i, embeddings_index.get(word)) for word, i in word_index.items())
-        embedded_with_values = [(word, i, embedding_vector) for word, i, embedding_vector in embedding_tupl if embedding_vector is not None]
-
-        for word, i, embedding_vector in embedded_with_values:
-            embedding_matrix[i] = embedding_vector
-
-
-    e = {tpl[0] for tpl in embedded_with_values}
-    w = set(word_index.keys())
-    words_with_no_embedding = w-e
-    rnd = random.sample(words_with_no_embedding , 5)
-    logger.debug("{0} words did not have embedding. e.g.:\n{1}".format(len(words_with_no_embedding),rnd))
-
-    with VerboseTimer("Dumping matrix"):
-        with h5py.File(embedding_filename, 'w') as f:
-            f.create_dataset('embedding_matrix', data=embedding_matrix)
-
-    return embedding_matrix
-
-
-
-# If the embedding already exists, save yourself the time and just load it.  
-# Otherwise - calculate it
-
-# In[11]:
-
-if os.path.exists(embedding_matrix_filename):
-    logger.debug("Embedding Data already exists. Loading...")
-    with h5py.File(embedding_matrix_filename) as f:
-        embedding_train = np.array(f['embedding_matrix'])    
-else:
-    logger.debug("Calculating Embedding...")
-    embedding_train = prepare_embeddings(meta_train)
-    
-embedding_matrix = embedding_train
-
-
-# And lets take a look:
-
-# In[12]:
-
-embedding_matrix
-
-
-# And lets wrap it with related information:
-
-# In[13]:
-
-from vqa_flow.data_structures import EmbeddingData
-def get_embedding_data(embedding_matrix, meta_data):    
+from collections import namedtuple
+VqaSpecs = namedtuple('VqaSpecs',['embedding_dim', 'seq_length', 'meta_data'])
+def get_vqa_specs(meta_data):    
     dim = embedding_dim
     s_length = seq_length    
-    return EmbeddingData(embedding_matrix=embedding_matrix,embedding_dim=dim, seq_length=s_length, meta_data=meta_data)
+    return VqaSpecs(embedding_dim=dim, seq_length=s_length, meta_data=meta_data)
 
-embedding_train = get_embedding_data(embedding_matrix, meta_train)
-str(embedding_train)
+vqa_specs = get_vqa_specs(meta_train)
+s = str(vqa_specs)
+s[:s.index('meta_data=')+10]
 
 
 # Define how to build the word-to vector branch:
 
-# In[14]:
+# In[ ]:
 
-def word_2_vec_model(embedding_matrix, num_words, embedding_dim, seq_length, input_tensor):
+def word_2_vec_model(input_tensor):
         # notes:
         # num works: scalar represents size of original corpus
         # embedding_dim : dim reduction. every input string will be encoded in a binary fashion using a vector of this length
@@ -316,12 +231,13 @@ def word_2_vec_model(embedding_matrix, num_words, embedding_dim, seq_length, inp
         DENSE_ACTIVATION = 'relu'
 
 
-        logger.debug("Creating Embedding model")
-        x = Embedding(num_words, embedding_dim, weights=[embedding_matrix], input_length=seq_length,trainable=False)(input_tensor)
-        x = LSTM(units=LSTM_UNITS, return_sequences=True, input_shape=(seq_length, embedding_dim))(x)
-        x = BatchNormalization()(x)
-        x = LSTM(units=LSTM_UNITS, return_sequences=False)(x)
-        x = BatchNormalization()(x)
+        # logger.debug("Creating Embedding model")
+        # x = Embedding(num_words, embedding_dim, weights=[embedding_matrix], input_length=seq_length,trainable=False)(input_tensor)
+        # x = LSTM(units=LSTM_UNITS, return_sequences=True, input_shape=(seq_length, embedding_dim))(x)
+        # x = BatchNormalization()(x)
+        # x = LSTM(units=LSTM_UNITS, return_sequences=False)(x)
+        # x = BatchNormalization()(x)
+        x= input_tensor # Since using spacy
         x = Dense(units=DENSE_UNITS, activation=DENSE_ACTIVATION)(x)
         model = x
         logger.debug("Done Creating Embedding model")
@@ -330,7 +246,7 @@ def word_2_vec_model(embedding_matrix, num_words, embedding_dim, seq_length, inp
 
 # In the same manner, define how to build the image representation branch:
 
-# In[15]:
+# In[ ]:
 
 from keras.applications.vgg19 import VGG19
 from keras.layers import Dense, GlobalAveragePooling2D#, Input, Dropout
@@ -355,7 +271,7 @@ def get_image_model(base_model_weights=DEFAULT_IMAGE_WIEGHTS, out_put_dim=1024):
 
 # Before we start, just for making sure, lets clear the session:
 
-# In[16]:
+# In[ ]:
 
 from keras import backend as keras_backend
 keras_backend.clear_session()
@@ -363,7 +279,7 @@ keras_backend.clear_session()
 
 # And finally, building the model itself:
 
-# In[17]:
+# In[ ]:
 
 import keras.layers as keras_layers
 #Available merge strategies:
@@ -373,32 +289,27 @@ import keras.layers as keras_layers
 merge_strategy = keras_layers.concatenate
 
 
-# In[18]:
+# In[ ]:
 
 from keras import Model, models, Input, callbacks
 from keras.utils import plot_model, to_categorical
 from keras.layers import Dense, Embedding, LSTM, BatchNormalization#, GlobalAveragePooling2D, Merge, Flatten
 
-def get_vqa_model(embedding_data=None):        
-        embedding_matrix = embedding_data.embedding_matrix
-        num_words = embedding_data.num_words
-        num_classes = embedding_data.num_classes
-
+def get_vqa_model(meta):
         DENSE_UNITS = 1000
         DENSE_ACTIVATION = 'relu'
 
         OPTIMIZER = 'rmsprop'
         LOSS = 'categorical_crossentropy'
         METRICS = 'accuracy'
-
+        num_classes = len(meta['ix_to_ans'].keys())
         image_model, lstm_model, fc_model = None, None, None
         try:
 
             lstm_input_tensor = Input(shape=(embedding_dim,), name='embedding_input')
 
             logger.debug("Getting embedding (lstm model)")
-            lstm_model = word_2_vec_model(embedding_matrix=embedding_matrix, num_words=num_words, embedding_dim=embedding_dim,
-                                               seq_length=seq_length, input_tensor=lstm_input_tensor)
+            lstm_model = word_2_vec_model(input_tensor=lstm_input_tensor)
 
             logger.debug("Getting image model")
             out_put_dim = lstm_model.shape[-1].value
@@ -412,7 +323,7 @@ def get_vqa_model(embedding_data=None):
             fc_tensors = BatchNormalization()(fc_tensors)
             fc_tensors = Dense(units=num_classes, activation='softmax')(fc_tensors)
 
-            fc_model = Model(input=[lstm_input_tensor, image_input_tensor], output=fc_tensors)
+            fc_model = Model(inputs=[lstm_input_tensor, image_input_tensor], output=fc_tensors)
             fc_model.compile(optimizer=OPTIMIZER, loss=LOSS, metrics=[METRICS])
         except Exception as ex:
             logger.error("Got an error while building vqa model:\n{0}".format(ex))
@@ -428,20 +339,20 @@ def get_vqa_model(embedding_data=None):
 
         return fc_model
 
-model = get_vqa_model(embedding_data=embedding_train)
+model = get_vqa_model(meta_train)
 model
 
 
 # And the summary of our model:
 
-# In[19]:
+# In[ ]:
 
 model.summary()
 
 
 # We better save it:
 
-# In[20]:
+# In[ ]:
 
 def print_model_summary_to_file(fn, model):
     # Open the file
@@ -478,11 +389,27 @@ except Exception as ex:
 
 # ### Training the model
 
-# In[21]:
+# In[ ]:
 
-print(model)
+from keras.utils import to_categorical
+keras_backend.clear_session()
 
-# ------------------------------------------------------------------------------------------------------------------------
+def get_categorial_labels(df, meta):
+    classes = df['answer']
+    class_count = len(classes)
+    classes_indices = list(meta['ix_to_ans'].keys())
+    categorial_labels = to_categorical(classes_indices, num_classes=class_count)
+
+    return categorial_labels
+
+categorial_labels_train = get_categorial_labels(df_train, meta_train)
+categorial_labels_val = get_categorial_labels(df_val, meta_validation)
+
+
+# ### Experimental
+
+# In[ ]:
+
 from keras.utils import plot_model, to_categorical
 import cv2
 keras_backend.clear_session()
@@ -500,7 +427,7 @@ categorial_labels_val = get_categorial_labels(df_val, meta_validation)
 
 
 
-image_model = get_image_model()
+# image_model = get_image_model()
 def get_image(image_file_name):
     ''' Runs the given image_file to VGG 16 model and returns the
     weights (filters) as a 1, 4096 dimension vector '''
@@ -512,91 +439,94 @@ def get_image(image_file_name):
     return im
 
 
-import spacy
-vectors = ['en_core_web_lg','en_core_web_md', 'en_core_web_sm']#'en_vectors_web_lg'
-vector = vectors[2]
-print(f'using vector: {vector}')
-#
-# en_core_web_md, en_core_web_lg, en_vectors_web_lg
-# en_core_web_sm
-# 'en_glove_cc_300_1m_vectors'
-
-word_embeddings = spacy.load('en', vectors=vector)
-def get_question_features(question):
-    ''' For a given question, a unicode string, returns the time series vector
+def get_text_features(txt):
+    ''' For a given txt, a unicode string, returns the time series vector
     with each word (token) transformed into a 300 dimension representation
     calculated using Glove Vector '''
-    tokens = word_embeddings(question)
-    question_tensor = np.zeros((1, len(tokens), 384))
+    tokens = nlp(txt)    
+    text_features = np.zeros((1, len(tokens), spacy_emmbeding_dim))
 
     for j, token in enumerate(tokens):
         # print(len(token.vector))
-        question_tensor[0,j,:] = token.vector
+        text_features[0,j,:] = token.vector
 
-    return question_tensor
+    return text_features
+logger.debug('Building input dataframe')
 
+image_name_question = df_train[['image_name', 'question', 'answer']].copy()
+image_name_question['image_name'] = image_name_question['image_name']                                    .apply(lambda q: q if q.lower().endswith('.jpg') else q+'.jpg')
 
-image_name_question = df_train[['image_name', 'question']].copy()
-image_name_question['image_name'] = image_name_question['image_name']\
-                                    .apply(lambda q: q if q.lower().endswith('.jpg') else q+'.jpg')
-
-image_name_question['path'] =  image_name_question['image_name']\
-                                .apply(lambda name:os.path.join(train_data.images_path, name))
+image_name_question['path'] =  image_name_question['image_name']                                .apply(lambda name:os.path.join(train_data.images_path, name))
 
 existing_files = [os.path.join(train_data.images_path, fn) for fn in os.listdir(train_data.images_path)]
 image_name_question = image_name_question.loc[image_name_question['path'].isin(existing_files)]
 
-image_name_question['image'] = image_name_question['path']\
-                                .apply(lambda im_path: get_image(im_path))
+logger.debug('Getting image features')
+image_name_question['image'] = image_name_question['path']                                .apply(lambda im_path: get_image(im_path))
 
-image_name_question['question_embedding'] = image_name_question['question']\
-                                            .apply(lambda q: get_question_features(q))
-image_name_question.to_hdf('model_input.h5', key='df')
-store = HDFStore('model_input.h5')
+logger.debug('Getting questions embedding')
+image_name_question['question_embedding'] = image_name_question['question']                                            .apply(lambda q: get_text_features(q))
 
-store['df'] = image_name_question  # save it
-store['df']  # load it
-images_path = [(fn, os.path.join(train_data.images_path, fn)) for fn in os.listdir(train_data.images_path) if fn.endswith('jpg')]
-image_names = [t[0] for t in images_path]
+
+logger.debug('Getting answers embedding')
+image_name_question['answer_embedding'] = image_name_question['answer']                                            .apply(lambda q: get_text_features(q))
 
 
 
 
 
+# In[ ]:
 
-df_train['image_path'] = df_train
-questions = 1
-image_file_name = images_path[0]
-images = np.array([get_image(image_fn) for image_fn in images_path])
-
-image_model[-1].predict(images)
-
-
-get_image(image_file_name)
-image_features = [get_image(image_fn) for image_fn in images_path]
+logger.debug("Save the data")
+image_name_question = image_name_question.head(2)
+image_name_question.to_hdf('model_input.h5', key='df')    
+# store = HDFStore('model_input.h5')
 
 
 
+# In[ ]:
 
 
+if image_name_question is None:
+    logger.debug("Load the data")
+    from pandas import HDFStore
+    store = HDFStore('model_input.h5')
+    image_name_question = store['df']  
+
+logger.debug(f"Shape: {image_name_question.shape}")
+image_name_question.head(2)
 
 
+# In[ ]:
+
+epochs=20
 
 
+# In[ ]:
 
 
+categorial_labels_train
+categorial_labels_val
+model
+train_features = np.asanyarray(image_name_question['question_embedding'], image_name_question['image'])
+train_labels = image_name_question['answer_embedding']
+validation_data = (train_features,train_labels)
 
+
+# In[ ]:
+
+# train_features = image_name_question
 # validation_data = (validation_features, categorial_validation_labels)
-#
-# ## construct the image generator for data augmentation
-# # aug = image.ImageDataGenerator(rotation_range=30, width_shift_range=0.1,
-# #                                height_shift_range=0.1, shear_range=0.2, zoom_range=0.2,
-# #                                horizontal_flip=True, fill_mode="nearest")
-# # train_generator = aug.flow(train_features, categorial_train_labels)
-#
+
+## construct the image generator for data augmentation
+# aug = image.ImageDataGenerator(rotation_range=30, width_shift_range=0.1,
+#                                height_shift_range=0.1, shear_range=0.2, zoom_range=0.2,
+#                                horizontal_flip=True, fill_mode="nearest")
+# train_generator = aug.flow(train_features, categorial_train_labels)
+
 # stop_callback = callbacks.EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=3, verbose=1,mode='auto')
-#
-# try:
+
+try:
 #     history = model.fit_generator(train_generator,
 #                                   validation_data=validation_data,
 #                                   steps_per_epoch=len(train_features) // self.batch_size,
@@ -605,14 +535,34 @@ image_features = [get_image(image_fn) for image_fn in images_path]
 #                                   callbacks=[stop_callback],
 #                                   class_weight=class_weight
 #                                   )
-#     # verbose: Integer. 0, 1, or 2. Verbosity mode. 0 = silent, 1 = progress bar, 2 = one line per epoch.
-#
-#     # history = model.fit(train_features,train_labels,
-#     #                     epochs=epochs,
-#     #                     batch_size=batch_size,
-#     #                     validation_data=validation_data)
-# except Exception as ex:
-#     logger.error("Got an error training model: {0}".format(ex))
-#     model.summary(print_fn=logger.error)
-#     raise
+    # verbose: Integer. 0, 1, or 2. Verbosity mode. 0 = silent, 1 = progress bar, 2 = one line per epoch.
+
+    history = model.fit(train_features,train_labels,
+                        #epochs=epochs,
+                        #batch_size=batch_size,
+                        validation_data=validation_data)
+except Exception as ex:
+    logger.error("Got an error training model: {0}".format(ex))
+    model.summary(print_fn=logger.error)
+    raise
 # return model, history
+
+
+# In[ ]:
+
+
+model.input_layers
+model.input_layers_node_indices
+model.input_layers_tensor_indices
+model.input_mask
+model.input_names
+
+
+model.inputs
+model.input
+model.input_spec
+model.input_shape, train_features.shape
+model.input_shape, np.concatenate(train_features).shape
+model.input_shape, train_features[0].shape,  train_features[1].shape
+image_name_question['question_embedding'][0].shape
+
