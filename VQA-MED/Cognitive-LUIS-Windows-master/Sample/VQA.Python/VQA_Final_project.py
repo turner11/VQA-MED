@@ -30,7 +30,7 @@
 
 # The following are just helpers & utils imports - feel free to skip...
 
-# In[1]:
+# In[2]:
 
 from parsers.utils import VerboseTimer
 from utils.os_utils import File, print_progress
@@ -52,12 +52,12 @@ from vqa_logger import logger
 
 # ###### Download pre trained items & store their location
 
-# In[2]:
+# In[3]:
 
 #TODO: Add down loading for glove file
 
 
-# In[3]:
+# In[4]:
 
 import os
 import spacy
@@ -100,7 +100,7 @@ image_size_by_base_models = {'imagenet': (224, 224)}
 
 # ##### Set locations for pre-training items to-be created
 
-# In[4]:
+# In[5]:
 
 # Pre process results files
 data_prepo_meta            = os.path.abspath('data/my_data_prepro.json')
@@ -113,7 +113,7 @@ vqa_models_folder          = "C:\\Users\\Public\\Documents\\Data\\2018\\vqa_mode
 
 
 
-# In[47]:
+# In[6]:
 
 from collections import namedtuple
 dbg_file_csv_train = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-QA.csv'
@@ -146,7 +146,7 @@ test_data = DataLocations('test', dbg_file_csv_test, dbg_file_xls_test, dbg_file
 
 # We will use this function for creating meta data:
 
-# In[44]:
+# In[7]:
 
 from vqa_logger import logger 
 import itertools
@@ -186,7 +186,7 @@ def create_meta(meta_file_location, df):
 # 3. answer
 # 
 
-# In[45]:
+# In[8]:
 
 from parsers.VQA18 import Vqa18Base
 df_train = Vqa18Base.get_instance(train_data.processed_xls).data            
@@ -194,7 +194,7 @@ df_val = Vqa18Base.get_instance(validation_data.processed_xls).data
 # df_train.head(2)
 
 
-# In[46]:
+# In[9]:
 
 print("----- Creating training meta -----")
 meta_train = create_meta(data_prepo_meta, df_train)
@@ -209,7 +209,7 @@ meta_validation = create_meta(data_prepo_meta, df_val)
 
 # #### The functions the gets the model:
 
-# In[48]:
+# In[10]:
 
 from collections import namedtuple
 VqaSpecs = namedtuple('VqaSpecs',['embedding_dim', 'seq_length', 'meta_data'])
@@ -227,7 +227,7 @@ s[:s.index('meta_data=')+10]
 
 # Define how to build the word-to vector branch:
 
-# In[10]:
+# In[11]:
 
 def word_2_vec_model(input_tensor):
         # notes:
@@ -255,7 +255,7 @@ def word_2_vec_model(input_tensor):
 
 # In the same manner, define how to build the image representation branch:
 
-# In[53]:
+# In[12]:
 
 from keras.applications.vgg19 import VGG19
 from keras.layers import Dense, GlobalAveragePooling2D#, Input, Dropout
@@ -282,7 +282,7 @@ def get_image_model(base_model_weights=DEFAULT_IMAGE_WIEGHTS, out_put_dim=1024):
 
 # Before we start, just for making sure, lets clear the session:
 
-# In[54]:
+# In[13]:
 
 from keras import backend as keras_backend
 keras_backend.clear_session()
@@ -290,7 +290,7 @@ keras_backend.clear_session()
 
 # And finally, building the model itself:
 
-# In[55]:
+# In[14]:
 
 import keras.layers as keras_layers
 #Available merge strategies:
@@ -300,7 +300,7 @@ import keras.layers as keras_layers
 merge_strategy = keras_layers.concatenate
 
 
-# In[93]:
+# In[15]:
 
 from keras import Model, models, Input, callbacks
 from keras.utils import plot_model, to_categorical
@@ -318,7 +318,8 @@ def get_vqa_model(meta):
         try:
 
             ## ATTN:
-            lstm_input_tensor = Input(shape=(input_length * embedding_dim,), name='embedding_input')
+            embedded_sentence_length = input_length * embedding_dim #Arbitrary  selected for both question and asnwers
+            lstm_input_tensor = Input(shape=(embedded_sentence_length,), name='embedding_input')
 #             lstm_input_tensor = Input(shape=(embedding_dim,), name='embedding_input')
 
             logger.debug("Getting embedding (lstm model)")
@@ -334,7 +335,10 @@ def get_vqa_model(meta):
             fc_tensors = BatchNormalization()(fc_tensors)
             fc_tensors = Dense(units=DENSE_UNITS, activation=DENSE_ACTIVATION)(fc_tensors)
             fc_tensors = BatchNormalization()(fc_tensors)
-            fc_tensors = Dense(units=num_classes, activation='softmax', name='model_output_sofmax_dense')(fc_tensors)
+            
+            #ATTN:
+            fc_tensors = Dense(units=embedded_sentence_length, activation='softmax', name='model_output_sofmax_dense')(fc_tensors)
+            #fc_tensors = Dense(units=num_classes, activation='softmax', name='model_output_sofmax_dense')(fc_tensors)
 
             fc_model = Model(inputs=[lstm_input_tensor, image_input_tensor], output=fc_tensors)
             fc_model.compile(optimizer=OPTIMIZER, loss=LOSS, metrics=[METRICS])
@@ -358,7 +362,10 @@ model
 
 # And the summary of our model:
 
-# In[112]:
+# In[16]:
+
+## If you are getting errors about installing pydot, add the path of dot.exe to PATH:
+#sys.path.append('PATH_TO_DOT_EXE')
 
 import graphviz
 import pydot
@@ -372,14 +379,19 @@ model_to_dot(model)
 # SVG(model_to_dot(model).create(prog='dot', format='svg'))
 
 
-# In[94]:
+# In[17]:
 
 model.summary()
 
 
 # We better save it:
 
-# In[95]:
+# In[41]:
+
+import graphviz
+import pydot
+from keras.utils import plot_model
+
 
 def print_model_summary_to_file(fn, model):
     # Open the file
@@ -396,6 +408,10 @@ model_image_fn = os.path.join(now_folder, 'model_vqa.png5')
 summary_fn = os.path.join(now_folder, 'model_summary.txt')
 logger.debug("saving model to: '{0}'".format(model_fn))
 
+fn_image = os.path.join(now_folder,'model.png')
+logger.debug(f"saving model image to {fn}")
+
+
 try:
     File.validate_dir_exists(now_folder)
     model.save(model_fn)  # creates a HDF5 file 'my_model.h5'
@@ -404,9 +420,13 @@ except Exception as ex:
     logger.error("Failed to save model:\n{0}".format(ex))
 
 try:
-    logger.debug("Writing history")
+    logger.debug("Writing Symmary")
     print_model_summary_to_file(summary_fn, model)
-    logger.debug("Done Writing History")
+    logger.debug("Done Writing Summary")
+    
+    logger.debug("Saving image")
+    plot_model(model, to_file=fn_image)
+    logger.debug(f"Image saved ('{fn_image}')")
 #     logger.debug("Plotting model")
 #     plot_model(model, to_file=model_image_fn)
 #     logger.debug("Done Plotting")
@@ -414,9 +434,27 @@ except Exception as ex:
     logger.warning("{0}".format(ex))
 
 
+# In[33]:
+
+# %matplotlib inline
+# from matplotlib import pyplot as plt
+# %pylab inline
+
+
+# plt.imshow(img,cmap='gray')
+# plt.show()
+
+from IPython.display import Image, display
+
+listOfImageNames = [fn_image]
+
+for imageName in listOfImageNames:
+    display(Image(filename=imageName))
+
+
 # ### Training the model
 
-# In[96]:
+# In[34]:
 
 import cv2
 def get_text_features(txt):
@@ -468,7 +506,7 @@ def get_image(image_file_name):
 
 # # Remove the Head! this is just for performance!
 
-# In[97]:
+# In[35]:
 
 from keras.utils import plot_model
 keras_backend.clear_session()
@@ -503,7 +541,7 @@ logger.debug('Done')
 
 # #### Saving the data, so later on we don't need to compute it again
 
-# In[98]:
+# In[36]:
 
 # logger.debug("Save the data")
 
@@ -518,7 +556,7 @@ logger.debug('Done')
 
 # #### Loading the data after saved:
 
-# In[99]:
+# In[37]:
 
 
 # if image_name_question is None:
@@ -533,7 +571,7 @@ logger.debug('Done')
 
 # #### Packaging the data to be in expected input shape
 
-# In[100]:
+# In[38]:
 
 def concate_row(col):
     return np.concatenate(image_name_question[col], axis=0)
@@ -553,7 +591,7 @@ train_labels =  concate_row('answer_embedding')
 validation_data = (train_features,train_labels)
 
 
-# In[101]:
+# In[39]:
 
 model.input_layers
 model.input_layers_node_indices
@@ -574,23 +612,9 @@ print(f'Train Labels shape:{train_labels.shape}')
 
 
 
-# In[ ]:
-
-import graphviz
-import pydot
-from keras.utils import plot_model
-plot_model(model, to_file='model.png')
-
-# from IPython.display import SVG
-# from keras.utils.vis_utils import model_to_dot
-#
-# model_to_dot(model)
-# SVG(model_to_dot(model).create(prog='dot', format='svg'))
-
-
 # #### Performaing the actual training
 
-# In[102]:
+# In[40]:
 
 from keras.utils import plot_model
 # train_features = image_name_question
@@ -626,7 +650,7 @@ except Exception as ex:
 # return model, history
 
 
-# In[104]:
+# In[ ]:
 
 
 train_labels.shape
