@@ -30,7 +30,7 @@
 
 # The following are just helpers & utils imports - feel free to skip...
 
-# In[2]:
+# In[1]:
 
 from parsers.utils import VerboseTimer
 from utils.os_utils import File, print_progress
@@ -52,12 +52,12 @@ from vqa_logger import logger
 
 # ###### Download pre trained items & store their location
 
-# In[3]:
+# In[2]:
 
 #TODO: Add down loading for glove file
 
 
-# In[4]:
+# In[35]:
 
 import os
 import spacy
@@ -90,7 +90,7 @@ spacy_emmbeding_dim = 384
 # input_dim : the vocabulary size. This is how many unique words are represented in your corpus.
 # output_dim : the desired dimension of the word vector. For example, if output_dim = 100, then every word will be mapped onto a vector with 100 elements, whereas if output_dim = 300, then every word will be mapped onto a vector with 300 elements.
 # input_length : the length of your sequences. For example, if your data consists of sentences, then this variable represents how many words there are in a sentence. As disparate sentences typically contain different number of words, it is usually required to pad your sequences such that all sentences are of equal length. The keras.preprocessing.pad_sequence method can be used for this (https://keras.io/preprocessing/sequence/).
-input_length = 256 # longest question / answer was 200 words. Rounding up to a nice round number
+input_length = 32 # longest question / answer was 28 words. Rounding up to a nice round number
 
 DEFAULT_IMAGE_WIEGHTS = 'imagenet'
 #  Since VGG was trained as a image of 224x224, every new image
@@ -100,7 +100,7 @@ image_size_by_base_models = {'imagenet': (224, 224)}
 
 # ##### Set locations for pre-training items to-be created
 
-# In[5]:
+# In[36]:
 
 # Pre process results files
 data_prepo_meta            = os.path.abspath('data/my_data_prepro.json')
@@ -113,7 +113,7 @@ vqa_models_folder          = "C:\\Users\\Public\\Documents\\Data\\2018\\vqa_mode
 
 
 
-# In[6]:
+# In[37]:
 
 from collections import namedtuple
 dbg_file_csv_train = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-QA.csv'
@@ -146,7 +146,7 @@ test_data = DataLocations('test', dbg_file_csv_test, dbg_file_xls_test, dbg_file
 
 # We will use this function for creating meta data:
 
-# In[7]:
+# In[38]:
 
 from vqa_logger import logger 
 import itertools
@@ -186,7 +186,7 @@ def create_meta(meta_file_location, df):
 # 3. answer
 # 
 
-# In[8]:
+# In[39]:
 
 from parsers.VQA18 import Vqa18Base
 df_train = Vqa18Base.get_instance(train_data.processed_xls).data            
@@ -194,7 +194,7 @@ df_val = Vqa18Base.get_instance(validation_data.processed_xls).data
 # df_train.head(2)
 
 
-# In[9]:
+# In[40]:
 
 print("----- Creating training meta -----")
 meta_train = create_meta(data_prepo_meta, df_train)
@@ -209,7 +209,7 @@ meta_validation = create_meta(data_prepo_meta, df_val)
 
 # #### The functions the gets the model:
 
-# In[10]:
+# In[41]:
 
 from collections import namedtuple
 VqaSpecs = namedtuple('VqaSpecs',['embedding_dim', 'seq_length', 'meta_data'])
@@ -227,7 +227,7 @@ s[:s.index('meta_data=')+10]
 
 # Define how to build the word-to vector branch:
 
-# In[11]:
+# In[42]:
 
 def word_2_vec_model(input_tensor):
         # notes:
@@ -255,7 +255,7 @@ def word_2_vec_model(input_tensor):
 
 # In the same manner, define how to build the image representation branch:
 
-# In[12]:
+# In[43]:
 
 from keras.applications.vgg19 import VGG19
 from keras.layers import Dense, GlobalAveragePooling2D#, Input, Dropout
@@ -282,7 +282,7 @@ def get_image_model(base_model_weights=DEFAULT_IMAGE_WIEGHTS, out_put_dim=1024):
 
 # Before we start, just for making sure, lets clear the session:
 
-# In[13]:
+# In[44]:
 
 from keras import backend as keras_backend
 keras_backend.clear_session()
@@ -290,7 +290,7 @@ keras_backend.clear_session()
 
 # And finally, building the model itself:
 
-# In[14]:
+# In[45]:
 
 import keras.layers as keras_layers
 #Available merge strategies:
@@ -300,61 +300,64 @@ import keras.layers as keras_layers
 merge_strategy = keras_layers.concatenate
 
 
-# In[15]:
+# In[46]:
 
 from keras import Model, models, Input, callbacks
 from keras.utils import plot_model, to_categorical
 from keras.layers import Dense, Embedding, LSTM, BatchNormalization#, GlobalAveragePooling2D, Merge, Flatten
 
 def get_vqa_model(meta):
-        DENSE_UNITS = 1000
-        DENSE_ACTIVATION = 'relu'
+#     import tensorflow as tf
+#     g = tf.Graph()
+#     with g.as_default():
+    DENSE_UNITS = 1000
+    DENSE_ACTIVATION = 'relu'
 
-        OPTIMIZER = 'rmsprop'
-        LOSS = 'categorical_crossentropy'
-        METRICS = 'accuracy'
-        num_classes = len(meta['ix_to_ans'].keys())
-        image_model, lstm_model, fc_model = None, None, None
-        try:
+    OPTIMIZER = 'rmsprop'
+    LOSS = 'categorical_crossentropy'
+    METRICS = 'accuracy'
+    num_classes = len(meta['ix_to_ans'].keys())
+    image_model, lstm_model, fc_model = None, None, None
+    try:
 
-            ## ATTN:
-            embedded_sentence_length = input_length * embedding_dim #Arbitrary  selected for both question and asnwers
-            lstm_input_tensor = Input(shape=(embedded_sentence_length,), name='embedding_input')
+        ## ATTN:
+        embedded_sentence_length = input_length * embedding_dim #Arbitrary  selected for both question and asnwers
+        lstm_input_tensor = Input(shape=(embedded_sentence_length,), name='embedding_input')
 #             lstm_input_tensor = Input(shape=(embedding_dim,), name='embedding_input')
 
-            logger.debug("Getting embedding (lstm model)")
-            lstm_model = word_2_vec_model(input_tensor=lstm_input_tensor)
+        logger.debug("Getting embedding (lstm model)")
+        lstm_model = word_2_vec_model(input_tensor=lstm_input_tensor)
 
-            logger.debug("Getting image model")
-            out_put_dim = lstm_model.shape[-1].value
-            image_input_tensor, image_model = get_image_model(out_put_dim=out_put_dim)
+        logger.debug("Getting image model")
+        out_put_dim = lstm_model.shape[-1].value
+        image_input_tensor, image_model = get_image_model(out_put_dim=out_put_dim)
 
 
-            logger.debug("merging final model")
-            fc_tensors = merge_strategy(inputs=[image_model, lstm_model])
-            fc_tensors = BatchNormalization()(fc_tensors)
-            fc_tensors = Dense(units=DENSE_UNITS, activation=DENSE_ACTIVATION)(fc_tensors)
-            fc_tensors = BatchNormalization()(fc_tensors)
-            
-            #ATTN:
-            fc_tensors = Dense(units=embedded_sentence_length, activation='softmax', name='model_output_sofmax_dense')(fc_tensors)
-            #fc_tensors = Dense(units=num_classes, activation='softmax', name='model_output_sofmax_dense')(fc_tensors)
+        logger.debug("merging final model")
+        fc_tensors = merge_strategy(inputs=[image_model, lstm_model])
+        fc_tensors = BatchNormalization()(fc_tensors)
+        fc_tensors = Dense(units=DENSE_UNITS, activation=DENSE_ACTIVATION)(fc_tensors)
+        fc_tensors = BatchNormalization()(fc_tensors)
 
-            fc_model = Model(inputs=[lstm_input_tensor, image_input_tensor], output=fc_tensors)
-            fc_model.compile(optimizer=OPTIMIZER, loss=LOSS, metrics=[METRICS])
-        except Exception as ex:
-            logger.error("Got an error while building vqa model:\n{0}".format(ex))
-            models = [(image_model, 'image_model'), (lstm_model, 'lstm_model'), (fc_model, 'lstm_model')]
-            for m, name in models:
-                if m is not None:
-                    logger.error("######################### {0} model details: ######################### ".format(name))
-                    try:
-                        m.summary(print_fn=logger.error)
-                    except Exception as ex2:
-                        logger.warning("Failed to print summary for {0}:\n{1}".format(name, ex2))
-            raise
+        #ATTN:
+        fc_tensors = Dense(units=embedded_sentence_length, activation='softmax', name='model_output_sofmax_dense')(fc_tensors)
+        #fc_tensors = Dense(units=num_classes, activation='softmax', name='model_output_sofmax_dense')(fc_tensors)
 
-        return fc_model
+        fc_model = Model(inputs=[lstm_input_tensor, image_input_tensor], output=fc_tensors)
+        fc_model.compile(optimizer=OPTIMIZER, loss=LOSS, metrics=[METRICS])
+    except Exception as ex:
+        logger.error("Got an error while building vqa model:\n{0}".format(ex))
+        models = [(image_model, 'image_model'), (lstm_model, 'lstm_model'), (fc_model, 'lstm_model')]
+        for m, name in models:
+            if m is not None:
+                logger.error("######################### {0} model details: ######################### ".format(name))
+                try:
+                    m.summary(print_fn=logger.error)
+                except Exception as ex2:
+                    logger.warning("Failed to print summary for {0}:\n{1}".format(name, ex2))
+        raise
+
+    return fc_model
 
 model = get_vqa_model(meta_train)
 model
@@ -362,7 +365,7 @@ model
 
 # And the summary of our model:
 
-# In[16]:
+# In[47]:
 
 ## If you are getting errors about installing pydot, add the path of dot.exe to PATH:
 #sys.path.append('PATH_TO_DOT_EXE')
@@ -379,14 +382,14 @@ model_to_dot(model)
 # SVG(model_to_dot(model).create(prog='dot', format='svg'))
 
 
-# In[17]:
+# In[48]:
 
 model.summary()
 
 
 # We better save it:
 
-# In[41]:
+# In[49]:
 
 import graphviz
 import pydot
@@ -409,7 +412,7 @@ summary_fn = os.path.join(now_folder, 'model_summary.txt')
 logger.debug("saving model to: '{0}'".format(model_fn))
 
 fn_image = os.path.join(now_folder,'model.png')
-logger.debug(f"saving model image to {fn}")
+logger.debug(f"saving model image to {fn_image}")
 
 
 try:
@@ -434,7 +437,7 @@ except Exception as ex:
     logger.warning("{0}".format(ex))
 
 
-# In[33]:
+# In[50]:
 
 # %matplotlib inline
 # from matplotlib import pyplot as plt
@@ -454,7 +457,7 @@ for imageName in listOfImageNames:
 
 # ### Training the model
 
-# In[34]:
+# In[51]:
 
 import cv2
 def get_text_features(txt):
@@ -506,7 +509,7 @@ def get_image(image_file_name):
 
 # # Remove the Head! this is just for performance!
 
-# In[35]:
+# In[53]:
 
 from keras.utils import plot_model
 keras_backend.clear_session()
@@ -514,7 +517,7 @@ keras_backend.clear_session()
 
 logger.debug('Building input dataframe')
 image_name_question = df_train[['image_name', 'question', 'answer']].copy()
-image_name_question = image_name_question.head(5)
+# image_name_question = image_name_question.head(5)
 
 
 # del df_train
@@ -541,7 +544,7 @@ logger.debug('Done')
 
 # #### Saving the data, so later on we don't need to compute it again
 
-# In[36]:
+# In[55]:
 
 # logger.debug("Save the data")
 
@@ -554,9 +557,14 @@ logger.debug('Done')
 
 
 
+# In[57]:
+
+# image_name_question = image_name_question.head(5)
+
+
 # #### Loading the data after saved:
 
-# In[37]:
+# In[59]:
 
 
 # if image_name_question is None:
@@ -571,7 +579,7 @@ logger.debug('Done')
 
 # #### Packaging the data to be in expected input shape
 
-# In[38]:
+# In[60]:
 
 def concate_row(col):
     return np.concatenate(image_name_question[col], axis=0)
@@ -591,7 +599,7 @@ train_labels =  concate_row('answer_embedding')
 validation_data = (train_features,train_labels)
 
 
-# In[39]:
+# In[61]:
 
 model.input_layers
 model.input_layers_node_indices
@@ -614,7 +622,7 @@ print(f'Train Labels shape:{train_labels.shape}')
 
 # #### Performaing the actual training
 
-# In[40]:
+# In[62]:
 
 from keras.utils import plot_model
 # train_features = image_name_question
@@ -650,11 +658,16 @@ except Exception as ex:
 # return model, history
 
 
-# In[ ]:
+# In[28]:
 
 
 train_labels.shape
 
 train_labels[0].shape, train_labels[0][0].shape
-model.summary()
+# model.summary()
+
+
+# In[ ]:
+
+
 
