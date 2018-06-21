@@ -32,6 +32,7 @@
 
 # In[1]:
 
+
 from parsers.utils import VerboseTimer
 from utils.os_utils import File, print_progress
 import time, datetime
@@ -54,10 +55,12 @@ from vqa_logger import logger
 
 # In[2]:
 
+
 #TODO: Add down loading for glove file
 
 
-# In[35]:
+# In[3]:
+
 
 import os
 import spacy
@@ -100,7 +103,8 @@ image_size_by_base_models = {'imagenet': (224, 224)}
 
 # ##### Set locations for pre-training items to-be created
 
-# In[36]:
+# In[4]:
+
 
 # Pre process results files
 data_prepo_meta            = os.path.abspath('data/my_data_prepro.json')
@@ -112,8 +116,8 @@ embedding_matrix_filename  = os.path.abspath('data/ckpts/embeddings_{0}.h5'.form
 vqa_models_folder          = "C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models"
 
 
+# In[5]:
 
-# In[37]:
 
 from collections import namedtuple
 dbg_file_csv_train = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-QA.csv'
@@ -146,7 +150,8 @@ test_data = DataLocations('test', dbg_file_csv_test, dbg_file_xls_test, dbg_file
 
 # We will use this function for creating meta data:
 
-# In[38]:
+# In[6]:
+
 
 from vqa_logger import logger 
 import itertools
@@ -186,7 +191,8 @@ def create_meta(meta_file_location, df):
 # 3. answer
 # 
 
-# In[39]:
+# In[7]:
+
 
 from parsers.VQA18 import Vqa18Base
 df_train = Vqa18Base.get_instance(train_data.processed_xls).data            
@@ -194,7 +200,8 @@ df_val = Vqa18Base.get_instance(validation_data.processed_xls).data
 # df_train.head(2)
 
 
-# In[40]:
+# In[8]:
+
 
 print("----- Creating training meta -----")
 meta_train = create_meta(data_prepo_meta, df_train)
@@ -209,7 +216,8 @@ meta_validation = create_meta(data_prepo_meta, df_val)
 
 # #### The functions the gets the model:
 
-# In[41]:
+# In[9]:
+
 
 from collections import namedtuple
 VqaSpecs = namedtuple('VqaSpecs',['embedding_dim', 'seq_length', 'meta_data'])
@@ -227,7 +235,8 @@ s[:s.index('meta_data=')+10]
 
 # Define how to build the word-to vector branch:
 
-# In[42]:
+# In[10]:
+
 
 def word_2_vec_model(input_tensor):
         # notes:
@@ -255,7 +264,8 @@ def word_2_vec_model(input_tensor):
 
 # In the same manner, define how to build the image representation branch:
 
-# In[43]:
+# In[33]:
+
 
 from keras.applications.vgg19 import VGG19
 from keras.layers import Dense, GlobalAveragePooling2D#, Input, Dropout
@@ -282,7 +292,8 @@ def get_image_model(base_model_weights=DEFAULT_IMAGE_WIEGHTS, out_put_dim=1024):
 
 # Before we start, just for making sure, lets clear the session:
 
-# In[44]:
+# In[32]:
+
 
 from keras import backend as keras_backend
 keras_backend.clear_session()
@@ -290,7 +301,8 @@ keras_backend.clear_session()
 
 # And finally, building the model itself:
 
-# In[45]:
+# In[13]:
+
 
 import keras.layers as keras_layers
 #Available merge strategies:
@@ -300,7 +312,8 @@ import keras.layers as keras_layers
 merge_strategy = keras_layers.concatenate
 
 
-# In[46]:
+# In[14]:
+
 
 from keras import Model, models, Input, callbacks
 from keras.utils import plot_model, to_categorical
@@ -365,7 +378,8 @@ model
 
 # And the summary of our model:
 
-# In[47]:
+# In[15]:
+
 
 ## If you are getting errors about installing pydot, add the path of dot.exe to PATH:
 #sys.path.append('PATH_TO_DOT_EXE')
@@ -382,14 +396,16 @@ model_to_dot(model)
 # SVG(model_to_dot(model).create(prog='dot', format='svg'))
 
 
-# In[48]:
+# In[16]:
+
 
 model.summary()
 
 
 # We better save it:
 
-# In[49]:
+# In[17]:
+
 
 import graphviz
 import pydot
@@ -437,7 +453,8 @@ except Exception as ex:
     logger.warning("{0}".format(ex))
 
 
-# In[50]:
+# In[30]:
+
 
 # %matplotlib inline
 # from matplotlib import pyplot as plt
@@ -457,7 +474,8 @@ for imageName in listOfImageNames:
 
 # ### Training the model
 
-# In[51]:
+# In[19]:
+
 
 import cv2
 def get_text_features(txt):
@@ -509,7 +527,8 @@ def get_image(image_file_name):
 
 # # Remove the Head! this is just for performance!
 
-# In[53]:
+# In[20]:
+
 
 from keras.utils import plot_model
 keras_backend.clear_session()
@@ -544,7 +563,8 @@ logger.debug('Done')
 
 # #### Saving the data, so later on we don't need to compute it again
 
-# In[55]:
+# In[21]:
+
 
 # logger.debug("Save the data")
 
@@ -556,15 +576,16 @@ logger.debug('Done')
 # logger.debug("Saved")
 
 
+# In[22]:
 
-# In[57]:
 
 # image_name_question = image_name_question.head(5)
 
 
 # #### Loading the data after saved:
 
-# In[59]:
+# In[23]:
+
 
 
 # if image_name_question is None:
@@ -579,7 +600,8 @@ logger.debug('Done')
 
 # #### Packaging the data to be in expected input shape
 
-# In[60]:
+# In[24]:
+
 
 def concate_row(col):
     return np.concatenate(image_name_question[col], axis=0)
@@ -599,7 +621,8 @@ train_labels =  concate_row('answer_embedding')
 validation_data = (train_features,train_labels)
 
 
-# In[61]:
+# In[27]:
+
 
 model.input_layers
 model.input_layers_node_indices
@@ -619,10 +642,10 @@ print(f'Actual shape:{train_features[0].shape, train_features[1].shape}')
 print(f'Train Labels shape:{train_labels.shape}')
 
 
-
 # #### Performaing the actual training
 
-# In[62]:
+# In[28]:
+
 
 from keras.utils import plot_model
 # train_features = image_name_question
@@ -658,16 +681,12 @@ except Exception as ex:
 # return model, history
 
 
-# In[28]:
+# In[ ]:
+
 
 
 train_labels.shape
 
 train_labels[0].shape, train_labels[0][0].shape
 # model.summary()
-
-
-# In[ ]:
-
-
 
