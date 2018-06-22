@@ -529,8 +529,13 @@ def get_image(image_file_name):
 
 
 logger.debug('Building input dataframe')
-image_name_question = df_train[['image_name', 'question', 'answer']].copy()
-del df_train
+cols = ['image_name', 'question', 'answer']
+
+image_name_question = df_train[cols].copy()
+image_name_question_val = df_val[cols].copy()
+
+# del df_train
+# del df_val
 
 
 # ### This is just for performance and quick debug cycles! remove before actual trainining:
@@ -538,36 +543,55 @@ del df_train
 # In[21]:
 
 
-image_name_question = image_name_question.head(5)
+# image_name_question = image_name_question.head(5)
+# image_name_question_val = image_name_question_val.head(5)
 
 
 # In[22]:
 
 
-image_name_question['image_name'] = image_name_question['image_name']                                    .apply(lambda q: q if q.lower().endswith('.jpg') else q+'.jpg')
+def pre_process_raw_data(df, images_path):
+    df['image_name'] = df['image_name'].apply(lambda q: q if q.lower().endswith('.jpg') else q+'.jpg')
 
-image_name_question['path'] =  image_name_question['image_name']                                .apply(lambda name:os.path.join(train_data.images_path, name))
+    df['path'] =  df['image_name'].apply(lambda name:os.path.join(images_path, name))
 
-existing_files = [os.path.join(train_data.images_path, fn) for fn in os.listdir(train_data.images_path)]
-image_name_question = image_name_question.loc[image_name_question['path'].isin(existing_files)]
-
-
-logger.debug('Getting questions embedding')
-image_name_question['question_embedding'] = image_name_question['question']                                            .apply(lambda q: get_text_features(q))
+    existing_files = [os.path.join(images_path, fn) for fn in os.listdir(images_path)]
+    df = df.loc[df['path'].isin(existing_files)]
 
 
-logger.debug('Getting answers embedding')
-image_name_question['answer_embedding'] = image_name_question['answer']                                            .apply(lambda q: get_text_features(q))
+    logger.debug('Getting questions embedding')
+    df['question_embedding'] = df['question'].apply(lambda q: get_text_features(q))
 
-logger.debug('Getting image features')
-image_name_question['image'] = image_name_question['path']                                .apply(lambda im_path: get_image(im_path))
 
-logger.debug('Done')
+    logger.debug('Getting answers embedding')
+    df['answer_embedding'] = df['answer'].apply(lambda q: get_text_features(q))
+
+    logger.debug('Getting image features')
+    df['image'] = df['path'].apply(lambda im_path: get_image(im_path))
+
+    logger.debug('Done')
+    return df
+
+
+# In[23]:
+
+
+logger.debug('Preproceccing train data')
+image_locations = train_data.images_path
+image_name_question = pre_process_raw_data(image_name_question, image_locations)
+
+
+# In[24]:
+
+
+logger.debug('Preproceccing validation data')
+image_locations = validation_data.images_path
+image_name_question_val = pre_process_raw_data(image_name_question_val, image_locations)
 
 
 # #### Saving the data, so later on we don't need to compute it again
 
-# In[23]:
+# In[25]:
 
 
 # logger.debug("Save the data")
@@ -582,7 +606,7 @@ logger.debug('Done')
 
 # #### Loading the data after saved:
 
-# In[24]:
+# In[26]:
 
 
 
@@ -598,56 +622,68 @@ logger.debug('Done')
 
 # #### Packaging the data to be in expected input shape
 
-# In[25]:
+# In[27]:
 
 
-def concate_row(col):
-    return np.concatenate(image_name_question[col], axis=0)
+def concate_row(df, col):
+    return np.concatenate(df[col], axis=0)
+
+def get_features_and_labels(df):
+    image_features = np.asarray([np.array(im) for im in df['image']])
+    # np.concatenate(image_features['question_embedding'], axis=0).shape
+    question_features = concate_row(df, 'question_embedding') 
+
+    features = ([f for f in [question_features, image_features]])
+    labels =  concate_row(df, 'answer_embedding')
+    return features, labels
+
+features_t, labels_t = get_features_and_labels(image_name_question)
+features_val, labels_val = get_features_and_labels(image_name_question_val)
+validation_input = (features_val, labels_val)
 
 
-image_features = np.asarray([np.array(im) for im in image_name_question['image']])
-# np.concatenate(image_features['question_embedding'], axis=0).shape
-question_features = concate_row('question_embedding') 
 
-
-
-# train_features = np.asarray([np.array(f) for f in [question_features, image_features]])
-train_features = ([f for f in [question_features, image_features]])
-
+# features_val
+# image_name_question.head(2)
+# image_name_question_val.head(2)
 # Note: The shape of answer (for a single recored ) is (number of words, 384)
-train_labels =  concate_row('answer_embedding')
-validation_data = (train_features,train_labels)
 
 
-# In[26]:
+# In[28]:
 
 
-model.input_layers
-model.input_layers_node_indices
-model.input_layers_tensor_indices
-model.input_mask
-model.input_names
+# model.input_layers
+# model.input_layers_node_indices
+# model.input_layers_tensor_indices
+# model.input_mask
+# model.input_names
 
 
-model.inputs
-model.input
-model.input_spec
-print(f'Expectedt shape: {model.input_shape}')
+# model.inputs
+# model.input
+# model.input_spec
+
 # print(f'Wrapper shape:{train_features.shape}')
-print(f'Actual shape:{train_features[0].shape, train_features[1].shape}')
 # model.input_shape, np.concatenate(train_features).shape
 # model.input_shape, train_features[0].shape,  train_features[1].shape
-print(f'Train Labels shape:{train_labels.shape}')
+
+print(f'Expectedt shape: {model.input_shape}')
+print('---------------------------------------------------------------------------')
+print(f'Actual training shape:{features_t[0].shape, features_t[1].shape}')
+print(f'Train Labels shape:{labels_t.shape}')
+print('---------------------------------------------------------------------------')
+print(f'Actual Validation shape:{features_val[0].shape, features_val[1].shape}')
+print(f'Validation Labels shape:{labels_val.shape}')
 
 
 # #### Performaing the actual training
 
-# In[27]:
+# In[29]:
 
 
 from keras.utils import plot_model
 # train_features = image_name_question
-# validation_data = (validation_features, categorial_validation_labels)
+# validation_input = (validation_features, categorial_validation_labels)
 
 ## construct the image generator for data augmentation
 # aug = image.ImageDataGenerator(rotation_range=30, width_shift_range=0.1,
@@ -659,7 +695,7 @@ from keras.utils import plot_model
 
 try:
 #     history = model.fit_generator(train_generator,
-#                                   validation_data=validation_data,
+#                                   validation_data=validation_input,
 #                                   steps_per_epoch=len(train_features) // self.batch_size,
 #                                   epochs=self.epochs,
 #                                   verbose=1,
@@ -668,13 +704,23 @@ try:
 #                                   )
     # verbose: Integer. 0, 1, or 2. Verbosity mode. 0 = silent, 1 = progress bar, 2 = one line per epoch.
 
-    history = model.fit(train_features,train_labels,
+    history = model.fit(features_t,labels_t,
                         #epochs=epochs,
                         #batch_size=batch_size,
-                        validation_data=validation_data)
+                        validation_data=validation_input)
 except Exception as ex:
     logger.error("Got an error training model: {0}".format(ex))
 #     model.summary(print_fn=logger.error)
     raise
 # return model, history
+
+
+# In[30]:
+
+
+features_t
+labels_t
+# features_val
+# labels_val 
+# validation_input
 
