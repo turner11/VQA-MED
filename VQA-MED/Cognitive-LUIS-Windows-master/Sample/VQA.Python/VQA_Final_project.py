@@ -90,11 +90,14 @@ ckpt_model_weights_filename =   os.path.abspath('data/ckpts/model_weights.h5')
 spacy_emmbeding_dim = 384
 
 
+
 # input_dim : the vocabulary size. This is how many unique words are represented in your corpus.
 # output_dim : the desired dimension of the word vector. For example, if output_dim = 100, then every word will be mapped onto a vector with 100 elements, whereas if output_dim = 300, then every word will be mapped onto a vector with 300 elements.
 # input_length : the length of your sequences. For example, if your data consists of sentences, then this variable represents how many words there are in a sentence. As disparate sentences typically contain different number of words, it is usually required to pad your sequences such that all sentences are of equal length. The keras.preprocessing.pad_sequence method can be used for this (https://keras.io/preprocessing/sequence/).
 input_length = 32 # longest question / answer was 28 words. Rounding up to a nice round number
 
+# ATTN: Arbitrary  selected for both question and asnwers
+embedded_sentence_length = input_length * embedding_dim 
 DEFAULT_IMAGE_WIEGHTS = 'imagenet'
 #  Since VGG was trained as a image of 224x224, every new image
 # is required to go through the same transformation
@@ -146,11 +149,20 @@ validation_data = DataLocations('validation', dbg_file_csv_validation, dbg_file_
 test_data = DataLocations('test', dbg_file_csv_test, dbg_file_xls_test, dbg_file_xls_processed_test, images_path_test)
 
 
+# Before we start, just for making sure, lets clear the session:
+
+# In[6]:
+
+
+from keras import backend as keras_backend
+keras_backend.clear_session()
+
+
 # ### Preprocessing and creating meta data
 
 # We will use this function for creating meta data:
 
-# In[6]:
+# In[7]:
 
 
 from vqa_logger import logger 
@@ -191,16 +203,15 @@ def create_meta(meta_file_location, df):
 # 3. answer
 # 
 
-# In[7]:
+# In[8]:
 
 
 from parsers.VQA18 import Vqa18Base
 df_train = Vqa18Base.get_instance(train_data.processed_xls).data            
 df_val = Vqa18Base.get_instance(validation_data.processed_xls).data
-# df_train.head(2)
 
 
-# In[8]:
+# In[9]:
 
 
 print("----- Creating training meta -----")
@@ -216,7 +227,7 @@ meta_validation = create_meta(data_prepo_meta, df_val)
 
 # #### The functions the gets the model:
 
-# In[9]:
+# In[10]:
 
 
 from collections import namedtuple
@@ -235,7 +246,7 @@ s[:s.index('meta_data=')+10]
 
 # Define how to build the word-to vector branch:
 
-# In[10]:
+# In[11]:
 
 
 def word_2_vec_model(input_tensor):
@@ -264,7 +275,7 @@ def word_2_vec_model(input_tensor):
 
 # In the same manner, define how to build the image representation branch:
 
-# In[33]:
+# In[12]:
 
 
 from keras.applications.vgg19 import VGG19
@@ -288,15 +299,6 @@ def get_image_model(base_model_weights=DEFAULT_IMAGE_WIEGHTS, out_put_dim=1024):
     model = x
     
     return base_model.input , model
-
-
-# Before we start, just for making sure, lets clear the session:
-
-# In[32]:
-
-
-from keras import backend as keras_backend
-keras_backend.clear_session()
 
 
 # And finally, building the model itself:
@@ -331,12 +333,10 @@ def get_vqa_model(meta):
     METRICS = 'accuracy'
     num_classes = len(meta['ix_to_ans'].keys())
     image_model, lstm_model, fc_model = None, None, None
-    try:
-
-        ## ATTN:
-        embedded_sentence_length = input_length * embedding_dim #Arbitrary  selected for both question and asnwers
+    try:     
+        # ATTN:
         lstm_input_tensor = Input(shape=(embedded_sentence_length,), name='embedding_input')
-#             lstm_input_tensor = Input(shape=(embedding_dim,), name='embedding_input')
+        #lstm_input_tensor = Input(shape=(embedding_dim,), name='embedding_input')
 
         logger.debug("Getting embedding (lstm model)")
         lstm_model = word_2_vec_model(input_tensor=lstm_input_tensor)
@@ -453,7 +453,7 @@ except Exception as ex:
     logger.warning("{0}".format(ex))
 
 
-# In[30]:
+# In[18]:
 
 
 # %matplotlib inline
@@ -525,21 +525,25 @@ def get_image(image_file_name):
 # Note:
 # This might take a while...
 
-# # Remove the Head! this is just for performance!
-
 # In[20]:
-
-
-from keras.utils import plot_model
-keras_backend.clear_session()
 
 
 logger.debug('Building input dataframe')
 image_name_question = df_train[['image_name', 'question', 'answer']].copy()
-# image_name_question = image_name_question.head(5)
+del df_train
 
 
-# del df_train
+# ### This is just for performance and quick debug cycles! remove before actual trainining:
+
+# In[21]:
+
+
+image_name_question = image_name_question.head(5)
+
+
+# In[22]:
+
+
 image_name_question['image_name'] = image_name_question['image_name']                                    .apply(lambda q: q if q.lower().endswith('.jpg') else q+'.jpg')
 
 image_name_question['path'] =  image_name_question['image_name']                                .apply(lambda name:os.path.join(train_data.images_path, name))
@@ -563,7 +567,7 @@ logger.debug('Done')
 
 # #### Saving the data, so later on we don't need to compute it again
 
-# In[21]:
+# In[23]:
 
 
 # logger.debug("Save the data")
@@ -576,15 +580,9 @@ logger.debug('Done')
 # logger.debug("Saved")
 
 
-# In[22]:
-
-
-# image_name_question = image_name_question.head(5)
-
-
 # #### Loading the data after saved:
 
-# In[23]:
+# In[24]:
 
 
 
@@ -600,7 +598,7 @@ logger.debug('Done')
 
 # #### Packaging the data to be in expected input shape
 
-# In[24]:
+# In[25]:
 
 
 def concate_row(col):
@@ -621,7 +619,7 @@ train_labels =  concate_row('answer_embedding')
 validation_data = (train_features,train_labels)
 
 
-# In[27]:
+# In[26]:
 
 
 model.input_layers
@@ -644,7 +642,7 @@ print(f'Train Labels shape:{train_labels.shape}')
 
 # #### Performaing the actual training
 
-# In[28]:
+# In[27]:
 
 
 from keras.utils import plot_model
@@ -679,14 +677,4 @@ except Exception as ex:
 #     model.summary(print_fn=logger.error)
     raise
 # return model, history
-
-
-# In[ ]:
-
-
-
-train_labels.shape
-
-train_labels[0].shape, train_labels[0][0].shape
-# model.summary()
 
