@@ -302,9 +302,15 @@ __pycache__/
 VQA-MED/Cognitive-LUIS-Windows-master/Sample/VQA.Python/models/*
 VQA-MED/Cognitive-LUIS-Windows-master/Sample/VQA.Python/data/glove*
 VQA-MED/Cognitive-LUIS-Windows-master/Sample/VQA.Python/data/ckpts/model_weights.h5
+VQA-MED/Cognitive-LUIS-Windows-master/Sample/VQA.Python/data/model_input.h5
 
+
+*checkpoint.ipynb
 
 VQA-MED/Cognitive-LUIS-Windows-master/Sample/VQA.Python/model_input.h5
 VQA-MED/Cognitive-LUIS-Windows-master/Sample/VQA.Python/.ipynb_checkpoints/VQA_Final_project-checkpoint.ipynb
 VQA-MED/Cognitive-LUIS-Windows-master/Sample/VQA.Python/VQA_Final_project.py
 VQA-MED/Cognitive-LUIS-Windows-master/Sample/VQA.Python/VQA_Final_project_backup.py
+VQA-MED/Cognitive-LUIS-Windows-master/Sample/VQA.Python/data/vqa_specs.pkl
+VQA-MED/Cognitive-LUIS-Windows-master/Sample/VQA.Python/data/vqa_specs.json
+VQA-MED/Cognitive-LUIS-Windows-master/Sample/VQA.Python/data/meta_data.json
