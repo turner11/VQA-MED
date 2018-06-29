@@ -2,10 +2,12 @@ import json
 
 import sys
 import os
+
+from common.utils import Timer
+
 dir = os.path.abspath(os.path.join(os.path.dirname(__file__),".."))
 # print(dir)
 sys.path.append(dir)
-from parsers.utils import Timer
 import argparse
 
 import pandas as pd

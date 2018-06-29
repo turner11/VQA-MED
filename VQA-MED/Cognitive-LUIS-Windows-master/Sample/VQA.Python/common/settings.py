@@ -1,7 +1,8 @@
-import os
 import spacy
 from common.classes import ClassifyStrategies
 from vqa_logger import logger
+
+nlp=None
 
 # How do we classify?-----------------------------------------------------------------------------
 # classify_strategy = ClassifyStrategies.CATEGORIAL
@@ -24,6 +25,21 @@ seq_length = 26
 input_length = 32  # longest question / answer was 28 words. Rounding up to a nice round number\n
 embedding_dim = 384  # Those are the sizes spacy uses
 embedded_sentence_length = input_length * embedding_dim
+
+
+def get_nlp():
+    global nlp
+    if nlp is None:
+        logger.debug(f'using embedding vector: {nlp_vector }')
+        nlp = spacy.load('en', vectors=nlp_vector)
+        # logger.debug(f'vector "{nlp_vector}" loaded')
+        # logger.debug(f'nlp creating pipe')
+        # nlp.add_pipe(nlp.create_pipe('sentencizer'))
+        # logger.debug(f'nlp getting embedding')
+        # word_embeddings = nlp.vocab.vectors.data
+        logger.debug(f'Got embedding')
+    return nlp
+
 
 # Image processing-----------------------------------------------------------------------------
 DEFAULT_IMAGE_WIEGHTS = 'imagenet'

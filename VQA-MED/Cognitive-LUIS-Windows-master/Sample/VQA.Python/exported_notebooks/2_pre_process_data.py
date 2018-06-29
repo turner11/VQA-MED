@@ -5,6 +5,7 @@
 
 
 # %%capture
+import IPython
 import os
 import numpy as np
 from pandas import HDFStore
@@ -16,13 +17,14 @@ from vqa_logger import logger
 from common.os_utils import File
 
 
-
 # In[2]:
 
 
 from common.constatns import train_data, validation_data, data_location, fn_meta, vqa_specs_location
-from common.settings import nlp_vector, input_length, embedding_dim, image_size, seq_length
+from common.settings import input_length, embedding_dim, image_size, seq_length, get_nlp
 from common.classes import VqaSpecs
+from common.functions import get_highlited_function_code, get_image, get_text_features, pre_process_raw_data, get_size
+from common.utils import VerboseTimer
 
 
 # In[3]:
@@ -33,21 +35,24 @@ meta_data = File.load_json(fn_meta)
 
 # ### Preparing the data for training
 
+# #### Getting the nlp engine
+
 # In[4]:
 
 
-logger.debug(f'using embedding vector: {nlp_vector }')
-nlp = spacy.load('en', vectors=nlp_vector)
+nlp = get_nlp()
 
-# logger.debug(f'vector "{nlp_vector}" loaded')
-# logger.debug(f'nlp creating pipe')
-# nlp.add_pipe(nlp.create_pipe('sentencizer'))
-# logger.debug(f'nlp getting embedding')
-# word_embeddings = nlp.vocab.vectors.data
-logger.debug(f'Got embedding')
 
+# #### Where get_nlp is defined as:
 
 # In[5]:
+
+
+code = get_highlited_function_code(get_nlp,remove_comments=True)
+IPython.display.display(code)
+
+
+# In[6]:
 
 
 from parsers.VQA18 import Vqa18Base
@@ -55,7 +60,7 @@ df_train = Vqa18Base.get_instance(train_data.processed_xls).data
 df_val = Vqa18Base.get_instance(validation_data.processed_xls).data
 
 
-# In[6]:
+# In[7]:
 
 
 logger.debug('Building input dataframe')
@@ -67,44 +72,46 @@ image_name_question_val = df_val[cols].copy()
 
 # ##### This is just for performance and quick debug cycles! remove before actual trainining:
 
-# In[7]:
+# In[8]:
 
 
 # image_name_question = image_name_question.head(5)
 # image_name_question_val = image_name_question_val.head(5)
 
 
-# In[8]:
+# ### Aditional functions we will use:
+
+# #### get_text_features:
+
+# In[9]:
 
 
-
-def get_text_features(txt):
-    ''' For a given txt, a unicode string, returns the time series vector
-    with each word (token) transformed into a 300 dimension representation
-    calculated using Glove Vector '''
-    tokens = nlp(txt)    
-    text_features = np.zeros((1, input_length, embedding_dim))
-    
-    num_tokens_to_take = min([input_length, len(tokens)])
-    trimmed_tokens = tokens[:num_tokens_to_take]
-    
-    for j, token in enumerate(trimmed_tokens):
-        # print(len(token.vector))
-        text_features[0,j,:] = token.vector
-    # Bringing to shape of (1, input_length * embedding_dim)
-    ## ATTN - nlp vector:
-    text_features = np.reshape(text_features, (1, input_length * embedding_dim))
-    return text_features
+code = get_highlited_function_code(get_text_features,remove_comments=True)
+IPython.display.display(code)
 
 
-def get_image(image_file_name):
-    ''' Runs the given image_file to VGG 16 model and returns the
-    weights (filters) as a 1, 4096 dimension vector '''    
-    im = cv2.resize(cv2.imread(image_file_name), image_size)
+# #### get_image:
 
-    # convert the image to RGBA
-#     im = im.transpose((2, 0, 1))
-    return im
+# In[10]:
+
+
+code = get_highlited_function_code(get_image,remove_comments=True)
+IPython.display.display(code)
+
+
+# #### pre_process_raw_data:
+
+# In[11]:
+
+
+code = get_highlited_function_code(pre_process_raw_data,remove_comments=True)
+IPython.display.display(code)
+
+
+# #### This is for in case we want to classify by categorial labels (TBD):
+# (i.e. make it into a one large multiple choice test)
+
+# In[12]:
 
 
 def get_categorial_labels(df, meta):
@@ -123,60 +130,39 @@ def get_categorial_labels(df, meta):
 
     return categorial_labels
 
-categorial_labels_train = get_categorial_labels(df_train, meta_data)
-categorial_labels_val = get_categorial_labels(df_val, meta_data)
+with VerboseTimer("Getting categorial training labels"):
+    categorial_labels_train = get_categorial_labels(df_train, meta_data)
+
+with VerboseTimer("Getting categorial validation labels"):
+    categorial_labels_val = get_categorial_labels(df_val, meta_data)
 # categorial_labels_train.shape, categorial_labels_val.shape
 del df_train
 del df_val
-
-
-# In[9]:
-
-
-def pre_process_raw_data(df, images_path):
-    df['image_name'] = df['image_name'].apply(lambda q: q if q.lower().endswith('.jpg') else q+'.jpg')
-
-    df['path'] =  df['image_name'].apply(lambda name:os.path.join(images_path, name))
-
-    existing_files = [os.path.join(images_path, fn) for fn in os.listdir(images_path)]
-    df = df.loc[df['path'].isin(existing_files)]
-
-
-    logger.debug('Getting questions embedding')
-    df['question_embedding'] = df['question'].apply(lambda q: get_text_features(q))
-
-
-    logger.debug('Getting answers embedding')
-    df['answer_embedding'] = df['answer'].apply(lambda q: get_text_features(q))
-
-    logger.debug('Getting image features')
-    df['image'] = df['path'].apply(lambda im_path: get_image(im_path))
-
-    logger.debug('Done')
-    return df
 
 
 # ### Do the actual pre processing
 # Note:  
 # This might take a while...
 
-# In[10]:
+# In[13]:
 
 
 logger.debug('----===== Preproceccing train data =====----')
 image_locations = train_data.images_path
-image_name_question = pre_process_raw_data(image_name_question, image_locations)
+with VerboseTimer("Pre processing training data"):
+    image_name_question = pre_process_raw_data(image_name_question, image_locations)
 
 
-# In[11]:
+# In[14]:
 
 
 logger.debug('----===== Preproceccing validation data =====----')
 image_locations = validation_data.images_path
-image_name_question_val = pre_process_raw_data(image_name_question_val, image_locations)
+with VerboseTimer("Pre processing validation data"):
+    image_name_question_val = pre_process_raw_data(image_name_question_val, image_locations)
 
 
-# In[12]:
+# In[15]:
 
 
 image_name_question.head(2)
@@ -184,7 +170,7 @@ image_name_question.head(2)
 
 # #### Saving the data, so later on we don't need to compute it again
 
-# In[13]:
+# In[16]:
 
 
 def get_vqa_specs(meta_data):    
@@ -199,11 +185,11 @@ s = str(vqa_specs)
 s[:s.index('meta_data=')+10]
 
 
-# In[14]:
+# In[18]:
 
 
 
-logger.debug("Save the data")
+logger.debug("Saving the data")
 
 item_to_save = image_name_question
 # item_to_save = image_name_question.head(10)
@@ -214,16 +200,21 @@ try:
 except OSError:
     pass
 
-with HDFStore(data_location) as store:
-    store['train']  = image_name_question
-    store['val']  = image_name_question_val
-    
+with VerboseTimer("Saving model training data"):
+    with HDFStore(data_location) as store:
+        store['train']  = image_name_question
+        store['val']  = image_name_question_val
+        
+
+size = get_size(data_location)
+logger.debug(f"training data's file size was: {size}")
+
+
 item_to_save.to_hdf(vqa_specs.data_location, key='df')    
-# store = HDFStore('model_input.h5')
 logger.debug(f"Saved to {vqa_specs.data_location}")
 
 
-# In[15]:
+# In[20]:
 
 
 File.dump_pickle(vqa_specs, vqa_specs_location)
