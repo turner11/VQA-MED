@@ -6,7 +6,8 @@
 # In[1]:
 
 
-model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180627_2043_32\\vqa_model_NLP.h5'
+model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180629_0933_17\\vqa_model_NLP.h5'
+strategy_str = 'NLP'
 
 
 # ### Preparing the data for training
@@ -14,40 +15,34 @@ model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180627
 # In[2]:
 
 
+# %%capture
 import os
 import numpy as np
 from pandas import HDFStore
 from vqa_logger import logger 
-import pandas as pd
 from enum import Enum
 from keras.models import load_model
-import warnings
-warnings.filterwarnings('ignore',category=pd.io.pytables.PerformanceWarning)
 
-
-# ### Todo: Duplicate
 
 # In[3]:
 
 
-# TODO: Duplicate:
-data_location      = os.path.abspath('./data/model_input.h5')
+from common.constatns import data_location, vqa_models_folder #train_data, validation_data, 
+from common.utils import VerboseTimer
+from common.settings import classify_strategy
+from common.classes import ClassifyStrategies
+from common.model_utils import save_model
 
 
-class ClassifyStrategies(Enum):
-    NLP = 1
-    CATEGORIAL = 2
-    
-# classify_strategy = ClassifyStrategies.CATEGORIAL
-classify_strategy = ClassifyStrategies.NLP
-
+# ### Todo: Duplicate
 
 # #### Loading the Model:
 
 # In[4]:
 
 
-model = load_model(model_location)
+with VerboseTimer("Loading Model"):
+    model = load_model(model_location)
 
 
 # #### Loading the data:
@@ -56,9 +51,10 @@ model = load_model(model_location)
 
 
 logger.debug("Load the data")
-with HDFStore(data_location) as store:
-    image_name_question = store['train']  
-    image_name_question_val = store['val']  
+with VerboseTimer("Loading Data"):
+    with HDFStore(data_location) as store:
+        image_name_question = store['train']  
+        image_name_question_val = store['val']  
 
 
 logger.debug(f"Shape: {image_name_question.shape}")
@@ -138,7 +134,7 @@ print(f'Actual Validation shape:{features_val[0].shape, features_val[1].shape}')
 print(f'Validation Labels shape:{labels_val.shape}')
 
 
-# In[ ]:
+# In[10]:
 
 
 from keras.utils import plot_model
@@ -166,14 +162,32 @@ try:
 #                                   class_weight=class_weight
 #                                   )
     # verbose: Integer. 0, 1, or 2. Verbosity mode. 0 = silent, 1 = progress bar, 2 = one line per epoch.
-
-    history = model.fit(features_t,labels_t,
-                        epochs=EPOCHS,
-                        batch_size=BATCH_SIZE,
-                        validation_data=validation_input)
+    with VerboseTimer("Training Model"):
+        history = model.fit(features_t,labels_t,
+                            epochs=EPOCHS,
+                            batch_size=BATCH_SIZE,
+                            validation_data=validation_input)
 except Exception as ex:
     logger.error("Got an error training model: {0}".format(ex))
 #     model.summary(print_fn=logger.error)
     raise
 # return model, history
+
+
+# ### Save trained model:
+
+# In[11]:
+
+
+with VerboseTimer("Saving trained Model"):
+    name_suffix = f'{classify_strategy}_trained'
+    model_fn, summary_fn, fn_image = save_model(model, vqa_models_folder, name_suffix=name_suffix)
+
+msg = f"Summary: {summary_fn}\n"
+msg += f"Image: {fn_image}\n"
+location_message = f"model_location = '{model_fn}'"
+
+
+print(msg)
+print (location_message)
 

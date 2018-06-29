@@ -4,65 +4,28 @@
 # In[1]:
 
 
+# %%capture
 import os
 import numpy as np
 from enum import Enum
 import time
 import datetime
-import pandas as pd
-from collections import namedtuple
-from vqa_logger import logger
-from utils.os_utils import File
-import warnings
-warnings.filterwarnings('ignore',category=pd.io.pytables.PerformanceWarning)
-
-
 import keras.layers as keras_layers
 
-
-def get_time_stamp():
-    now = time.time()
-    ts = datetime.datetime.fromtimestamp(now).strftime('%Y%m%d_%H%M_%S')
-    return ts
+from vqa_logger import logger
 
 
 # In[2]:
 
 
-# The location to dump models to
-vqa_models_folder          = "C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models"
+from common.os_utils import File
+from common.settings import classify_strategy, embedded_sentence_length, get_stratagy_str
+from common.classes import ClassifyStrategies, VqaSpecs
+from common.model_utils import save_model
+from common.constatns import vqa_models_folder, vqa_specs_location
 
 
 # In[3]:
-
-
-# TODO: Duplicate:
-class ClassifyStrategies(Enum):
-    NLP = 1
-    CATEGORIAL = 2
-    
-# classify_strategy = ClassifyStrategies.CATEGORIAL
-classify_strategy = ClassifyStrategies.NLP
-
-
-# In[4]:
-
-
-# TODO: Duplicate:
-spacy_emmbeding_dim = 384
-
-embedding_dim = 384
-
-# input_dim : the vocabulary size. This is how many unique words are represented in your corpus.
-# output_dim : the desired dimension of the word vector. For example, if output_dim = 100, then every word will be mapped onto a vector with 100 elements, whereas if output_dim = 300, then every word will be mapped onto a vector with 300 elements.
-# input_length : the length of your sequences. For example, if your data consists of sentences, then this variable represents how many words there are in a sentence. As disparate sentences typically contain different number of words, it is usually required to pad your sequences such that all sentences are of equal length. The keras.preprocessing.pad_sequence method can be used for this (https://keras.io/preprocessing/sequence/).
-input_length = 32 # longest question / answer was 28 words. Rounding up to a nice round number
-
-# ATTN - nlp vector: Arbitrary  selected for both question and asnwers
-embedded_sentence_length = input_length * embedding_dim 
-
-
-# In[5]:
 
 
 DEFAULT_IMAGE_WIEGHTS = 'imagenet'
@@ -71,7 +34,7 @@ DEFAULT_IMAGE_WIEGHTS = 'imagenet'
 image_size_by_base_models = {'imagenet': (224, 224)}
 
 
-# In[6]:
+# In[4]:
 
 
 #Available merge strategies:
@@ -81,15 +44,7 @@ image_size_by_base_models = {'imagenet': (224, 224)}
 merge_strategy = keras_layers.concatenate
 
 
-# In[7]:
-
-
-#TODO: Duplicate
-VqaSpecs = namedtuple('VqaSpecs',['embedding_dim', 'seq_length', 'data_location','meta_data'])
-vqa_specs_location = os.path.abspath('./data/vqa_specs.json')
-
-
-# In[8]:
+# In[5]:
 
 
 vqa_specs = File.load_pickle(vqa_specs_location)
@@ -98,7 +53,7 @@ meta_data = vqa_specs.meta_data
 
 # Before we start, just for making sure, lets clear the session:
 
-# In[9]:
+# In[6]:
 
 
 from keras import backend as keras_backend
@@ -111,7 +66,7 @@ keras_backend.clear_session()
 
 # Define how to build the word-to vector branch:
 
-# In[10]:
+# In[7]:
 
 
 def word_2_vec_model(input_tensor):
@@ -140,7 +95,7 @@ def word_2_vec_model(input_tensor):
 
 # In the same manner, define how to build the image representation branch:
 
-# In[11]:
+# In[8]:
 
 
 from keras.applications.vgg19 import VGG19
@@ -168,7 +123,7 @@ def get_image_model(base_model_weights=DEFAULT_IMAGE_WIEGHTS, out_put_dim=1024):
 
 # And finally, building the model itself:
 
-# In[12]:
+# In[9]:
 
 
 model_output_num_units = None
@@ -182,7 +137,7 @@ else:
 logger.debug(f'Model will have {model_output_num_units} output units (Strategy: {classify_strategy})')
 
 
-# In[13]:
+# In[10]:
 
 
 from keras import Model, models, Input, callbacks
@@ -246,62 +201,25 @@ model
 
 # We better save it:
 
-# In[24]:
+# In[11]:
 
 
-import graphviz
-import pydot
-from keras.utils import plot_model
+strategy_str = get_stratagy_str()
+
+model_fn, summary_fn, fn_image = save_model(model, vqa_models_folder, name_suffix=strategy_str)
+
+msg = f"Summary: {summary_fn}\n"
+msg += f"Image: {fn_image}\n"
+location_message = f"model_location = '{model_fn}'"
 
 
-def print_model_summary_to_file(fn, model):
-    # Open the file
-    with open(fn,'w') as fh:
-        # Pass the file handle in as a lambda function to make it callable
-        model.summary(print_fn=lambda x: fh.write(x + '\n'))
-        
-
-ts = get_time_stamp()
-
-now_folder = os.path.abspath('{0}\\{1}\\'.format(vqa_models_folder, ts))
-strat_str = str(classify_strategy).split('.')[-1]
-model_name =f'vqa_model_{strat_str}.h5'
-model_fn = os.path.join(now_folder,model_name)
-model_image_fn = os.path.join(now_folder, 'model_vqa.png')
-summary_fn = os.path.join(now_folder, 'model_summary.txt')
-logger.debug("saving model to: '{0}'".format(model_fn))
-
-fn_image = os.path.join(now_folder,'model.png')
-logger.debug(f"saving model image to {fn_image}")
-
-
-try:
-    File.validate_dir_exists(now_folder)
-    model.save(model_fn)  # creates a HDF5 file 'my_model.h5'
-    logger.debug("model saved")
-    location_message = f"model_location = '{model_fn}'"
-except Exception as ex:
-    location_message ="Failed to save model:\n{0}".format(ex)
-    logger.error(location_message)
-
-try:
-    logger.debug("Writing Symmary")
-    print_model_summary_to_file(summary_fn, model)
-    logger.debug("Done Writing Summary")
-    
-    logger.debug("Saving image")
-    plot_model(model, to_file=fn_image)
-    logger.debug(f"Image saved ('{fn_image}')")
-#     logger.debug("Plotting model")
-#     plot_model(model, to_file=model_image_fn)
-#     logger.debug("Done Plotting")
-except Exception as ex:
-    logger.warning("{0}".format(ex))
+print(msg)
+print (location_message)
 
 
 # Display a plot + summary:
 
-# In[25]:
+# In[12]:
 
 
 # %matplotlib inline
@@ -321,8 +239,12 @@ for imageName in listOfImageNames:
 model.summary()
 
 
-# In[27]:
+# Copy these items to the next notebook of training the model
+
+# In[19]:
 
 
-location_message
+logger.debug('Done')
+print(location_message.replace('\\', '\\\\'))
+print(f'strategy_str = \'{strategy_str}\'')
 
