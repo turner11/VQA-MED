@@ -241,7 +241,7 @@ model.summary()
 
 # Copy these items to the next notebook of training the model
 
-# In[19]:
+# In[13]:
 
 
 logger.debug('Done')

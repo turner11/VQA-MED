@@ -80,13 +80,19 @@ def get_text_features(txt):
     return text_features
 
 
-def pre_process_raw_data(df, images_path):
+def pre_process_raw_data(df):
     df['image_name'] = df['image_name'].apply(lambda q: q if q.lower().endswith('.jpg') else q + '.jpg')
+    paths = df['path']
 
-    df['path'] = df['image_name'].apply(lambda name: os.path.join(images_path, name))
+    import itertools
+    dirs = {os.path.split(c)[0] for c in paths}
+    files_by_folder = {dir:os.listdir(dir) for dir in dirs }
+    existing_files = [os.path.join(dir, fn) for dir, fn_arr in files_by_folder.items() for fn in fn_arr]
 
-    existing_files = [os.path.join(images_path, fn) for fn in os.listdir(images_path)]
     df = df.loc[df['path'].isin(existing_files)]
+
+    # df = df[df['path'].isin(existing_files)]
+    # df = df.where(df['path'].isin(existing_files))
 
     logger.debug('Getting questions embedding')
     df['question_embedding'] = df['question'].apply(lambda q: get_text_features(q))
@@ -101,7 +107,8 @@ def pre_process_raw_data(df, images_path):
     return df
 
 def main():
-    print_function_code(get_nlp, remove_comments=True)
+    pass
+    # print_function_code(get_nlp, remove_comments=True)
 
 
 

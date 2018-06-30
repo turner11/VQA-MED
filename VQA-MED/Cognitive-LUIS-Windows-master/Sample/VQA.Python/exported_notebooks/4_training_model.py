@@ -6,7 +6,7 @@
 # In[1]:
 
 
-model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180629_0933_17\\vqa_model_NLP.h5'
+model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180629_1514_58\\vqa_model_NLP.h5'
 strategy_str = 'NLP'
 
 
@@ -34,8 +34,6 @@ from common.classes import ClassifyStrategies
 from common.model_utils import save_model
 
 
-# ### Todo: Duplicate
-
 # #### Loading the Model:
 
 # In[4]:
@@ -47,23 +45,37 @@ with VerboseTimer("Loading Model"):
 
 # #### Loading the data:
 
-# In[5]:
+# In[13]:
 
 
-logger.debug("Load the data")
+logger.debug(f"Loading the data from {data_location}")
 with VerboseTimer("Loading Data"):
     with HDFStore(data_location) as store:
-        image_name_question = store['train']  
-        image_name_question_val = store['val']  
+        df_data = store['data']  
 
 
-logger.debug(f"Shape: {image_name_question.shape}")
-image_name_question.head(2)
+# In[14]:
+
+
+logger.debug(f"df_data Shape: {df_data.shape}")
+df_data.head(2)
 
 
 # #### Packaging the data to be in expected input shape
 
-# In[6]:
+# In[16]:
+
+
+data_train = df_data[df_data.group == 'train']
+data_val = df_data[df_data.group == 'validation']
+
+
+# print(f'groups:\n{df_data.group.drop_duplicates()}')
+# print(len(df_data))
+# data_val.head()
+
+
+# In[18]:
 
 
 def concate_row(df, col):
@@ -78,15 +90,19 @@ def get_features_and_labels(df):
     labels =  concate_row(df, 'answer_embedding')
     return features, labels
 
-features_t, labels_t = get_features_and_labels(image_name_question)
-features_val, labels_val = get_features_and_labels(image_name_question_val)
+
+
+logger.debug('Getting train features')
+features_t, labels_t = get_features_and_labels(data_train)
+logger.debug('Getting validation features')
+features_val, labels_val = get_features_and_labels(data_val)
 
 # Note: The shape of answer (for a single recored ) is (number of words, 384)
 
 
 # An attempt for using categorial classes:
 
-# In[7]:
+# In[19]:
 
 
 if classify_strategy == ClassifyStrategies.CATEGORIAL:
@@ -101,13 +117,13 @@ classify_strategy
 len(features_t[1])
 
 
-# In[8]:
+# In[20]:
 
 
 validation_input = (features_val, labels_val)
 
 
-# In[9]:
+# In[21]:
 
 
 # model.input_layers
@@ -134,7 +150,7 @@ print(f'Actual Validation shape:{features_val[0].shape, features_val[1].shape}')
 print(f'Validation Labels shape:{labels_val.shape}')
 
 
-# In[10]:
+# In[ ]:
 
 
 from keras.utils import plot_model
@@ -176,7 +192,7 @@ except Exception as ex:
 
 # ### Save trained model:
 
-# In[11]:
+# In[ ]:
 
 
 with VerboseTimer("Saving trained Model"):
@@ -189,5 +205,11 @@ location_message = f"model_location = '{model_fn}'"
 
 
 print(msg)
-print (location_message)
+print(location_message)
+
+
+# In[ ]:
+
+
+print (location_message.replace('\\','\\\\'))
 

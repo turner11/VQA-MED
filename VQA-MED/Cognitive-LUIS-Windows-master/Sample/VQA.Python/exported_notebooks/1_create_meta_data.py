@@ -6,6 +6,7 @@
 
 import os
 import pandas as pd
+from pandas import HDFStore
 
 
 # In[2]:
@@ -18,7 +19,7 @@ fn_meta            = os.path.abspath('data/meta_data.json')
 # In[3]:
 
 
-from common.constatns import train_data, validation_data
+from common.constatns import train_data, validation_data, raw_data_location
 
 
 # ### Preprocessing and creating meta data
@@ -32,14 +33,16 @@ from common.constatns import train_data, validation_data
 # In[4]:
 
 
-from parsers.VQA18 import Vqa18Base
-df_train = Vqa18Base.get_instance(train_data.processed_xls).data            
-df_val = Vqa18Base.get_instance(validation_data.processed_xls).data
+with HDFStore(raw_data_location) as store:
+     df_data = store['data']
+        
+print(f'Data length: {len(df_data)}')        
+df_data.head()
 
 
 # We will use this function for creating meta data:
 
-# In[5]:
+# In[8]:
 
 
 from vqa_logger import logger 
@@ -47,8 +50,8 @@ import itertools
 import string
 from common.os_utils import File #This is a simplehelper file of mine...
 
-def create_meta(meta_file_location, df):
-        logger.debug("Creating meta data ('{0}')".format(meta_file_location))
+def create_meta(df):
+        
         print(f"Dataframe had {len(df)} rows")
         def get_unique_words(col):
             single_string = " ".join(df[col])
@@ -78,16 +81,23 @@ def create_meta(meta_file_location, df):
         print("Meta number of unique answers: {0}".format(len(set(metadata['ix_to_ans'].values()))))
         print("Meta number of unique words: {0}".format(len(set(metadata['ix_to_word'].values()))))
 
-        File.dump_json(metadata,meta_file_location)
+       
         return metadata
 
 
-# In[6]:
+# In[14]:
 
 
 print("----- Creating meta -----")
-full_df = pd.concat([df_train, df_val])
-meta_data = create_meta(fn_meta, full_df)
+meta_data = create_meta( df_data)
+
+# pd.DataFrame(meta_data).head()
+meta_data.keys()
+
+
+# In[16]:
+
+
+File.dump_json(meta_data,fn_meta)
 print(f"Meta file available at: {fn_meta}")
-# meta_data
 

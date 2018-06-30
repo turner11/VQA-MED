@@ -8,6 +8,7 @@
 import IPython
 import os
 import numpy as np
+import pandas as pd
 from pandas import HDFStore
 import spacy
 from keras.utils import to_categorical
@@ -20,7 +21,7 @@ from common.os_utils import File
 # In[2]:
 
 
-from common.constatns import train_data, validation_data, data_location, fn_meta, vqa_specs_location
+from common.constatns import train_data, validation_data, data_location, fn_meta, vqa_specs_location, raw_data_location, raw_data_location
 from common.settings import input_length, embedding_dim, image_size, seq_length, get_nlp
 from common.classes import VqaSpecs
 from common.functions import get_highlited_function_code, get_image, get_text_features, pre_process_raw_data, get_size
@@ -55,19 +56,25 @@ IPython.display.display(code)
 # In[6]:
 
 
-from parsers.VQA18 import Vqa18Base
-df_train = Vqa18Base.get_instance(train_data.processed_xls).data            
-df_val = Vqa18Base.get_instance(validation_data.processed_xls).data
+with HDFStore(raw_data_location) as store:
+     image_name_question = store['data']
+
+# df_train = image_name_question[image_name_question.group == 'train']
+# df_val = image_name_question[image_name_question.group == 'validation']
+
+# from parsers.VQA18 import Vqa18Base
+# df_train = Vqa18Base.get_instance(train_data.processed_xls).data            
+# df_val = Vqa18Base.get_instance(validation_data.processed_xls).data
 
 
 # In[7]:
 
 
-logger.debug('Building input dataframe')
-cols = ['image_name', 'question', 'answer']
+# logger.debug('Building input dataframe')
+# cols = ['image_name', 'question', 'answer']
 
-image_name_question = df_train[cols].copy()
-image_name_question_val = df_val[cols].copy()
+# image_name_question = df_data#df_train[cols].copy()
+# # image_name_question_val = df_val[cols].copy()
 
 
 # ##### This is just for performance and quick debug cycles! remove before actual trainining:
@@ -131,46 +138,40 @@ def get_categorial_labels(df, meta):
     return categorial_labels
 
 with VerboseTimer("Getting categorial training labels"):
-    categorial_labels_train = get_categorial_labels(df_train, meta_data)
+    categorial_labels_train = get_categorial_labels(image_name_question, meta_data)
 
-with VerboseTimer("Getting categorial validation labels"):
-    categorial_labels_val = get_categorial_labels(df_val, meta_data)
+# with VerboseTimer("Getting categorial validation labels"):
+#     categorial_labels_val = get_categorial_labels(df_val, meta_data)
 # categorial_labels_train.shape, categorial_labels_val.shape
-del df_train
-del df_val
+# del df_train
+# del df_val
 
 
 # ### Do the actual pre processing
 # Note:  
 # This might take a while...
 
-# In[13]:
+# In[15]:
 
 
 logger.debug('----===== Preproceccing train data =====----')
 image_locations = train_data.images_path
 with VerboseTimer("Pre processing training data"):
-    image_name_question = pre_process_raw_data(image_name_question, image_locations)
+    image_name_question_processed = pre_process_raw_data(image_name_question)
 
 
-# In[14]:
+# In[16]:
 
 
-logger.debug('----===== Preproceccing validation data =====----')
-image_locations = validation_data.images_path
-with VerboseTimer("Pre processing validation data"):
-    image_name_question_val = pre_process_raw_data(image_name_question_val, image_locations)
-
-
-# In[15]:
-
-
-image_name_question.head(2)
+# logger.debug('----===== Preproceccing validation data =====----')
+# image_locations = validation_data.images_path
+# with VerboseTimer("Pre processing validation data"):
+#     image_name_question_val = pre_process_raw_data(image_name_question_val, image_locations)
 
 
 # #### Saving the data, so later on we don't need to compute it again
 
-# In[16]:
+# In[18]:
 
 
 def get_vqa_specs(meta_data):    
@@ -185,8 +186,7 @@ s = str(vqa_specs)
 s[:s.index('meta_data=')+10]
 
 
-# In[18]:
-
+# In[22]:
 
 
 logger.debug("Saving the data")
@@ -200,10 +200,11 @@ try:
 except OSError:
     pass
 
+
 with VerboseTimer("Saving model training data"):
     with HDFStore(data_location) as store:
-        store['train']  = image_name_question
-        store['val']  = image_name_question_val
+        store['data']  = image_name_question_processed
+        
         
 
 size = get_size(data_location)
@@ -214,7 +215,13 @@ item_to_save.to_hdf(vqa_specs.data_location, key='df')
 logger.debug(f"Saved to {vqa_specs.data_location}")
 
 
-# In[20]:
+# In[27]:
+
+
+image_name_question_processed.describe()
+
+
+# In[23]:
 
 
 File.dump_pickle(vqa_specs, vqa_specs_location)
