@@ -21,7 +21,7 @@ from common.os_utils import File
 # In[2]:
 
 
-from common.constatns import train_data, validation_data, data_location, fn_meta, vqa_specs_location, raw_data_location, raw_data_location
+from common.constatns import train_data, validation_data, data_location, fn_meta, vqa_specs_location, raw_data_location
 from common.settings import input_length, embedding_dim, image_size, seq_length, get_nlp
 from common.classes import VqaSpecs
 from common.functions import get_highlited_function_code, get_image, get_text_features, pre_process_raw_data, get_size
@@ -57,8 +57,7 @@ IPython.display.display(code)
 
 
 with HDFStore(raw_data_location) as store:
-     image_name_question = store['data']
-
+    image_name_question = store['data']
 # df_train = image_name_question[image_name_question.group == 'train']
 # df_val = image_name_question[image_name_question.group == 'validation']
 
@@ -67,19 +66,9 @@ with HDFStore(raw_data_location) as store:
 # df_val = Vqa18Base.get_instance(validation_data.processed_xls).data
 
 
-# In[7]:
-
-
-# logger.debug('Building input dataframe')
-# cols = ['image_name', 'question', 'answer']
-
-# image_name_question = df_data#df_train[cols].copy()
-# # image_name_question_val = df_val[cols].copy()
-
-
 # ##### This is just for performance and quick debug cycles! remove before actual trainining:
 
-# In[8]:
+# In[7]:
 
 
 # image_name_question = image_name_question.head(5)
@@ -90,7 +79,7 @@ with HDFStore(raw_data_location) as store:
 
 # #### get_text_features:
 
-# In[9]:
+# In[8]:
 
 
 code = get_highlited_function_code(get_text_features,remove_comments=True)
@@ -99,7 +88,7 @@ IPython.display.display(code)
 
 # #### get_image:
 
-# In[10]:
+# In[9]:
 
 
 code = get_highlited_function_code(get_image,remove_comments=True)
@@ -108,7 +97,7 @@ IPython.display.display(code)
 
 # #### pre_process_raw_data:
 
-# In[11]:
+# In[10]:
 
 
 code = get_highlited_function_code(pre_process_raw_data,remove_comments=True)
@@ -118,7 +107,7 @@ IPython.display.display(code)
 # #### This is for in case we want to classify by categorial labels (TBD):
 # (i.e. make it into a one large multiple choice test)
 
-# In[12]:
+# In[11]:
 
 
 def get_categorial_labels(df, meta):
@@ -138,7 +127,8 @@ def get_categorial_labels(df, meta):
     return categorial_labels
 
 with VerboseTimer("Getting categorial training labels"):
-    categorial_labels_train = get_categorial_labels(image_name_question, meta_data)
+    df_train = image_name_question[image_name_question.group == 'train']
+    categorial_labels_train = get_categorial_labels(df_train, meta_data)
 
 # with VerboseTimer("Getting categorial validation labels"):
 #     categorial_labels_val = get_categorial_labels(df_val, meta_data)
@@ -151,7 +141,29 @@ with VerboseTimer("Getting categorial training labels"):
 # Note:  
 # This might take a while...
 
-# In[15]:
+# In[12]:
+
+
+# # # # RRR
+# # # logger.debug('Getting answers embedding')
+# df = image_name_question
+# df['l'] = df.answer.apply(lambda a: len(str(a)))
+# df[df.l > 2].sort_values('l')
+# # print(len(df[(df.answer == np.nan) | (df.question == np.nan)]))
+
+
+# # df['answer'].apply(lambda q: get_text_features(q))
+# # # a= df['answer'].apply(lambda q: 0 if q == np.nan else 1)
+# # # sum(a), len(a), len(image_name_question)
+
+# import json
+# # json.load(open)
+# a = df[df.group == 'test']['answer'].values[0]
+# type(a)
+
+
+
+# In[13]:
 
 
 logger.debug('----===== Preproceccing train data =====----')
@@ -160,7 +172,7 @@ with VerboseTimer("Pre processing training data"):
     image_name_question_processed = pre_process_raw_data(image_name_question)
 
 
-# In[16]:
+# In[14]:
 
 
 # logger.debug('----===== Preproceccing validation data =====----')
@@ -171,7 +183,7 @@ with VerboseTimer("Pre processing training data"):
 
 # #### Saving the data, so later on we don't need to compute it again
 
-# In[18]:
+# In[15]:
 
 
 def get_vqa_specs(meta_data):    
@@ -186,12 +198,12 @@ s = str(vqa_specs)
 s[:s.index('meta_data=')+10]
 
 
-# In[22]:
+# In[16]:
 
 
 logger.debug("Saving the data")
 
-item_to_save = image_name_question
+item_to_save = image_name_question_processed
 # item_to_save = image_name_question.head(10)
 
 # remove if exists
@@ -203,7 +215,9 @@ except OSError:
 
 with VerboseTimer("Saving model training data"):
     with HDFStore(data_location) as store:
-        store['data']  = image_name_question_processed
+        store['data']  = image_name_question_processed[(image_name_question_processed.group == 'train') | (image_name_question_processed.group == 'validation')]
+        store['test']  = image_name_question_processed[image_name_question_processed.group == 'test']
+        
         
         
 
@@ -211,19 +225,19 @@ size = get_size(data_location)
 logger.debug(f"training data's file size was: {size}")
 
 
-item_to_save.to_hdf(vqa_specs.data_location, key='df')    
-logger.debug(f"Saved to {vqa_specs.data_location}")
+# item_to_save.to_hdf(vqa_specs.data_location, key='df')    
+# logger.debug(f"Saved to {vqa_specs.data_location}")
 
 
-# In[27]:
+# In[17]:
 
 
-image_name_question_processed.describe()
-
-
-# In[23]:
-
-
-File.dump_pickle(vqa_specs, vqa_specs_location)
+File.dump_pickle(vqa_specs, data_location)
 logger.debug(f"VQA Specs saved to:\n{vqa_specs_location}")
+
+
+# In[25]:
+
+
+print (f"vqa_specs_location = '{vqa_specs_location}'".replace('\\','\\\\'))
 

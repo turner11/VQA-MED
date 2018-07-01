@@ -11,11 +11,12 @@
 import os
 from pandas import HDFStore
 import pandas as pd
+import IPython
 
-from common.constatns import train_data, validation_data,  raw_data_location, images_folder_train, images_folder_validation 
+from common.constatns import train_data, validation_data, test_data, raw_data_location, images_folder_train, images_folder_validation, images_path_test
 from common.utils import VerboseTimer
 from parsers.VQA18 import Vqa18Base
-from common.functions import get_size
+from common.functions import get_size, get_highlited_function_code, normalize_data_strucrture
 from vqa_logger import logger
 
 
@@ -24,33 +25,37 @@ from vqa_logger import logger
 
 # TODO: Change this to use the original format from image_clef
 df_train = Vqa18Base.get_instance(train_data.processed_xls).data    
-df_valid = Vqa18Base.get_instance(validation_data.processed_xls).data 
-
-cols = ['image_name', 'question', 'answer']
-df_t = df_train[cols].copy()
-df_v = df_valid[cols].copy()
-
-df_t['group'] = 'train'
-df_v['group'] = 'validation'
+df_valid = Vqa18Base.get_instance(validation_data.processed_xls).data
+df_test = Vqa18Base.get_instance(test_data.processed_xls).data
 
 
-df = pd.concat([df_t, df_v])#.reset_index()
+# ### For bringing the data to a normalized state we will use the function 'normalize_data_strucrture'
+# Defined as:
 
-def get_image_path(group, image_name):
-    assert group in ['train', 'validation']
-    folder = images_folder_train if group == 'train' else images_folder_validation    
-    return os.path.join(folder, image_name)
+# In[3]:
 
 
-df['image_name'] = df['image_name'].apply(lambda q: q if q.lower().endswith('.jpg') else q + '.jpg')
-df['path'] = df.apply(lambda x:  get_image_path(x['group'],x['image_name']),axis=1) #x: get_image_path(x['group'],x['image_name'])
+code = get_highlited_function_code(normalize_data_strucrture,remove_comments=True)
+IPython.display.display(code)
 
+
+# In[4]:
+
+
+df_t = normalize_data_strucrture(df_train, 'train',images_folder_train)
+df_v = normalize_data_strucrture(df_valid, 'validation',images_folder_validation)
+df_test = normalize_data_strucrture(df_test, 'test',images_path_test)
+
+
+df = pd.concat([df_t, df_v, df_test])  # .reset_index()
+#         folder = images_folder_train if group == 'train' else images_folder_validation
+    
 df.describe()
 
 
 # ### Save the data
 
-# In[3]:
+# In[5]:
 
 
 # remove if exists
@@ -61,18 +66,10 @@ except OSError:
 
 with VerboseTimer("Saving raw data"):
     with HDFStore(raw_data_location) as store:
-         store['data']  = df
+        store['data']  = df
+      
         
 
 size = get_size(raw_data_location)
 logger.debug(f"raw data's file size was: {size}")
-
-
-# In[9]:
-
-
-# df.reset_index()
-# df.head()
-a = df[df.group == 'validation'].path[0]
-os.path.exists(a)
 

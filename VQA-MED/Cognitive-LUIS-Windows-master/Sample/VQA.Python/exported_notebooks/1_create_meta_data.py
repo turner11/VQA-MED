@@ -36,13 +36,14 @@ from common.constatns import train_data, validation_data, raw_data_location
 with HDFStore(raw_data_location) as store:
      df_data = store['data']
         
+df_data = df_data[df_data.group.isin(['train','validation'])]
 print(f'Data length: {len(df_data)}')        
 df_data.head()
 
 
 # We will use this function for creating meta data:
 
-# In[8]:
+# In[5]:
 
 
 from vqa_logger import logger 
@@ -85,17 +86,17 @@ def create_meta(df):
         return metadata
 
 
-# In[14]:
+# In[6]:
 
 
 print("----- Creating meta -----")
-meta_data = create_meta( df_data)
+meta_data = create_meta(df_data)
 
 # pd.DataFrame(meta_data).head()
 meta_data.keys()
 
 
-# In[16]:
+# In[7]:
 
 
 File.dump_json(meta_data,fn_meta)
