@@ -1,6 +1,7 @@
 import inspect
 import os
 import re
+from collections import defaultdict
 
 import pandas as pd
 import cv2
@@ -141,6 +142,40 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _consolidate_image_devices(df):
+    def get_imaging_device(r):
+        if r.ct and r.mri:
+            res = 'both'
+        elif r.ct and not r.mri:
+            res = 'ct'
+        elif not r.ct and r.mri:
+            res = 'mri'
+        else:
+            res = 'unknown'
+        return res
+
+    df['imaging_device'] = df.apply(get_imaging_device, axis=1)
+
+    imaging_device_by_image = defaultdict(lambda: set())
+    for i, r in df.iterrows():
+        imaging_device_by_image[r.image_name].add(r.imaging_device)
+
+    for name, s in imaging_device_by_image.items():
+        if 'both' in s or ('ct' in s and 'mri' in s):
+            s.clear()
+            s.add('both')
+        elif 'unknown' in s and ('ct' in s or 'mri' in s):
+            s.clear()
+            s.add('ct' if s else 'mri')
+
+    non_consolidated_vals = [s for s in list(imaging_device_by_image.values()) if len(s) != 1]
+    imaging_device_by_image = {k: list(s)[0] for k, s in imaging_device_by_image.items()}
+    assert len(
+        non_consolidated_vals) == 0, f'got {len(non_consolidated_vals)} non consolodated image devices. for example:\n{non_consolidated_vals[:5]}'
+    df['imaging_device'] = df.apply(lambda r: imaging_device_by_image[r.image_name], axis=1)
+    return df
+
+
 def enrich_data(df: pd.DataFrame) -> pd.DataFrame:
     from pre_processing.known_find_and_replace_items import imaging_devices, diagnosis, locations
 
@@ -150,6 +185,10 @@ def enrich_data(df: pd.DataFrame) -> pd.DataFrame:
     _add_columns_by_search(df, indicator_words=diagnosis, search_columns=['question', 'answer'])
     # add_locations_columns
     _add_columns_by_search(df, indicator_words=locations, search_columns=['question', 'answer'])
+
+    _consolidate_image_devices(df)
+    for col in imaging_devices:
+        del df[col]
     return df
 
 
