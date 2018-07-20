@@ -69,7 +69,18 @@ keras_backend.clear_session()
 # In[7]:
 
 
+#  Input 0 is incompatible with layer lstm_1: expected ndim=3, found ndim=2
+# Input 0 is incompatible with layer embbeding_LSTM_1: expected ndim=3, found ndim=2
 def word_2_vec_model(input_tensor):
+        #print(dir(input_tensor))
+        print('---------------------------------------------')
+        print(input_tensor.get_shape())
+        print('---------------------------------------------')
+        print(input_tensor.shape)
+        print('---------------------------------------------')
+        print(embedded_sentence_length)
+        print('---------------------------------------------')
+        # return
         # notes:
         # num works: scalar represents size of original corpus
         # embedding_dim : dim reduction. every input string will be encoded in a binary fashion using a vector of this length
@@ -78,15 +89,17 @@ def word_2_vec_model(input_tensor):
         LSTM_UNITS = 512
         DENSE_UNITS = 1024
         DENSE_ACTIVATION = 'relu'
-
-
-        # logger.debug("Creating Embedding model")
+        
+        logger.debug("Creating Embedding model")
+        x= input_tensor # Since using spacy
+        
         # x = Embedding(num_words, embedding_dim, weights=[embedding_matrix], input_length=seq_length,trainable=False)(input_tensor)
         # x = LSTM(units=LSTM_UNITS, return_sequences=True, input_shape=(seq_length, embedding_dim))(x)
-        # x = BatchNormalization()(x)
-        # x = LSTM(units=LSTM_UNITS, return_sequences=False)(x)
-        # x = BatchNormalization()(x)
-        x= input_tensor # Since using spacy
+        x = LSTM(units=LSTM_UNITS, return_sequences=True, name='embbeding_LSTM_1',  input_shape=(1,embedded_sentence_length))(x)
+        x = BatchNormalization(name='embbeding_batch_normalization_1')(x)
+        x = LSTM(units=LSTM_UNITS, return_sequences=False, name='embbeding_LSTM_2')(x)
+        x = BatchNormalization(name='embbeding_batch_normalization_2')(x)
+        
         x = Dense(units=DENSE_UNITS, activation=DENSE_ACTIVATION)(x)
         model = x
         logger.debug("Done Creating Embedding model")
@@ -158,7 +171,7 @@ def get_vqa_model(meta):
     image_model, lstm_model, fc_model = None, None, None
     try:     
         # ATTN:
-        lstm_input_tensor = Input(shape=(embedded_sentence_length,), name='embedding_input')
+        lstm_input_tensor = Input(shape=(embedded_sentence_length,1), name='embedding_input')
         #lstm_input_tensor = Input(shape=(embedding_dim,), name='embedding_input')
 
         logger.debug("Getting embedding (lstm model)")
