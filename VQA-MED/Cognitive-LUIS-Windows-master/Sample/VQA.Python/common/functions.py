@@ -1,5 +1,7 @@
 import inspect
 import os
+import re
+
 import pandas as pd
 import cv2
 import numpy as np
@@ -121,11 +123,56 @@ def normalize_data_strucrture(df, group, image_folder):
 
     return df_c
 
+def clean_data(df: pd.DataFrame) -> pd.DataFrame:
+    from pre_processing.known_find_and_replace_items import find_and_replace_collection
+
+    find_and_replace_data = find_and_replace_collection
+
+    def replace_func(val: str) -> str:
+        new_val = val
+        if isinstance(new_val, str):
+            for tpl in find_and_replace_data:
+                pattern = re.compile(tpl.orig, re.IGNORECASE)
+                new_val = pattern.sub(tpl.sub, new_val).strip()
+        return new_val
+
+    df['question'] = df['question'].apply(replace_func)
+    df['answer'] = df['answer'].apply(replace_func)
+    return df
+
+
+def enrich_data(df: pd.DataFrame) -> pd.DataFrame:
+    from pre_processing.known_find_and_replace_items import imaging_devices, diagnosis, locations
+
+    # add_imaging_columns
+    _add_columns_by_search(df, indicator_words=imaging_devices, search_columns=['question', 'answer'])
+    # add_diagnostics_columns
+    _add_columns_by_search(df, indicator_words=diagnosis, search_columns=['question', 'answer'])
+    # add_locations_columns
+    _add_columns_by_search(df, indicator_words=locations, search_columns=['question', 'answer'])
+    return df
+
+
+
+
+
+def _add_columns_by_search(df, indicator_words, search_columns):
+    from common.utils import has_word
+    for word in indicator_words:
+        res = None
+        for col in search_columns:
+            curr_res = df[col].apply(lambda s: has_word(word,s))
+            if res is None:
+                res = curr_res
+            res = res | curr_res
+        if any(res):
+            df[word] = res
+        else:
+            logger.warn("found no matching for '{0}'".format(word))
+
 def main():
     pass
     # print_function_code(get_nlp, remove_comments=True)
-
-
 
 if __name__ == '__main__':
     main()

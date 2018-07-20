@@ -137,11 +137,26 @@ with VerboseTimer("Getting categorial training labels"):
 # del df_val
 
 
+# In[12]:
+
+
+from common.functions import enrich_data, clean_data
+image_name_question = clean_data(image_name_question)
+image_name_question = enrich_data(image_name_question)
+image_name_question.head()
+
+
+# In[24]:
+
+
+image_name_question.groupby('group').describe()
+
+
 # ### Do the actual pre processing
 # Note:  
 # This might take a while...
 
-# In[12]:
+# In[13]:
 
 
 # # # # RRR
@@ -163,7 +178,7 @@ with VerboseTimer("Getting categorial training labels"):
 
 
 
-# In[13]:
+# In[14]:
 
 
 logger.debug('----===== Preproceccing train data =====----')
@@ -172,7 +187,7 @@ with VerboseTimer("Pre processing training data"):
     image_name_question_processed = pre_process_raw_data(image_name_question)
 
 
-# In[14]:
+# In[15]:
 
 
 # logger.debug('----===== Preproceccing validation data =====----')
@@ -183,7 +198,7 @@ with VerboseTimer("Pre processing training data"):
 
 # #### Saving the data, so later on we don't need to compute it again
 
-# In[15]:
+# In[16]:
 
 
 def get_vqa_specs(meta_data):    
@@ -198,7 +213,7 @@ s = str(vqa_specs)
 s[:s.index('meta_data=')+10]
 
 
-# In[16]:
+# In[17]:
 
 
 logger.debug("Saving the data")
@@ -229,14 +244,14 @@ logger.debug(f"training data's file size was: {size}")
 # logger.debug(f"Saved to {vqa_specs.data_location}")
 
 
-# In[17]:
+# In[18]:
 
 
 File.dump_pickle(vqa_specs, data_location)
 logger.debug(f"VQA Specs saved to:\n{vqa_specs_location}")
 
 
-# In[25]:
+# In[19]:
 
 
 print (f"vqa_specs_location = '{vqa_specs_location}'".replace('\\','\\\\'))
