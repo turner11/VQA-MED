@@ -37,6 +37,13 @@ image_size_by_base_models = {'imagenet': (224, 224)}
 # In[4]:
 
 
+# categorial_column = 'ix_to_ans'
+categorial_column = 'ix_to_img_device'
+
+
+# In[5]:
+
+
 #Available merge strategies:
 # keras_layers.multiply, keras_layers.add, keras_layers.concatenate, 
 # keras_layers.average, keras_layers.co, keras_layers.dot, keras_layers.maximum
@@ -44,16 +51,23 @@ image_size_by_base_models = {'imagenet': (224, 224)}
 merge_strategy = keras_layers.concatenate
 
 
-# In[5]:
+# In[6]:
 
 
 vqa_specs = File.load_pickle(vqa_specs_location)
 meta_data = vqa_specs.meta_data
 
 
+# In[7]:
+
+
+print(vqa_specs_location)
+meta_data.keys()
+
+
 # Before we start, just for making sure, lets clear the session:
 
-# In[6]:
+# In[8]:
 
 
 from keras import backend as keras_backend
@@ -66,7 +80,7 @@ keras_backend.clear_session()
 
 # Define how to build the word-to vector branch:
 
-# In[7]:
+# In[9]:
 
 
 #  Input 0 is incompatible with layer lstm_1: expected ndim=3, found ndim=2
@@ -108,7 +122,7 @@ def word_2_vec_model(input_tensor):
 
 # In the same manner, define how to build the image representation branch:
 
-# In[8]:
+# In[10]:
 
 
 from keras.applications.vgg19 import VGG19
@@ -136,12 +150,12 @@ def get_image_model(base_model_weights=DEFAULT_IMAGE_WIEGHTS, out_put_dim=1024):
 
 # And finally, building the model itself:
 
-# In[9]:
+# In[11]:
 
 
 model_output_num_units = None
 if classify_strategy == ClassifyStrategies.CATEGORIAL:    
-    model_output_num_units = len(list(meta_data['ix_to_ans'].keys()) )
+    model_output_num_units = len(list(meta_data[categorial_column].keys()) )
 elif classify_strategy == ClassifyStrategies.NLP:
     model_output_num_units = embedded_sentence_length    
 else:
@@ -150,7 +164,7 @@ else:
 logger.debug(f'Model will have {model_output_num_units} output units (Strategy: {classify_strategy})')
 
 
-# In[10]:
+# In[12]:
 
 
 from keras import Model, models, Input, callbacks
@@ -189,7 +203,7 @@ def get_vqa_model(meta):
         fc_tensors = BatchNormalization()(fc_tensors)
 
         #ATTN:
-        fc_tensors = Dense(units=embedded_sentence_length, activation='softmax', name='model_output_sofmax_dense')(fc_tensors)
+        fc_tensors = Dense(units=model_output_num_units, activation='softmax', name='model_output_sofmax_dense')(fc_tensors)
         #fc_tensors = Dense(units=num_classes, activation='softmax', name='model_output_sofmax_dense')(fc_tensors)
 
         fc_model = Model(inputs=[lstm_input_tensor, image_input_tensor], output=fc_tensors)
@@ -214,7 +228,7 @@ model
 
 # We better save it:
 
-# In[11]:
+# In[13]:
 
 
 strategy_str = get_stratagy_str()
@@ -232,7 +246,7 @@ print (location_message)
 
 # Display a plot + summary:
 
-# In[12]:
+# In[14]:
 
 
 # %matplotlib inline
@@ -254,7 +268,7 @@ model.summary()
 
 # Copy these items to the next notebook of training the model
 
-# In[13]:
+# In[15]:
 
 
 logger.debug('Done')

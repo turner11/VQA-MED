@@ -6,8 +6,10 @@
 # In[1]:
 
 
-model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180629_1514_58\\vqa_model_NLP.h5'
-strategy_str = 'NLP'
+model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180720_1155_22\\vqa_model_CATEGORIAL.h5'
+strategy_str = 'CATEGORIAL'
+# model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180720_0837_03\\vqa_model_NLP.h5'
+# strategy_str = 'NLP'
 
 
 # ### Preparing the data for training
@@ -22,16 +24,20 @@ from pandas import HDFStore
 from vqa_logger import logger 
 from enum import Enum
 from keras.models import load_model
+from keras.utils import to_categorical
+
+from functools import partial
 
 
-# In[3]:
+# In[12]:
 
 
-from common.constatns import data_location, vqa_models_folder #train_data, validation_data, 
+from common.constatns import data_location, vqa_models_folder, vqa_specs_location #train_data, validation_data, 
 from common.utils import VerboseTimer
 from common.settings import classify_strategy
 from common.classes import ClassifyStrategies
 from common.model_utils import save_model
+from common.os_utils import File
 
 
 # #### Loading the Model:
@@ -45,7 +51,7 @@ with VerboseTimer("Loading Model"):
 
 # #### Loading the data:
 
-# In[13]:
+# In[5]:
 
 
 logger.debug(f"Loading the data from {data_location}")
@@ -54,7 +60,7 @@ with VerboseTimer("Loading Data"):
         df_data = store['data']  
 
 
-# In[14]:
+# In[6]:
 
 
 logger.debug(f"df_data Shape: {df_data.shape}")
@@ -63,7 +69,7 @@ df_data.head(2)
 
 # #### Packaging the data to be in expected input shape
 
-# In[16]:
+# In[7]:
 
 
 data_train = df_data[df_data.group == 'train']
@@ -75,55 +81,100 @@ data_val = df_data[df_data.group == 'validation']
 # data_val.head()
 
 
-# In[18]:
+# In[57]:
 
 
 def concate_row(df, col):
     return np.concatenate(df[col], axis=0)
 
-def get_features_and_labels(df):
+def get_features(df):
     image_features = np.asarray([np.array(im) for im in df['image']])
     # np.concatenate(image_features['question_embedding'], axis=0).shape
     question_features = concate_row(df, 'question_embedding') 
+    reshaped_q = np.array([a.reshape(a.shape + (1,)) for a in question_features])
+    
+    features = ([f for f in [reshaped_q, image_features]])    
+    
+    return features
 
-    features = ([f for f in [question_features, image_features]])
+
+# #### Defining how to get NLP labels
+
+# In[58]:
+
+
+def get_nlp_labels():
     labels =  concate_row(df, 'answer_embedding')
-    return features, labels
+    return labels
+
+
+# #### Defining how to get Categorial fetaures / labels
+
+# In[59]:
+
+
+def get_categorial_labels(df, meta):
+    lookup_col = 'img_device_to_ix'
+    # lookup_col = 'img_device_to_ix'
+    ans_to_ix = meta[lookup_col]
+    all_classes =  ans_to_ix.keys()
+    data_classes = df['imaging_device']
+    class_count = len(all_classes)
+
+    classes_indices = [ans_to_ix[ans] for ans in data_classes]
+    categorial_labels = to_categorical(classes_indices, num_classes=class_count)
+    
+    for i in range(len(categorial_labels)):
+        assert np.argmax(categorial_labels[i])== classes_indices[i], 'Expected to get argmax at index of label' 
+
+    return categorial_labels
 
 
 
-logger.debug('Getting train features')
-features_t, labels_t = get_features_and_labels(data_train)
-logger.debug('Getting validation features')
-features_val, labels_val = get_features_and_labels(data_val)
+# with VerboseTimer("Getting categorial validation labels"):
+#     categorial_labels_val = get_categorial_labels(df_val, meta_data)
+# categorial_labels_train.shape, categorial_labels_val.shape
+# del df_train
+# del df_val
 
-# Note: The shape of answer (for a single recored ) is (number of words, 384)
 
-
-# An attempt for using categorial classes:
-
-# In[19]:
+# In[60]:
 
 
 if classify_strategy == ClassifyStrategies.CATEGORIAL:
-    labels_t = categorial_labels_train
-    labels_val = categorial_labels_val    
-elif classify_strategy == ClassifyStrategies.NLP:
-    pass
+    vqa_specs = File.load_pickle(vqa_specs_location)
+    meta_data = vqa_specs.meta_data
+    p_get_categorial_labels = partial(get_categorial_labels, meta=meta_data)    
+    
+    get_labels = p_get_categorial_labels
+elif classify_strategy == ClassifyStrategies.NLP:   
+    get_labels = get_nlp_features_and_labels    
+
+# Note: The shape of answer (for a single recored ) is (number of words, 384)
 else:
     raise Exception(f'Unfamilier strategy: {strat}')
 classify_strategy
 
-len(features_t[1])
+with VerboseTimer('Getting train features'):
+    features_t = get_features(data_train)   
+with VerboseTimer('Getting train labels'):
+    labels_t = get_labels(data_train)        
+    
+with VerboseTimer('Getting train features'):
+    features_val = get_features(data_val)
+with VerboseTimer('Getting validation labels'):
+    labels_val = get_labels(data_val)
+
+# len(features_t[1])
 
 
-# In[20]:
+# In[61]:
 
 
 validation_input = (features_val, labels_val)
 
 
-# In[21]:
+# In[62]:
 
 
 # model.input_layers

@@ -19,7 +19,9 @@ fn_meta            = os.path.abspath('data/meta_data.json')
 # In[3]:
 
 
-from common.constatns import train_data, validation_data, raw_data_location
+from common.constatns import data_location, vqa_specs_location
+from common.settings import embedding_dim, seq_length
+from common.classes import VqaSpecs
 
 
 # ### Preprocessing and creating meta data
@@ -33,7 +35,8 @@ from common.constatns import train_data, validation_data, raw_data_location
 # In[4]:
 
 
-with HDFStore(raw_data_location) as store:
+print(f'loading from:\n{data_location}')
+with HDFStore(data_location) as store:
      df_data = store['data']
         
 df_data = df_data[df_data.group.isin(['train','validation'])]
@@ -41,7 +44,7 @@ print(f'Data length: {len(df_data)}')
 df_data.head()
 
 
-# We will use this function for creating meta data:
+# #### We will use this function for creating meta data:
 
 # In[5]:
 
@@ -65,11 +68,16 @@ def create_meta(df):
         cols = ['question', 'answer']
         df_unique_words = set(itertools.chain.from_iterable([get_unique_words(col) for col in cols]))
         df_unique_answers = set(df['answer'])        
+        
+        df_unique_imaging_devices = set(df['imaging_device'])        
 
         metadata = {}
         metadata['ix_to_word'] = {str(word): int(i) for i, word in enumerate(df_unique_words)}
         metadata['ix_to_ans'] = {i:ans for i, ans in enumerate(df_unique_answers)}
         metadata['ans_to_ix'] = {ans:i for i, ans in enumerate(df_unique_answers)}
+        
+        metadata['img_device_to_ix'] = {ans:i for i, ans in enumerate(df_unique_imaging_devices)}
+        metadata['ix_to_img_device'] = {i:ans for i, ans in enumerate(df_unique_imaging_devices)}
                 
         
         #------------------- Asserts
@@ -78,6 +86,7 @@ def create_meta(df):
         
         assert len(set(answers)) == len(answers), 'Got duplicate answers'
         assert len(set(words)) == len(words), 'Got duplicate words'        
+        #---------------------------
         
         print("Meta number of unique answers: {0}".format(len(set(metadata['ix_to_ans'].values()))))
         print("Meta number of unique words: {0}".format(len(set(metadata['ix_to_word'].values()))))
@@ -101,4 +110,34 @@ meta_data.keys()
 
 File.dump_json(meta_data,fn_meta)
 print(f"Meta file available at: {fn_meta}")
+
+
+# #### Saving the data, so later on we don't need to compute it again
+
+# In[8]:
+
+
+def get_vqa_specs(meta_data):    
+    dim = embedding_dim
+    s_length = seq_length    
+    return VqaSpecs(embedding_dim=dim, seq_length=s_length, data_location=data_location,meta_data=meta_data)
+
+vqa_specs = get_vqa_specs(meta_data)
+
+# Show waht we got...
+s = str(vqa_specs)
+s[:s.index('meta_data=')+10]
+
+
+# In[9]:
+
+
+File.dump_pickle(vqa_specs, vqa_specs_location)
+logger.debug(f"VQA Specs saved to:\n{vqa_specs_location}")
+
+
+# In[10]:
+
+
+print (f"vqa_specs_location = '{vqa_specs_location}'".replace('\\','\\\\'))
 

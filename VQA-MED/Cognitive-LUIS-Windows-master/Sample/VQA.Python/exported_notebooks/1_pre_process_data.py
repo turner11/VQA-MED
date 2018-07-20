@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[2]:
 
 
 # %%capture
@@ -13,25 +13,19 @@ from pandas import HDFStore
 import spacy
 from keras.utils import to_categorical
 import cv2
+from collections import defaultdict
 
 from vqa_logger import logger
 from common.os_utils import File
 
 
-# In[2]:
-
-
-from common.constatns import train_data, validation_data, data_location, fn_meta, vqa_specs_location, raw_data_location
-from common.settings import input_length, embedding_dim, image_size, seq_length, get_nlp
-from common.classes import VqaSpecs
-from common.functions import get_highlited_function_code, get_image, get_text_features, pre_process_raw_data, get_size
-from common.utils import VerboseTimer
-
-
 # In[3]:
 
 
-meta_data = File.load_json(fn_meta)
+from common.constatns import train_data, validation_data, data_location, raw_data_location
+from common.settings import input_length, embedding_dim, image_size, seq_length, get_nlp
+from common.functions import get_highlited_function_code, get_image, get_text_features, pre_process_raw_data, get_size
+from common.utils import VerboseTimer
 
 
 # ### Preparing the data for training
@@ -104,59 +98,34 @@ code = get_highlited_function_code(pre_process_raw_data,remove_comments=True)
 IPython.display.display(code)
 
 
-# #### This is for in case we want to classify by categorial labels (TBD):
-# (i.e. make it into a one large multiple choice test)
+# ### Clean and enrich the data
 
 # In[11]:
-
-
-def get_categorial_labels(df, meta):
-    ans_to_ix = meta['ans_to_ix']
-    all_classes =  ans_to_ix.keys()
-    data_classes = df['answer']
-    class_count = len(all_classes)
-
-    classes_indices = [ans_to_ix[ans] for ans in data_classes]
-    categorial_labels = to_categorical(classes_indices, num_classes=class_count)
-    
-    for i in range(len(categorial_labels)):
-        assert np.argmax(categorial_labels[i])== classes_indices[i], 'Expected to get argmax at index of label'
-    
-
-
-    return categorial_labels
-
-with VerboseTimer("Getting categorial training labels"):
-    df_train = image_name_question[image_name_question.group == 'train']
-    categorial_labels_train = get_categorial_labels(df_train, meta_data)
-
-# with VerboseTimer("Getting categorial validation labels"):
-#     categorial_labels_val = get_categorial_labels(df_val, meta_data)
-# categorial_labels_train.shape, categorial_labels_val.shape
-# del df_train
-# del df_val
-
-
-# In[12]:
 
 
 from common.functions import enrich_data, clean_data
 image_name_question = clean_data(image_name_question)
 image_name_question = enrich_data(image_name_question)
+
+
+# In[12]:
+
+
 image_name_question.head()
 
 
-# In[24]:
+# In[13]:
 
 
 image_name_question.groupby('group').describe()
+image_name_question[['imaging_device','image_name']].groupby('imaging_device').describe()
 
 
 # ### Do the actual pre processing
 # Note:  
 # This might take a while...
 
-# In[13]:
+# In[14]:
 
 
 # # # # RRR
@@ -178,7 +147,7 @@ image_name_question.groupby('group').describe()
 
 
 
-# In[14]:
+# In[15]:
 
 
 logger.debug('----===== Preproceccing train data =====----')
@@ -187,7 +156,7 @@ with VerboseTimer("Pre processing training data"):
     image_name_question_processed = pre_process_raw_data(image_name_question)
 
 
-# In[15]:
+# In[16]:
 
 
 # logger.debug('----===== Preproceccing validation data =====----')
@@ -198,22 +167,7 @@ with VerboseTimer("Pre processing training data"):
 
 # #### Saving the data, so later on we don't need to compute it again
 
-# In[16]:
-
-
-def get_vqa_specs(meta_data):    
-    dim = embedding_dim
-    s_length = seq_length    
-    return VqaSpecs(embedding_dim=dim, seq_length=s_length, data_location=data_location,meta_data=meta_data)
-
-vqa_specs = get_vqa_specs(meta_data)
-
-# Show waht we got...
-s = str(vqa_specs)
-s[:s.index('meta_data=')+10]
-
-
-# In[17]:
+# In[19]:
 
 
 logger.debug("Saving the data")
@@ -233,26 +187,13 @@ with VerboseTimer("Saving model training data"):
         store['data']  = image_name_question_processed[(image_name_question_processed.group == 'train') | (image_name_question_processed.group == 'validation')]
         store['test']  = image_name_question_processed[image_name_question_processed.group == 'test']
         
-        
-        
-
 size = get_size(data_location)
 logger.debug(f"training data's file size was: {size}")
 
 
-# item_to_save.to_hdf(vqa_specs.data_location, key='df')    
-# logger.debug(f"Saved to {vqa_specs.data_location}")
+# In[20]:
 
 
-# In[18]:
-
-
-File.dump_pickle(vqa_specs, data_location)
-logger.debug(f"VQA Specs saved to:\n{vqa_specs_location}")
-
-
-# In[19]:
-
-
-print (f"vqa_specs_location = '{vqa_specs_location}'".replace('\\','\\\\'))
+print('Data saved at:')
+f'{data_location}'
 

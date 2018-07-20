@@ -5,8 +5,8 @@ from vqa_logger import logger
 nlp=None
 
 # How do we classify?-----------------------------------------------------------------------------
-# classify_strategy = ClassifyStrategies.CATEGORIAL
-classify_strategy = ClassifyStrategies.NLP
+classify_strategy = ClassifyStrategies.CATEGORIAL
+# classify_strategy = ClassifyStrategies.NLP
 
 
 def get_stratagy_str():
