@@ -1,4 +1,4 @@
-
+from keras.applications import resnet50
 # coding: utf-8
 
 # In[1]:

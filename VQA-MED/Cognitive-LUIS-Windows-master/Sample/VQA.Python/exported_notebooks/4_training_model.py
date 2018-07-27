@@ -3,10 +3,10 @@
 
 # ### Training the model
 
-# In[1]:
+# In[16]:
 
 
-model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180720_1155_22\\vqa_model_CATEGORIAL.h5'
+model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180727_0929_52\\vqa_model_CATEGORIAL.h5'
 strategy_str = 'CATEGORIAL'
 # model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180720_0837_03\\vqa_model_NLP.h5'
 # strategy_str = 'NLP'
@@ -14,7 +14,7 @@ strategy_str = 'CATEGORIAL'
 
 # ### Preparing the data for training
 
-# In[2]:
+# In[ ]:
 
 
 # %%capture
@@ -23,13 +23,15 @@ import numpy as np
 from pandas import HDFStore
 from vqa_logger import logger 
 from enum import Enum
-from keras.models import load_model
-from keras.utils import to_categorical
 
 from functools import partial
 
+from keras.models import load_model
+from keras.utils import to_categorical
+from keras import backend as keras_backend
 
-# In[12]:
+
+# In[ ]:
 
 
 from common.constatns import data_location, vqa_models_folder, vqa_specs_location #train_data, validation_data, 
@@ -42,7 +44,7 @@ from common.os_utils import File
 
 # #### Loading the Model:
 
-# In[4]:
+# In[19]:
 
 
 with VerboseTimer("Loading Model"):
@@ -51,7 +53,7 @@ with VerboseTimer("Loading Model"):
 
 # #### Loading the data:
 
-# In[5]:
+# In[20]:
 
 
 logger.debug(f"Loading the data from {data_location}")
@@ -60,7 +62,7 @@ with VerboseTimer("Loading Data"):
         df_data = store['data']  
 
 
-# In[6]:
+# In[21]:
 
 
 logger.debug(f"df_data Shape: {df_data.shape}")
@@ -69,7 +71,7 @@ df_data.head(2)
 
 # #### Packaging the data to be in expected input shape
 
-# In[7]:
+# In[22]:
 
 
 data_train = df_data[df_data.group == 'train']
@@ -81,7 +83,7 @@ data_val = df_data[df_data.group == 'validation']
 # data_val.head()
 
 
-# In[57]:
+# In[23]:
 
 
 def concate_row(df, col):
@@ -100,7 +102,7 @@ def get_features(df):
 
 # #### Defining how to get NLP labels
 
-# In[58]:
+# In[24]:
 
 
 def get_nlp_labels():
@@ -110,7 +112,7 @@ def get_nlp_labels():
 
 # #### Defining how to get Categorial fetaures / labels
 
-# In[59]:
+# In[25]:
 
 
 def get_categorial_labels(df, meta):
@@ -138,7 +140,7 @@ def get_categorial_labels(df, meta):
 # del df_val
 
 
-# In[60]:
+# In[26]:
 
 
 if classify_strategy == ClassifyStrategies.CATEGORIAL:
@@ -168,13 +170,13 @@ with VerboseTimer('Getting validation labels'):
 # len(features_t[1])
 
 
-# In[61]:
+# In[27]:
 
 
 validation_input = (features_val, labels_val)
 
 
-# In[62]:
+# In[28]:
 
 
 # model.input_layers
@@ -201,12 +203,22 @@ print(f'Actual Validation shape:{features_val[0].shape, features_val[1].shape}')
 print(f'Validation Labels shape:{labels_val.shape}')
 
 
+# In[29]:
+
+
+# from utils.gpu_utils import test_gpu
+# test_gpu()
+
+
 # In[ ]:
 
 
 from keras.utils import plot_model
-EPOCHS=25
-BATCH_SIZE = 20
+# EPOCHS=25
+# BATCH_SIZE = 10
+
+EPOCHS=10
+BATCH_SIZE = 10
 
 # train_features = image_name_question
 # validation_input = (validation_features, categorial_validation_labels)
@@ -229,11 +241,29 @@ try:
 #                                   class_weight=class_weight
 #                                   )
     # verbose: Integer. 0, 1, or 2. Verbosity mode. 0 = silent, 1 = progress bar, 2 = one line per epoch.
+
+
+    import tensorflow as tf
+    import keras.backend.tensorflow_backend as ktf
+
+
+    def get_session(gpu_fraction=0.333):
+        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=gpu_fraction,allow_growth=True)
+        return tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
+
+
+    
+
     with VerboseTimer("Training Model"):
-        history = model.fit(features_t,labels_t,
-                            epochs=EPOCHS,
-                            batch_size=BATCH_SIZE,
-                            validation_data=validation_input)
+        with get_session() as sess:
+            ktf.set_session(sess)
+            sess.run(tf.global_variables_initializer())
+            
+            history = model.fit(features_t,labels_t,
+                                epochs=EPOCHS,
+                                batch_size=BATCH_SIZE,
+                                validation_data=validation_input)
+            
 except Exception as ex:
     logger.error("Got an error training model: {0}".format(ex))
 #     model.summary(print_fn=logger.error)
