@@ -17,14 +17,14 @@ model_dal = get_model(model_id)
 model_dal
 
 
-# In[1]:
+# In[3]:
 
 
 #From Step #2:
 vqa_specs_location = 'C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\Cognitive-LUIS-Windows-master\\Sample\\VQA.Python\\data\\vqa_specs.pkl'
 
 
-# In[3]:
+# In[4]:
 
 
 model_location = model_dal.model_location
@@ -32,7 +32,7 @@ model_location
 # model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180629_1220_23\\vqa_model_ClassifyStrategies.NLP_trained.h5'
 
 
-# In[3]:
+# In[5]:
 
 
 # %%capture
@@ -45,7 +45,7 @@ import IPython
 from keras.models import load_model
 
 
-# In[4]:
+# In[6]:
 
 
 from common.constatns import images_path_test
@@ -56,14 +56,14 @@ from vqa_logger import logger
 from common.os_utils import File 
 
 
-# In[5]:
+# In[7]:
 
 
 with VerboseTimer("Loading Model"):
     model = load_model(model_location)
 
 
-# In[6]:
+# In[8]:
 
 
 vqa_specs = File.load_pickle(vqa_specs_location)
@@ -71,14 +71,14 @@ data_location = vqa_specs.data_location
 data_location
 
 
-# In[7]:
+# In[9]:
 
 
 code = get_highlited_function_code(normalize_data_strucrture,remove_comments=True)
 IPython.display.display(code)
 
 
-# In[8]:
+# In[10]:
 
 
 logger.debug(f"Loading test data from {data_location}")
@@ -87,19 +87,15 @@ with VerboseTimer("Loading Test Data"):
         df_data = store['test']
 
 
-# In[9]:
+# In[16]:
 
 
-df_data.head()
+df_data.head(2)
 
 
-# In[11]:
+# ## TODO: Duplicate:
 
-
-#TODO: Duplicate:
-
-
-# In[21]:
+# In[12]:
 
 
 def concate_row(df, col):
@@ -110,26 +106,80 @@ def get_features_and_labels(df):
     # np.concatenate(image_features['question_embedding'], axis=0).shape
     question_features = concate_row(df, 'question_embedding') 
 
-    features = ([f for f in [question_features, image_features]])
-    labels = None# concate_row(df, 'answer_embedding')
-    return features, labels
+    reshaped_q = np.array([a.reshape(a.shape + (1,)) for a in question_features])
+    
+    features = ([f for f in [reshaped_q, image_features]])    
+    
+    return features
+    
+    
 
 
-# In[22]:
+# In[13]:
 
 
-features, _ = get_features_and_labels(df_data)
+features = get_features_and_labels(df_data)
 
 
-# In[25]:
+# In[14]:
 
 
 
 p = model.predict(features)
 
 
-# In[26]:
+# In[15]:
 
 
 p
+
+
+# In[21]:
+
+
+predictions = [np.argmax(a, axis=None, out=None) for a in p]
+predictions[:10]
+
+
+# In[29]:
+
+
+meta_data = vqa_specs.meta_data
+ix_to_img_device = meta_data['ix_to_img_device']
+results = [ix_to_img_device[i] for i in predictions]
+results[:10]
+
+list(zip(df_data.image_name.values, results))[:10]
+
+
+# In[79]:
+
+
+# from IPython.core.interactiveshell import InteractiveShell
+# InteractiveShell.ast_node_interactivity = "all"
+idx = 42
+image_names = df_data.image_name.values
+image_name = image_names[idx]
+
+print(f'Result: {results[idx]}')
+idxs = [index for index, value in enumerate(image_names) if value == image_name]
+all_results_for_image = {results[idx] for idx in idxs}
+print(f'All results for image: {results[idx]}')
+print('DataFrame:')
+      
+df_image = df_data[df_data.image_name==image_name]
+
+len(image_path)
+image_path = df_image['path'].values[0]
+
+
+df_mini = df_image[['question','answer']]
+df_mini
+
+
+# In[80]:
+
+
+from IPython.display import Image
+Image(filename = image_path, width=400, height=400)
 
