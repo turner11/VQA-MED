@@ -1,4 +1,4 @@
-from keras.applications import resnet50
+
 # coding: utf-8
 
 # In[1]:
@@ -29,6 +29,7 @@ from common.constatns import vqa_models_folder, vqa_specs_location
 
 
 DEFAULT_IMAGE_WIEGHTS = 'imagenet'
+
 #  Since VGG was trained as a image of 224x224, every new image
 # is required to go through the same transformation
 image_size_by_base_models = {'imagenet': (224, 224)}
@@ -85,36 +86,36 @@ keras_backend.clear_session()
 
 #  Input 0 is incompatible with layer lstm_1: expected ndim=3, found ndim=2
 # Input 0 is incompatible with layer embbeding_LSTM_1: expected ndim=3, found ndim=2
+from keras.layers import Flatten, LSTM, BatchNormalization
 def word_2_vec_model(input_tensor):
         #print(dir(input_tensor))
-        print('---------------------------------------------')
-        print(input_tensor.get_shape())
-        print('---------------------------------------------')
-        print(input_tensor.shape)
-        print('---------------------------------------------')
-        print(embedded_sentence_length)
-        print('---------------------------------------------')
-        # return
-        # notes:
-        # num works: scalar represents size of original corpus
-        # embedding_dim : dim reduction. every input string will be encoded in a binary fashion using a vector of this length
-        # embedding_matrix (AKA embedding_initializers): represents a pre trained network
+#         print('---------------------------------------------')
+#         print('Tensor shape: {0}'.format(input_tensor.get_shape()))
+#         print('---------------------------------------------')
+#         print(input_tensor.shape)
+#         print('---------------------------------------------')
+#         print('embedded_sentence_length: {0}'.format(embedded_sentence_length))
+#         print('---------------------------------------------')
+#         return
+        
+        
 
-        LSTM_UNITS = 512
-        DENSE_UNITS = 1024
+        LSTM_UNITS = 256 # 512
+        DENSE_UNITS = 256
         DENSE_ACTIVATION = 'relu'
         
         logger.debug("Creating Embedding model")
         x= input_tensor # Since using spacy
+ 
+        x = LSTM(units=LSTM_UNITS, return_sequences=False, name='embbeding_LSTM',  input_shape=(1,embedded_sentence_length))(x)
+        x = BatchNormalization(name='embbeding_batch_normalization')(x)
         
-        # x = Embedding(num_words, embedding_dim, weights=[embedding_matrix], input_length=seq_length,trainable=False)(input_tensor)
-        # x = LSTM(units=LSTM_UNITS, return_sequences=True, input_shape=(seq_length, embedding_dim))(x)
-        x = LSTM(units=LSTM_UNITS, return_sequences=True, name='embbeding_LSTM_1',  input_shape=(1,embedded_sentence_length))(x)
-        x = BatchNormalization(name='embbeding_batch_normalization_1')(x)
-        x = LSTM(units=LSTM_UNITS, return_sequences=False, name='embbeding_LSTM_2')(x)
-        x = BatchNormalization(name='embbeding_batch_normalization_2')(x)
+#         x = LSTM(units=LSTM_UNITS, return_sequences=True, name='embbeding_LSTM_1',  input_shape=(1,embedded_sentence_length))(x)
+#         x = BatchNormalization(name='embbeding_batch_normalization_1')(x)
+#         x = LSTM(units=LSTM_UNITS, return_sequences=False, name='embbeding_LSTM_2')(x)
+#         x = BatchNormalization(name='embbeding_batch_normalization_2')(x)
         
-        x = Dense(units=DENSE_UNITS, activation=DENSE_ACTIVATION)(x)
+#         x = Dense(units=DENSE_UNITS, activation=DENSE_ACTIVATION)(x)
         model = x
         logger.debug("Done Creating Embedding model")
         return model
@@ -126,12 +127,14 @@ def word_2_vec_model(input_tensor):
 
 
 from keras.applications.vgg19 import VGG19
+from keras.applications.resnet50 import ResNet50
+
 from keras.layers import Dense, GlobalAveragePooling2D#, Input, Dropout
 def get_image_model(base_model_weights=DEFAULT_IMAGE_WIEGHTS, out_put_dim=1024):
     base_model_weights = base_model_weights
 
-    # base_model = VGG19(weights=base_model_weights,include_top=False)
-    base_model = VGG19(weights=base_model_weights, include_top=False)
+    base_model = VGG19(weights=base_model_weights,include_top=False)
+#     base_model = ResNet50(weights=base_model_weights, include_top=False)
     base_model.trainable = False
     for layer in base_model.layers:
         layer.trainable = False
@@ -139,10 +142,9 @@ def get_image_model(base_model_weights=DEFAULT_IMAGE_WIEGHTS, out_put_dim=1024):
     x = base_model.output
     # add a global spatial average pooling layer
     x = GlobalAveragePooling2D(name="image_model_average_pool")(x)
-    # let's add a fully-connected layer
-    x = Dense(out_put_dim, activation='relu',name="image_model_dense")(x)
-    # and a logistic layer -- let's say we have 200 classes
-    # predictions = Dense(200, activation='softmax')(x)
+    
+    # x = Dense(out_put_dim, activation='relu',name="image_model_dense")(x)
+    
     model = x
     
     return base_model.input , model
@@ -169,13 +171,13 @@ logger.debug(f'Model will have {model_output_num_units} output units (Strategy: 
 
 from keras import Model, models, Input, callbacks
 from keras.utils import plot_model, to_categorical
-from keras.layers import Dense, Embedding, LSTM, BatchNormalization#, GlobalAveragePooling2D, Merge, Flatten
+from keras.layers import Dense, Embedding, LSTM, BatchNormalization, Activation, Flatten#, GlobalAveragePooling2D, Merge, Flatten
 
 def get_vqa_model(meta):
 #     import tensorflow as tf
 #     g = tf.Graph()
 #     with g.as_default():
-    DENSE_UNITS = 1000
+    DENSE_UNITS = 256
     DENSE_ACTIVATION = 'relu'
 
     OPTIMIZER = 'rmsprop'
@@ -198,9 +200,10 @@ def get_vqa_model(meta):
 
         logger.debug("merging final model")
         fc_tensors = merge_strategy(inputs=[image_model, lstm_model])
+#         fc_tensors = BatchNormalization()(fc_tensors)
+        fc_tensors = Dense(units=DENSE_UNITS)(fc_tensors)
         fc_tensors = BatchNormalization()(fc_tensors)
-        fc_tensors = Dense(units=DENSE_UNITS, activation=DENSE_ACTIVATION)(fc_tensors)
-        fc_tensors = BatchNormalization()(fc_tensors)
+        fc_tensors = Activation(DENSE_ACTIVATION)(fc_tensors)
 
         #ATTN:
         fc_tensors = Dense(units=model_output_num_units, activation='softmax', name='model_output_sofmax_dense')(fc_tensors)
@@ -226,12 +229,13 @@ model = get_vqa_model(meta_data)
 model
 
 
-# We better save it:
+# ##### We better save it:
 
 # In[13]:
 
 
 strategy_str = get_stratagy_str()
+
 
 model_fn, summary_fn, fn_image = save_model(model, vqa_models_folder, name_suffix=strategy_str)
 
@@ -244,7 +248,7 @@ print(msg)
 print (location_message)
 
 
-# Display a plot + summary:
+# ##### Display a plot + summary:
 
 # In[14]:
 
@@ -271,7 +275,7 @@ model.summary()
 # In[15]:
 
 
-logger.debug('Done')
+# logger.debug('Done')
 print(location_message.replace('\\', '\\\\'))
 print(f'strategy_str = \'{strategy_str}\'')
 

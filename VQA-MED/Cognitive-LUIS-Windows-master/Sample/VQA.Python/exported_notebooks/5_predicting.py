@@ -4,14 +4,32 @@
 # In[1]:
 
 
-#From Step #2:
-vqa_specs_location = 'C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\Cognitive-LUIS-Windows-master\\Sample\\VQA.Python\\data\\vqa_specs.pkl'
+from common.DAL import get_models_data_frame, get_model
+df_models = get_models_data_frame()
+df_models.head()
 
 
 # In[2]:
 
 
-model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180629_1220_23\\vqa_model_ClassifyStrategies.NLP_trained.h5'
+model_id = 1
+model_dal = get_model(model_id)
+model_dal
+
+
+# In[1]:
+
+
+#From Step #2:
+vqa_specs_location = 'C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\Cognitive-LUIS-Windows-master\\Sample\\VQA.Python\\data\\vqa_specs.pkl'
+
+
+# In[3]:
+
+
+model_location = model_dal.model_location
+model_location
+# model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180629_1220_23\\vqa_model_ClassifyStrategies.NLP_trained.h5'
 
 
 # In[3]:

@@ -6,10 +6,16 @@
 # In[16]:
 
 
-model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180727_0929_52\\vqa_model_CATEGORIAL.h5'
+model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180730_0648_46\\vqa_model_CATEGORIAL.h5'
 strategy_str = 'CATEGORIAL'
-# model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180720_0837_03\\vqa_model_NLP.h5'
-# strategy_str = 'NLP'
+
+# model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180728_2248_02\\vqa_model_CATEGORIAL.h5'
+# strategy_str = 'CATEGORIAL'
+
+# ## Resnet 50: 
+# trained_model_location = 'C:\Users\Public\Documents\Data\2018\vqa_models\20180730_0524_48\vqa_model_ClassifyStrategies.CATEGORIAL_trained.h5'
+# loss: 0.1248 - acc: 0.9570 - val_loss: 2.7968 - val_acc: 0.5420
+# Training Model: 12:22:54.619203                
 
 
 # ### Preparing the data for training
@@ -215,10 +221,10 @@ print(f'Validation Labels shape:{labels_val.shape}')
 
 from keras.utils import plot_model
 # EPOCHS=25
-# BATCH_SIZE = 10
+# BATCH_SIZE = 20
 
-EPOCHS=10
-BATCH_SIZE = 10
+EPOCHS= 5
+BATCH_SIZE = 30
 
 # train_features = image_name_question
 # validation_input = (validation_features, categorial_validation_labels)
@@ -255,19 +261,20 @@ try:
     
 
     with VerboseTimer("Training Model"):
-        with get_session() as sess:
-            ktf.set_session(sess)
-            sess.run(tf.global_variables_initializer())
+#         with get_session() as sess:
+#             ktf.set_session(sess)
+#             sess.run(tf.global_variables_initializer())
             
-            history = model.fit(features_t,labels_t,
-                                epochs=EPOCHS,
-                                batch_size=BATCH_SIZE,
-                                validation_data=validation_input)
+        history = model.fit(features_t,labels_t,
+                            epochs=EPOCHS,
+                            batch_size=BATCH_SIZE,
+                            validation_data=validation_input)
+#             sess.close()
             
 except Exception as ex:
     logger.error("Got an error training model: {0}".format(ex))
 #     model.summary(print_fn=logger.error)
-    raise
+#     raise
 # return model, history
 
 

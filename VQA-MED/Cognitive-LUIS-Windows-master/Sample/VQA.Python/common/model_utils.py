@@ -21,7 +21,7 @@ def _print_model_summary_to_file(fn, model):
         model.summary(print_fn=lambda x: fh.write(x + '\n'))
 
 
-def save_model(model, base_folder, name_suffix=""):
+def save_model(model, base_folder, name_suffix="", history=None):
     ts = _get_time_stamp()
 
     now_folder = os.path.abspath('{0}\\{1}\\'.format(base_folder, ts))
@@ -29,6 +29,7 @@ def save_model(model, base_folder, name_suffix=""):
     model_fn = os.path.join(now_folder, model_name)
     model_image_fn = os.path.join(now_folder, 'model_vqa.png')
     summary_fn = os.path.join(now_folder, 'model_summary.txt')
+    history_fn = os.path.join(now_folder, 'model_history.pkl')
     logger.debug("saving model to: '{0}'".format(model_fn))
 
     fn_image = os.path.join(now_folder, 'model.png')
@@ -59,4 +60,12 @@ def save_model(model, base_folder, name_suffix=""):
     #     logger.debug("Done Plotting")
     except Exception as ex:
         logger.warning("{0}".format(ex))
+
+    if history:
+        try:
+            logger.debug("Saving History")
+            File.dump_pickle(history,history_fn )
+            logger.debug("History saved to '{0}'".format(history_fn))
+        except Exception as ex:
+            logger.warning("Failed to write history:\n{0}".format(ex))
     return model_fn, summary_fn, fn_image
