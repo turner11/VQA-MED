@@ -11,7 +11,7 @@ import pandas as pd
 from common.utils import VerboseTimer
 
 ERROR_KEY = "error"
-df_path = 'C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\Cognitive-LUIS-Windows-master\\Sample\\VQA.Python\\data\\model_input.h5'
+df_path = 'C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\data\\model_input.h5'
 print(f'Loading data from \n"{df_path}"')
 with VerboseTimer('Loading Data'):
     with pd.HDFStore(df_path) as store:

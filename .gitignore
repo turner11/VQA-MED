@@ -320,3 +320,6 @@ VQA-MED/VQA.Python/exported_notebooks/Test.py
 VQA-MED/VQA.Python/data/raw_data.h5
 VQA-MED/VQA.Python/data/meta_data.json
 VQA-MED/VQA.WPF/VQA.GUI/images/*
+VQA-MED/VQA.Python/.idea/*
+VQA-MED/VQA.Python/data/model_input.h5
+.idea/*
