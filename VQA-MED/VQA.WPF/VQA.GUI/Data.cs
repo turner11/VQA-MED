@@ -21,6 +21,7 @@ namespace SDKSamples.ImageSample
             this._source = null;
             this._image = null;
             this._metadata = null;
+            this.image_name = new FileInfo(path).Name;
         }
 
         public override string ToString()
@@ -49,13 +50,24 @@ namespace SDKSamples.ImageSample
             get
             {
                 if (this._image == null)
-                    this._image = BitmapFrame.Create(Source);
+                    try
+                    {
+                        this._image = BitmapFrame.Create(Source);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        Debug.WriteLine($"Failed to create image for '{this.Path}'");
+                        this._image = null;
+                    }
                 return _image;
             }
             set { _image = value; }
         }
 
         private ExifMetadata _metadata;
+
+        public readonly string image_name;
+
         public ExifMetadata Metadata
         {
             get
@@ -196,8 +208,17 @@ namespace SDKSamples.ImageSample
 
         public ExifMetadata(Uri imageUri)
         {
-            BitmapFrame frame = BitmapFrame.Create(imageUri, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
-            _metadata = (BitmapMetadata)frame.Metadata;
+            try
+            {
+                BitmapFrame frame = BitmapFrame.Create(imageUri, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
+                _metadata = (BitmapMetadata)frame.Metadata;
+            }
+            catch (ArgumentException ex)
+            {
+                Debug.WriteLine($"Failed to create meta data for '{imageUri.AbsolutePath}'");
+                
+            }
+            
 
         }
 
@@ -213,10 +234,11 @@ namespace SDKSamples.ImageSample
 
         private object QueryMetadata(string query)
         {
-            if (_metadata.ContainsQuery(query))
-                return _metadata.GetQuery(query);
-            else
+            if (_metadata == null || !_metadata.ContainsQuery(query))
                 return null;
+            
+            return _metadata.GetQuery(query);
+            
         }
 
         public uint? Width
@@ -531,11 +553,11 @@ namespace SDKSamples.ImageSample
         public string PixelMaps { get; private set; }
         public string PythonHandler { get; private set; }
 
-        public VqaData(string description, string images, string captions, string pixelMaps, string pythonHandler)
+        public VqaData(string description, string images, string dataFile, string pixelMaps, string pythonHandler)
         {
             this.Description = description;
             this.Images = images;
-            this.Captions = captions;
+            this.Captions = dataFile;
             this.PixelMaps = pixelMaps;
             this.PythonHandler = pythonHandler;
         }

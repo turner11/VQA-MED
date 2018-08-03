@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace VQA.Logic
 {
@@ -77,20 +78,42 @@ namespace VQA.Logic
             Dictionary<string, object>  values = null;
             if (!String.IsNullOrWhiteSpace(option) && !String.IsNullOrWhiteSpace(value))
             {
+                string error_message = null;
+                string rawData = "";
                 try
                 {
                     var args = $"-{option} \"{value}\"";
-                    var rawData = await ExecutePython(args);
-                    values = JsonConvert.DeserializeObject<Dictionary<string, object>>(rawData);
-                    //var valuesAAAA = JsonConvert.DeserializeObject<Dictionary<string, string>>(rawData);
+                    rawData = await ExecutePython(args);
+                    var json_pattern = @"\{(.|\s)*\}";
+                    var re = new Regex(json_pattern);
+                    var match = re.Match(rawData);
+                    if (match.Success)
+                    {
+                        //new List<int>().FirstOrDefault
+                        var json = match.Groups[0].Value;
+                        //var cleanJson = json.Replace("\\\"", "\"");
+                        values = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
+                    }
+                    else
+                    {
+                        error_message = String.IsNullOrWhiteSpace(rawData)?
+                                "Got an Empty response":
+                                $"Failed to get match for: {rawData}";
+                    }
+                    
+                    
                 }
                 catch (Exception e)
                 {
-
-                    values = new Dictionary<string, object>() { { ERROR_KEY, $"Got an error while quering python:\n{e}" } };
+                    error_message = $"Got an error while quering python:\n{e}";
+                    // 
+                    if (!String.IsNullOrWhiteSpace(rawData) )
+                        error_message += $"\n\nRaw Data:\n{rawData}";
                 }
 
-               
+                values = values ?? new Dictionary<string, object>() { { ERROR_KEY, error_message ?? "Unknown Error"} };
+
+
 
             }
 
@@ -139,16 +162,12 @@ namespace VQA.Logic
             // p.WaitForExit();
             // Read the output stream first and then wait.
             string output = await Task.Run(() => p.StandardOutput.ReadToEnd().Trim());
-            if (String.IsNullOrWhiteSpace(output))
-            {
-                Debug.Print($"Got an empty output for \n{p.StartInfo.FileName} {p.StartInfo.Arguments}");
-
-            }
             p.WaitForExit();
 
             if (String.IsNullOrWhiteSpace(output))
             {
-                Debug.WriteLine(String.Format("Got an ampty responce for:\n{0}",argStr));
+                Debug.Print($"Got an empty output for \n{p.StartInfo.FileName} {p.StartInfo.Arguments}");
+                Debug.WriteLine(String.Format("Args were:\n{0}",argStr));
             }
             return output;
         }
