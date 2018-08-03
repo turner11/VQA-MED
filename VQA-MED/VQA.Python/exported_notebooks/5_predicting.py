@@ -17,11 +17,11 @@ model_dal = get_model(model_id)
 model_dal
 
 
-# In[3]:
+# In[10]:
 
 
 #From Step #2:
-vqa_specs_location = 'C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\Cognitive-LUIS-Windows-master\\Sample\\VQA.Python\\data\\vqa_specs.pkl'
+vqa_specs_location = 'C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\data\\vqa_specs.pkl'
 
 
 # In[4]:
@@ -63,7 +63,7 @@ with VerboseTimer("Loading Model"):
     model = load_model(model_location)
 
 
-# In[8]:
+# In[11]:
 
 
 vqa_specs = File.load_pickle(vqa_specs_location)
@@ -71,14 +71,14 @@ data_location = vqa_specs.data_location
 data_location
 
 
-# In[9]:
+# In[12]:
 
 
 code = get_highlited_function_code(normalize_data_strucrture,remove_comments=True)
 IPython.display.display(code)
 
 
-# In[10]:
+# In[ ]:
 
 
 logger.debug(f"Loading test data from {data_location}")
@@ -87,7 +87,7 @@ with VerboseTimer("Loading Test Data"):
         df_data = store['test']
 
 
-# In[16]:
+# In[ ]:
 
 
 df_data.head(2)
@@ -95,7 +95,7 @@ df_data.head(2)
 
 # ## TODO: Duplicate:
 
-# In[12]:
+# In[14]:
 
 
 def concate_row(df, col):
@@ -115,33 +115,33 @@ def get_features_and_labels(df):
     
 
 
-# In[13]:
+# In[ ]:
 
 
 features = get_features_and_labels(df_data)
 
 
-# In[14]:
+# In[ ]:
 
 
 
 p = model.predict(features)
 
 
-# In[15]:
+# In[ ]:
 
 
 p
 
 
-# In[21]:
+# In[ ]:
 
 
 predictions = [np.argmax(a, axis=None, out=None) for a in p]
 predictions[:10]
 
 
-# In[29]:
+# In[ ]:
 
 
 meta_data = vqa_specs.meta_data
@@ -152,7 +152,7 @@ results[:10]
 list(zip(df_data.image_name.values, results))[:10]
 
 
-# In[79]:
+# In[ ]:
 
 
 # from IPython.core.interactiveshell import InteractiveShell
@@ -169,7 +169,6 @@ print('DataFrame:')
       
 df_image = df_data[df_data.image_name==image_name]
 
-len(image_path)
 image_path = df_image['path'].values[0]
 
 
@@ -177,7 +176,7 @@ df_mini = df_image[['question','answer']]
 df_mini
 
 
-# In[80]:
+# In[ ]:
 
 
 from IPython.display import Image

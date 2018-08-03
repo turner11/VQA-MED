@@ -13,7 +13,7 @@ images_folder_validation = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018
 # The location to dump models to
 vqa_models_folder  = "C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models"
 
-_DB_FILE_LOCATION = 'C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\Cognitive-LUIS-Windows-master\\Sample\\VQA.Python\\models.db'
+_DB_FILE_LOCATION = 'C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\models.db'
 
 # -----------------------------------------------------------------------------
 
