@@ -36,7 +36,7 @@ def get_image_data(image_name, dataframe_path=df_path):
     return json_ret
 
 if __name__ == "__main__":
-    # image = '0392-100X-31-109-g001.jpg'
+    # image = '0392-100X-33-350-g002.jpg' #'0392-100X-31-109-g001.jpg'
     # ret_val = get_image_data(image)
     # print(ret_val)
     if True:

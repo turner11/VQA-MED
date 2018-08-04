@@ -323,3 +323,4 @@ VQA-MED/VQA.WPF/VQA.GUI/images/*
 VQA-MED/VQA.Python/.idea/*
 VQA-MED/VQA.Python/data/model_input.h5
 .idea/*
+VQA-MED/VQA.Python/data/vqa_specs.pkl
