@@ -17,14 +17,15 @@ df_path = 'C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\da
 #     with pd.HDFStore(df_path) as store:
 #         df_data = store['data']
 
-
+result_columns = ['image_name', 'question', 'answer', 'imaging_device']
 def get_image_data(image_name, dataframe_path=None):
     try:
         dataframe_path = dataframe_path or df_path
         df_ret = pd.read_hdf(dataframe_path, key='light', where=[f'image_name="{image_name}"'])
 
+
         # df_ret = df_data[df_data.image_name == image_name]
-        df_ret = df_ret[['image_name','question', 'answer', 'imaging_device']]
+        df_ret = df_ret[result_columns]
         json_ret = df_ret.to_json(orient='columns')
 
 
