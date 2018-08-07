@@ -12,39 +12,22 @@ namespace Utils
     {
         public static void Main()
         {
+            start:
+            PythonQueryProxy p = PythonQueryProxy.Factory();
 
-            var p = new PythonQueryProxy();
+            string imageName = "0392-100X-33-350-g002.jpg";
+            var res = p.GetImageData(imageName);
+            
 
-            var dataframe_path = "C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\data\\model_input.h5".Replace(@"\", @"\\");
-            var res = p.AddCommand($"get_image_data(image_name='{"0392-100X-33-350-g002.jpg"}', dataframe_path='{dataframe_path}')");
-            Debug.Write(res);
+            Debug.WriteLine("------------------------------------------------------");
+            foreach (var pair in res)
+                Debug.WriteLine("{0}:\n\n{1}", pair.Key, pair.Value);
+            Debug.WriteLine("------------------------------------------------------");
 
-            //p.AddCommand($"get_image_data(image_name='{"0392-100X-33-350-g002.jpg"}')");
-            //p.AddCommand($"print('hello')");
-
-            //var printCmd = $"print('{dataframe_path}')";
-            //p.AddCommand(printCmd); 
-
-            while (true)
-            {
-                Thread.Sleep(1000);
-            }
+            
+            p.Dispose();
+            goto start;
             return;
-            var w = new PythonPredictor();
-            //w.AddCommand("print(os.getcwd())");
-            w.AddCommand("print(sys.path)");
-
-            //w.AddCommand("add(1,0)");
-            //w.AddCommand("predict(2)");
-            //w.AddCommand("add(3)");
-
-            //w.AddCommand("add(3,1)");
-            //w.AddCommand("add(0,5)");
-
-            Thread.Sleep(500);
-            //w.Dispose();
-
-
 
         }
     }

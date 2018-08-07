@@ -18,8 +18,9 @@ df_path = 'C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\da
 #         df_data = store['data']
 
 
-def get_image_data(image_name, dataframe_path=df_path):
+def get_image_data(image_name, dataframe_path=None):
     try:
+        dataframe_path = dataframe_path or df_path
         df_ret = pd.read_hdf(dataframe_path, key='light', where=[f'image_name="{image_name}"'])
 
         # df_ret = df_data[df_data.image_name == image_name]
@@ -39,7 +40,7 @@ if __name__ == "__main__":
     # image = '0392-100X-33-350-g002.jpg' #'0392-100X-31-109-g001.jpg'
     # ret_val = get_image_data(image)
     # print(ret_val)
-    if True:
+    if False:
         parser = argparse.ArgumentParser(description='Extracts caption for a COCO image.')
         parser.add_argument('-p', dest='df_path', help='path of data frame',default=None)
         parser.add_argument('-n', dest='image_name', help='name_of_image')

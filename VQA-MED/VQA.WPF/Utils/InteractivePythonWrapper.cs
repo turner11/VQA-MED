@@ -12,18 +12,20 @@ using System.Threading.Tasks;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Text.RegularExpressions;
+using Newtonsoft.Json;
 
 namespace Utils
 {
-    public abstract class InteractivePythonWrapper:IDisposable
+    public abstract class InteractivePythonWrapper : IDisposable
     {
-        private const string PYTHON_INTERP_PATH = @"C:\local\Anaconda3-4.1.1-Windows-x86_64\envs\conda_env\python.exe";
+        const string ERROR_KEY = "error";
 
         private readonly string _script;
         private readonly string _interpeter;
         public string _workDir { get; }
 
-        
+
         private readonly Object _lockObject = new Object();
         private bool _exit;
 
@@ -35,7 +37,8 @@ namespace Utils
 
         private readonly ObservableCollection<string> _commands = new ObservableCollection<string>();
         private readonly ObservableCollection<string> _responces = new ObservableCollection<string>();
-        private ObservableCollection<string> _safeCommands {
+        private ObservableCollection<string> _safeCommands
+        {
             get
             {
                 lock (this._lockObject)
@@ -50,7 +53,7 @@ namespace Utils
 
 
 
-        public InteractivePythonWrapper(string script, string interpeter=null, string workingDir=null)
+        public InteractivePythonWrapper(string script, string interpeter = null, string workingDir = null)
         {
             FileInfo fi = new FileInfo(script);
             if (!fi.Exists)
@@ -58,7 +61,7 @@ namespace Utils
 
             this._script = script;
             this._workDir = workingDir ?? fi.Directory.FullName;
-            this._interpeter = interpeter ?? PYTHON_INTERP_PATH; //new DirectoryInfo(Path.GetDirectoryName(this._script)).Parent.FullName;
+            this._interpeter = interpeter ?? "python"; //new DirectoryInfo(Path.GetDirectoryName(this._script)).Parent.FullName;
 
             this._outputDataReceived += InteractivePythonWrapper__outputDataReceived;
             this._errorDataReceived += InteractivePythonWrapper__errorDataReceived;
@@ -78,7 +81,7 @@ namespace Utils
 
         private void _responces_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            if (e.Action == NotifyCollectionChangedAction.Add )
+            if (e.Action == NotifyCollectionChangedAction.Add)
             {
                 this._signalGotResponceEvent.Set();
             }
@@ -109,7 +112,7 @@ namespace Utils
             Directory.SetCurrentDirectory(this._workDir);
         }
 
-        public string AddCommand(string cmd)
+        protected virtual string ExecutePythonCommand(string cmd)
         {
             this._safeCommands.Add(cmd);
             this._signalGotResponceEvent.WaitOne();
@@ -121,7 +124,52 @@ namespace Utils
                 this._responces.RemoveAt(0);
             }
             return res;
-            
+
+        }
+
+        protected static string ResponceToJson(string responce)
+        {
+            var json_pattern = @"\{(.|\s)*\}";
+            var re = new Regex(json_pattern);
+            var match = re.Match(responce);
+            string json = match.Success ? match.Groups[0].Value : String.Empty;
+            return json;
+        }
+
+        protected static Dictionary<string, object> JsonToDictionay(string json)
+        {
+            if (String.IsNullOrWhiteSpace(json))
+                return new Dictionary<string, object> { { ERROR_KEY, "Got an Empty JSON" } };
+
+            Dictionary<string, object> values = null;
+
+            var error_message = String.Empty;
+            try
+            {
+                values = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
+            }
+            catch (Exception e)
+            {
+                error_message = $"Got an error while parsing responce:\n{e}";
+            }
+
+            values = values ?? new Dictionary<string, object>() { { ERROR_KEY, error_message ?? "Unknown Error" } };
+            return values;
+        }
+
+        protected  Dictionary<string, object> CommandToDictionay(string cmd)
+        {
+            var responce = this.ExecutePythonCommand(cmd);
+            var retDict = PythonQueryProxy.ResponceToDictonary(responce);
+            return retDict;
+        }
+
+
+        protected static Dictionary<string, object> ResponceToDictonary(string responce)
+        {
+            var json = InteractivePythonWrapper.ResponceToJson(responce);
+            var retDict = InteractivePythonWrapper.JsonToDictionay(json);
+            return retDict;
         }
 
         private void SpinUpPythonProcess()
@@ -140,9 +188,9 @@ namespace Utils
             var sortOutput = new StringBuilder("");
 
             // Set our event handler to asynchronously read the sort output.
-            process.OutputDataReceived += (s,e) => this._outputDataReceived?.Invoke(this, e);
-            process.ErrorDataReceived += (s, e) => this._errorDataReceived?.Invoke(this, e); 
-            
+            process.OutputDataReceived += (s, e) => this._outputDataReceived?.Invoke(this, e);
+            process.ErrorDataReceived += (s, e) => this._errorDataReceived?.Invoke(this, e);
+
 
 
             // Redirect standard input as well.  This stream
@@ -155,8 +203,11 @@ namespace Utils
             var argStr = $"-i {this._script}";
             process.StartInfo.Arguments = argStr;
             if (!String.IsNullOrWhiteSpace(this._workDir))
-            process.StartInfo.WorkingDirectory = this._workDir;
-            
+                process.StartInfo.WorkingDirectory = this._workDir;
+
+            Debug.WriteLine($"\n\nStarting Process:");
+            Debug.WriteLine($"{this._interpeter} {argStr}\n\n");
+
             process.Start();
 
             // Use a stream writer to synchronously write the sort input.
@@ -164,15 +215,15 @@ namespace Utils
 
             // Start the asynchronous read of the sort output stream.
             process.BeginOutputReadLine();
-            
+
             String inputText;
             int numInputLines = 0;
-            while(!this._exit)
+            while (!this._exit)
             {
                 string args = this.getNextCommand();
                 Debug.WriteLine($"Args: {args}");
 
-                
+
                 if (!String.IsNullOrEmpty(args))
                 {
                     numInputLines++;
@@ -186,59 +237,15 @@ namespace Utils
                     this._signalGotCommandEvent.WaitOne();
                 }
             }
-
-            if (false)
-            {
-
-                // Start the child process.
-                Process p = new Process();
-                // Redirect the output stream of the child process.
-                p.StartInfo.UseShellExecute = false;
-                //p.StartInfo.UseShellExecute = true;
-                p.StartInfo.RedirectStandardOutput = true;
-                p.StartInfo.FileName = PYTHON_INTERP_PATH;
-                p.StartInfo.CreateNoWindow = true;
-
-                //Debug.Print($"args:\n{args}");
-
-
-
-                //var processArgs = $"-p \"{this.jsonPath}\" {args}";
-                //Debug.Print($"Process Args:\n{processArgs}");
-
-
-                var argStra = $"-i ";
-                p.StartInfo.Arguments = argStr;
-                p.StartInfo.WorkingDirectory = new DirectoryInfo(Path.GetDirectoryName(this._script)).Parent.FullName;
-                p.Start();
-                // Do not wait for the child process to exit before
-                // reading to the end of its redirected stream.
-                // p.WaitForExit();
-                // Read the output stream first and then wait.
-                string output = p.StandardOutput.ReadToEnd().Trim();
-
-                p.WaitForExit();
-
-                if (String.IsNullOrWhiteSpace(output))
-                {
-                    Debug.Print($"Got an empty output for \n{p.StartInfo.FileName} {p.StartInfo.Arguments}");
-                    Debug.WriteLine(String.Format("Args were:\n{0}", argStr));
-                }
-                //return output;
-            }
         }
-
-
-
         
-
         private string getNextCommand()
         {
             var command = "";
             if (this._safeCommands.Count > 0)
                 lock (this._lockObject)
                 {
-                    command= this._commands[0];
+                    command = this._commands[0];
                     this._commands.RemoveAt(0);
                 }
 
@@ -257,10 +264,7 @@ namespace Utils
             this._signalGotCommandEvent.Dispose();
         }
 
-      
-    }
-    
 
-    
+    }
 
 }
