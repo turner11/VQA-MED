@@ -163,10 +163,11 @@ def _consolidate_image_devices(df):
     for name, s in imaging_device_by_image.items():
         if 'both' in s or ('ct' in s and 'mri' in s):
             s.clear()
-            s.add('both')
+            s.add('unknown')
         elif 'unknown' in s and ('ct' in s or 'mri' in s):
+            is_ct = 'ct' in s
             s.clear()
-            s.add('ct' if s else 'mri')
+            s.add('ct' if is_ct else 'mri')
 
     non_consolidated_vals = [s for s in list(imaging_device_by_image.values()) if len(s) != 1]
     imaging_device_by_image = {k: list(s)[0] for k, s in imaging_device_by_image.items()}
