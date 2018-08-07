@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
 
 namespace Utils
 {
@@ -12,8 +14,10 @@ namespace Utils
         const string WORKINGDIR = @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\VQA.Python\";
         public PythonQueryProxy() : base(SCRIPT, workingDir: WORKINGDIR)
         {
-
+            
         }
+
+       
     }
 
 }

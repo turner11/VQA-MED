@@ -9,9 +9,13 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
+using System.Reactive;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
+
 namespace Utils
 {
-    public class InteractivePythonWrapper:IDisposable
+    public abstract class InteractivePythonWrapper:IDisposable
     {
         private const string PYTHON_INTERP_PATH = @"C:\local\Anaconda3-4.1.1-Windows-x86_64\envs\conda_env\python.exe";
 
@@ -24,10 +28,14 @@ namespace Utils
         private bool _exit;
 
 
-        private readonly AutoResetEvent _signalEvent = new AutoResetEvent(false);
-        
+        private readonly AutoResetEvent _signalGotCommandEvent = new AutoResetEvent(false);
+        private readonly AutoResetEvent _signalGotResponceEvent = new AutoResetEvent(false);
+
+
+
         private readonly ObservableCollection<string> _commands = new ObservableCollection<string>();
-        private ObservableCollection<string> safeCommands {
+        private readonly ObservableCollection<string> _responces = new ObservableCollection<string>();
+        private ObservableCollection<string> _safeCommands {
             get
             {
                 lock (this._lockObject)
@@ -37,9 +45,8 @@ namespace Utils
             }
         }
 
-        public event EventHandler<string> GotResults;
-        public event EventHandler<string> GotError;
-
+        private event EventHandler<DataReceivedEventArgs> _errorDataReceived;
+        private event EventHandler<DataReceivedEventArgs> _outputDataReceived;
 
 
 
@@ -51,19 +58,40 @@ namespace Utils
 
             this._script = script;
             this._workDir = workingDir ?? fi.Directory.FullName;
-            this._interpeter = interpeter ?? PYTHON_INTERP_PATH;
-            //new DirectoryInfo(Path.GetDirectoryName(this._script)).Parent.FullName;
+            this._interpeter = interpeter ?? PYTHON_INTERP_PATH; //new DirectoryInfo(Path.GetDirectoryName(this._script)).Parent.FullName;
+
+            this._outputDataReceived += InteractivePythonWrapper__outputDataReceived;
+            this._errorDataReceived += InteractivePythonWrapper__errorDataReceived;
 
             AddCurrentDirectoryToPath();
 
             this._exit = false;
             this._commands.CollectionChanged += this._commands_CollectionChanged;
+            this._responces.CollectionChanged += this._responces_CollectionChanged;
 
 
             var ts = new ThreadStart(this.SpinUpPythonProcess);
             var th = new Thread(ts);
             th.Start();
 
+        }
+
+        private void _responces_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.Action == NotifyCollectionChangedAction.Add )
+            {
+                this._signalGotResponceEvent.Set();
+            }
+        }
+
+        private void InteractivePythonWrapper__errorDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            this._responces.Add(e.Data);
+        }
+
+        private void InteractivePythonWrapper__outputDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            this._responces.Add(e.Data);
         }
 
         private void AddCurrentDirectoryToPath()
@@ -81,9 +109,19 @@ namespace Utils
             Directory.SetCurrentDirectory(this._workDir);
         }
 
-        public void AddCommand(string cmd)
+        public string AddCommand(string cmd)
         {
-            this.safeCommands.Add(cmd);
+            this._safeCommands.Add(cmd);
+            this._signalGotResponceEvent.WaitOne();
+
+            string res = "No Responce";
+            if (this._responces.Count > 0)
+            {
+                res = this._responces[0];
+                this._responces.RemoveAt(0);
+            }
+            return res;
+            
         }
 
         private void SpinUpPythonProcess()
@@ -102,8 +140,8 @@ namespace Utils
             var sortOutput = new StringBuilder("");
 
             // Set our event handler to asynchronously read the sort output.
-            process.OutputDataReceived += new DataReceivedEventHandler(this.gotOutPutHandler);
-            process.ErrorDataReceived += new DataReceivedEventHandler(this.errorOutPutHandler);
+            process.OutputDataReceived += (s,e) => this._outputDataReceived?.Invoke(this, e);
+            process.ErrorDataReceived += (s, e) => this._errorDataReceived?.Invoke(this, e); 
             
 
 
@@ -143,9 +181,9 @@ namespace Utils
 
                 //inputText = Console.ReadLine();
 
-                if (this.safeCommands.Count == 0)
+                if (this._safeCommands.Count == 0)
                 {
-                    this._signalEvent.WaitOne();
+                    this._signalGotCommandEvent.WaitOne();
                 }
             }
 
@@ -197,7 +235,7 @@ namespace Utils
         private string getNextCommand()
         {
             var command = "";
-            if (this.safeCommands.Count > 0)
+            if (this._safeCommands.Count > 0)
                 lock (this._lockObject)
                 {
                     command= this._commands[0];
@@ -209,23 +247,17 @@ namespace Utils
 
         private void _commands_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            this._signalEvent.Set();
-        }
-
-        private void errorOutPutHandler(object sender, DataReceivedEventArgs e)
-        {
-            Debug.WriteLine($"@@@@@@ Error: {e.Data}");
-        }
-        private void gotOutPutHandler(object sender, DataReceivedEventArgs e)
-        {
-            Debug.WriteLine($"@@@@@@ Data: {e.Data}");
+            if (e.Action == NotifyCollectionChangedAction.Add)
+                this._signalGotCommandEvent.Set();
         }
 
         public void Dispose()
         {
             this._exit = true;
-            this._signalEvent.Dispose();
+            this._signalGotCommandEvent.Dispose();
         }
+
+      
     }
     
 

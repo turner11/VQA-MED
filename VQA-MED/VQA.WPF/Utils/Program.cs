@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -15,7 +16,8 @@ namespace Utils
             var p = new PythonQueryProxy();
 
             var dataframe_path = "C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\data\\model_input.h5".Replace(@"\", @"\\");
-            p.AddCommand($"get_image_data(image_name='{"0392-100X-33-350-g002.jpg"}', dataframe_path='{dataframe_path}')");
+            var res = p.AddCommand($"get_image_data(image_name='{"0392-100X-33-350-g002.jpg"}', dataframe_path='{dataframe_path}')");
+            Debug.Write(res);
 
             //p.AddCommand($"get_image_data(image_name='{"0392-100X-33-350-g002.jpg"}')");
             //p.AddCommand($"print('hello')");
