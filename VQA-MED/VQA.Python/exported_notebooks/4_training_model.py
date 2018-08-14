@@ -6,8 +6,8 @@
 # In[1]:
 
 
-## VGG 2 Classes
-model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180731_2017_31\\vqa_model_CATEGORIAL.h5'
+## VGG 2 Classes (Trainable params: 165,762)
+model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180814_2035_20\\vqa_model_CATEGORIAL.h5'
 strategy_str = 'CATEGORIAL'
 
 ## VGG 4 Classes
@@ -45,12 +45,7 @@ from keras import backend as keras_backend
 # In[3]:
 
 
-from common.constatns import data_location, vqa_models_folder, vqa_specs_location #train_data, validation_data, 
-from common.utils import VerboseTimer
-from common.settings import classify_strategy
-from common.classes import ClassifyStrategies
-from common.model_utils import save_model
-from common.os_utils import File
+get_ipython().run_cell_magic('capture', '', 'import IPython\nfrom common.functions import get_highlited_function_code, get_features, _concat_row\nfrom common.constatns import data_location, vqa_models_folder, vqa_specs_location #train_data, validation_data, \nfrom common.utils import VerboseTimer\nfrom common.settings import classify_strategy\nfrom common.classes import ClassifyStrategies\nfrom common.model_utils import save_model\nfrom common.os_utils import File')
 
 
 # #### Loading the Model:
@@ -76,64 +71,87 @@ with VerboseTimer("Loading Data"):
 # In[6]:
 
 
+vqa_specs = File.load_pickle(vqa_specs_location)
+meta_data = vqa_specs.meta_data
+
+
+# In[7]:
+
+
 logger.debug(f"df_data Shape: {df_data.shape}")
 df_data.head(2)
 
 
 # ### ATTN: This is for training only on 2 classees: MRI / CT
 
-# In[13]:
+# In[8]:
 
 
-df_data = df_data[(df_data.imaging_device == 'ct')|( df_data.imaging_device == 'mri' )].copy()
-logger.debug(f"df_data Shape: {df_data.shape}")
-np.unique(df_data.imaging_device)
+# df_data = df_data[(df_data.imaging_device == 'ct')|( df_data.imaging_device == 'mri' )].copy()
+# logger.debug(f"df_data Shape: {df_data.shape}")
+# np.unique(df_data.imaging_device)
+
+
+# In[9]:
+
+
+(df_data.imaging_device).head()
 
 
 # #### Packaging the data to be in expected input shape
 
-# In[14]:
+# ##### It makes no sense to train on imageing devices we don't know thier lables
+
+# In[10]:
 
 
-data_train = df_data[df_data.group == 'train']
-data_val = df_data[df_data.group == 'validation']
+#ATTN: 
+cols_to_remove = ['both', 'unknown']
+def filter_out_unknown_devices(df):
+    valid_devices = meta_data['img_device_to_ix'].keys()
+    return df[df.imaging_device.isin(valid_devices)]
 
+
+df_data_orig = df_data 
+df_data = filter_out_unknown_devices(df_data)
+
+
+# In[11]:
+
+
+data_train = df_data[df_data.group == 'train'].copy().reset_index()
+data_val = df_data[df_data.group == 'validation'].copy().reset_index()
 
 # print(f'groups:\n{df_data.group.drop_duplicates()}')
 # print(len(df_data))
 # data_val.head()
 
 
-# In[15]:
+# ##### The functions for getting the features & labels:
+
+# In[12]:
 
 
-def concate_row(df, col):
-    return np.concatenate(df[col], axis=0)
-
-def get_features(df):
-    image_features = np.asarray([np.array(im) for im in df['image']])
-    # np.concatenate(image_features['question_embedding'], axis=0).shape
-    question_features = concate_row(df, 'question_embedding') 
-    reshaped_q = np.array([a.reshape(a.shape + (1,)) for a in question_features])
-    
-    features = ([f for f in [reshaped_q, image_features]])    
-    
-    return features
+from common.functions import get_features, _concat_row
+code_get_features = get_highlited_function_code( get_features, remove_comments=True)
+code_concat = get_highlited_function_code(_concat_row, remove_comments=True)
+IPython.display.display(code_get_features)
+IPython.display.display(code_concat)
 
 
 # #### Defining how to get NLP labels
 
-# In[24]:
+# In[13]:
 
 
 def get_nlp_labels():
-    labels =  concate_row(df, 'answer_embedding')
+    labels =  _concat_row(df, 'answer_embedding')
     return labels
 
 
 # #### Defining how to get Categorial fetaures / labels
 
-# In[25]:
+# In[14]:
 
 
 def get_categorial_labels(df, meta):
@@ -141,10 +159,12 @@ def get_categorial_labels(df, meta):
     # lookup_col = 'img_device_to_ix'
     ans_to_ix = meta[lookup_col]
     all_classes =  ans_to_ix.keys()
+   
+    
     data_classes = df['imaging_device']
     class_count = len(all_classes)
 
-    classes_indices = [ans_to_ix[ans] for ans in data_classes]
+    classes_indices = [ans_to_ix[ans] for ans in data_classes if ans in ans_to_ix.keys()]
     categorial_labels = to_categorical(classes_indices, num_classes=class_count)
     
     for i in range(len(categorial_labels)):
@@ -161,22 +181,62 @@ def get_categorial_labels(df, meta):
 # del df_val
 
 
-# In[26]:
+# In[15]:
 
 
-if classify_strategy == ClassifyStrategies.CATEGORIAL:
-    vqa_specs = File.load_pickle(vqa_specs_location)
-    meta_data = vqa_specs.meta_data
-    p_get_categorial_labels = partial(get_categorial_labels, meta=meta_data)    
-    
+meta = meta_data
+df = data_train
+lookup_col = 'img_device_to_ix'
+# lookup_col = 'img_device_to_ix'
+ans_to_ix = meta[lookup_col]
+all_classes =  ans_to_ix.keys()
+
+data_classes = df['imaging_device']
+class_count = len(all_classes)
+
+classes_indices = [ans_to_ix[ans] for ans in data_classes if ans in ans_to_ix.keys()]
+categorial_labels = to_categorical(classes_indices, num_classes=class_count)
+
+
+max(classes_indices),min(classes_indices)
+# data_classes
+categorial_labels
+class_count
+
+
+# In[16]:
+
+
+def get_features(df):
+    image_features = np.asarray([np.array(im) for im in df['image']])
+    question_features = _concat_row(df, 'question_embedding')
+    reshaped_q = np.array([a.reshape(a.shape + (1,)) for a in question_features])
+
+    features = ([f for f in [reshaped_q, image_features]])
+
+    return features
+def _concat_row(df, col):
+    try:    
+        return np.concatenate(df[col], axis=0)
+    except:        
+        File.dump_pickle(fn="aaa.pkl", obj=df[col])
+        raise
+
+
+# In[17]:
+
+
+if classify_strategy == ClassifyStrategies.CATEGORIAL:    
+    p_get_categorial_labels = partial(get_categorial_labels, meta=meta_data)        
     get_labels = p_get_categorial_labels
+    
 elif classify_strategy == ClassifyStrategies.NLP:   
     get_labels = get_nlp_features_and_labels    
 
 # Note: The shape of answer (for a single recored ) is (number of words, 384)
 else:
     raise Exception(f'Unfamilier strategy: {strat}')
-classify_strategy
+print(f'classify stratagy: {classify_strategy}')
 
 with VerboseTimer('Getting train features'):
     features_t = get_features(data_train)   
@@ -191,13 +251,13 @@ with VerboseTimer('Getting validation labels'):
 # len(features_t[1])
 
 
-# In[27]:
+# In[18]:
 
 
 validation_input = (features_val, labels_val)
 
 
-# In[28]:
+# In[19]:
 
 
 # model.input_layers
@@ -224,7 +284,7 @@ print(f'Actual Validation shape:{features_val[0].shape, features_val[1].shape}')
 print(f'Validation Labels shape:{labels_val.shape}')
 
 
-# In[29]:
+# In[20]:
 
 
 # from utils.gpu_utils import test_gpu
@@ -288,6 +348,7 @@ try:
             
 except Exception as ex:
     logger.error("Got an error training model: {0}".format(ex))
+    raise
 #     model.summary(print_fn=logger.error)
 #     raise
 # return model, history

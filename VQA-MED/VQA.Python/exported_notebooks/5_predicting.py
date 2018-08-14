@@ -17,7 +17,7 @@ model_dal = get_model(model_id)
 model_dal
 
 
-# In[10]:
+# In[3]:
 
 
 #From Step #2:
@@ -63,7 +63,7 @@ with VerboseTimer("Loading Model"):
     model = load_model(model_location)
 
 
-# In[11]:
+# In[8]:
 
 
 vqa_specs = File.load_pickle(vqa_specs_location)
@@ -71,14 +71,14 @@ data_location = vqa_specs.data_location
 data_location
 
 
-# In[12]:
+# In[9]:
 
 
 code = get_highlited_function_code(normalize_data_strucrture,remove_comments=True)
 IPython.display.display(code)
 
 
-# In[ ]:
+# In[10]:
 
 
 logger.debug(f"Loading test data from {data_location}")
@@ -87,7 +87,7 @@ with VerboseTimer("Loading Test Data"):
         df_data = store['test']
 
 
-# In[ ]:
+# In[11]:
 
 
 df_data.head(2)
@@ -95,7 +95,7 @@ df_data.head(2)
 
 # ## TODO: Duplicate:
 
-# In[14]:
+# In[12]:
 
 
 def concate_row(df, col):
@@ -115,33 +115,33 @@ def get_features_and_labels(df):
     
 
 
-# In[ ]:
+# In[13]:
 
 
 features = get_features_and_labels(df_data)
 
 
-# In[ ]:
+# In[14]:
 
 
 
 p = model.predict(features)
 
 
-# In[ ]:
+# In[15]:
 
 
 p
 
 
-# In[ ]:
+# In[16]:
 
 
 predictions = [np.argmax(a, axis=None, out=None) for a in p]
 predictions[:10]
 
 
-# In[ ]:
+# In[17]:
 
 
 meta_data = vqa_specs.meta_data
@@ -152,7 +152,7 @@ results[:10]
 list(zip(df_data.image_name.values, results))[:10]
 
 
-# In[ ]:
+# In[22]:
 
 
 # from IPython.core.interactiveshell import InteractiveShell
@@ -176,7 +176,7 @@ df_mini = df_image[['question','answer']]
 df_mini
 
 
-# In[ ]:
+# In[23]:
 
 
 from IPython.display import Image

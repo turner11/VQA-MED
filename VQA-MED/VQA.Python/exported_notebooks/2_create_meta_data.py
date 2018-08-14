@@ -44,9 +44,18 @@ print(f'Data length: {len(df_data)}')
 df_data.head()
 
 
+# In[5]:
+
+
+import numpy as np
+d = df_data[df_data.imaging_device.isin(['ct','mri'])]
+print(np.unique(df_data.imaging_device))
+print(np.unique(d.imaging_device))
+
+
 # #### We will use this function for creating meta data:
 
-# In[5]:
+# In[6]:
 
 
 from vqa_logger import logger 
@@ -69,12 +78,16 @@ def create_meta(df):
         df_unique_words = set(itertools.chain.from_iterable([get_unique_words(col) for col in cols]))
         df_unique_answers = set(df['answer'])        
         
-        df_unique_imaging_devices = set(df['imaging_device'])        
+        df_unique_imaging_devices = set(df['imaging_device'])
+        unknown_devices = ['both', 'unknown']
+        df_unique_imaging_devices = [v for v in df_unique_imaging_devices if v not in unknown_devices]
+        
 
         metadata = {}
         metadata['ix_to_word'] = {str(word): int(i) for i, word in enumerate(df_unique_words)}
         metadata['ix_to_ans'] = {i:ans for i, ans in enumerate(df_unique_answers)}
         metadata['ans_to_ix'] = {ans:i for i, ans in enumerate(df_unique_answers)}
+        
         
         metadata['img_device_to_ix'] = {ans:i for i, ans in enumerate(df_unique_imaging_devices)}
         metadata['ix_to_img_device'] = {i:ans for i, ans in enumerate(df_unique_imaging_devices)}
@@ -95,7 +108,7 @@ def create_meta(df):
         return metadata
 
 
-# In[6]:
+# In[7]:
 
 
 print("----- Creating meta -----")
@@ -105,7 +118,7 @@ meta_data = create_meta(df_data)
 meta_data.keys()
 
 
-# In[7]:
+# In[8]:
 
 
 File.dump_json(meta_data,fn_meta)
@@ -114,7 +127,7 @@ print(f"Meta file available at: {fn_meta}")
 
 # #### Saving the data, so later on we don't need to compute it again
 
-# In[8]:
+# In[9]:
 
 
 def get_vqa_specs(meta_data):    
@@ -129,14 +142,14 @@ s = str(vqa_specs)
 s[:s.index('meta_data=')+10]
 
 
-# In[9]:
+# In[10]:
 
 
 File.dump_pickle(vqa_specs, vqa_specs_location)
 logger.debug(f"VQA Specs saved to:\n{vqa_specs_location}")
 
 
-# In[10]:
+# In[11]:
 
 
 print (f"vqa_specs_location = '{vqa_specs_location}'".replace('\\','\\\\'))

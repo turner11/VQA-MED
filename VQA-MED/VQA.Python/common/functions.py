@@ -210,6 +210,21 @@ def _add_columns_by_search(df, indicator_words, search_columns):
         else:
             logger.warn("found no matching for '{0}'".format(word))
 
+
+def _concat_row(df, col):
+    return np.concatenate(df[col], axis=0)
+
+
+def get_features(df):
+    image_features = np.asarray([np.array(im) for im in df['image']])
+    # np.concatenate(image_features['question_embedding'], axis=0).shape
+    question_features = _concat_row(df, 'question_embedding')
+    reshaped_q = np.array([a.reshape(a.shape + (1,)) for a in question_features])
+
+    features = ([f for f in [reshaped_q, image_features]])
+
+    return features
+
 def main():
     pass
     # print_function_code(get_nlp, remove_comments=True)
