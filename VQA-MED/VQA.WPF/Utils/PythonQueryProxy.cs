@@ -32,11 +32,21 @@ namespace Utils
             return retDict;
         }
 
+        public Dictionary<string, object> QuryData(string substring)
+        {
+            var command = $"query_data(query_string='{substring}', dataframe_path='{this.dataFramePath}')";
+            var retDict = this.CommandToDictionay(command);
+            return retDict;
+        }
+        
+
         public static PythonQueryProxy Factory()
         {
             var inst = new PythonQueryProxy(SCRIPT, DATAFRAME_PATH, PYTHON_INTERP_PATH);
             return inst;
         }
+
+      
     }
 
 }
