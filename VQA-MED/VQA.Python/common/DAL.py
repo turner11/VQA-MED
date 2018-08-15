@@ -19,10 +19,13 @@ class Model(Base):
     accuracy = Column(Float())
     val_accuracy = Column(Float())
     class_strategy = Column(String(15))
+    parameter_count = Column('parameter_count', Integer)
+    trainable_parameter_count = Column('trainable_parameter_count', Integer)
+    notes = Column('notes',String(200))
 
     
     
-    def __init__(self, model_location, history_location, image_base_net, loss, val_loss, accuracy, val_accuracy,notes):
+    def __init__(self, model_location, history_location, image_base_net, loss, val_loss, accuracy, val_accuracy,notes, parameter_count, trainable_parameter_count):
         """"""
         self.model_location = model_location  
         self.history_location = history_location  
@@ -32,6 +35,8 @@ class Model(Base):
         self.accuracy = accuracy  
         self.val_accuracy = val_accuracy
         self.notes = notes
+        self.parameter_count = parameter_count
+        self.trainable_parameter_count = trainable_parameter_count
 
     def __repr__(self):
         return f'{self.__class__.__name__}(id={self.id},\n'\
@@ -47,6 +52,8 @@ class Model(Base):
 def create_db():
     Base.metadata.create_all(_engine)
 
+
+
 def insert_models(models):
     session = get_session()
 
@@ -54,10 +61,12 @@ def insert_models(models):
         session.add_all(models)
         # session.flush()
         session.commit()
-    except:
+    except Exception as ex:
         session.rollback()
         raise
 
+def insert_model(model):
+    return insert_models([model])
 
 def get_session():
     Session = sessionmaker(bind=_engine, autocommit=False, autoflush=False)
@@ -102,18 +111,33 @@ def main():
     #                      val_accuracy=0.5420,
     #                      notes ='Categorial, 4 options Imaging devices')
 
-    vgg19_model = Model(
-        model_location='C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180731_0630_29\\vqa_model_ClassifyStrategies.CATEGORIAL_trained.h5',
+    # loss: - acc:  - val_loss: - val_acc:  Training Model: 3:50:30.246880
+    vgg19_model_2_classes = Model(
+        model_location='C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180815_0137_53\\vqa_model_ClassifyStrategies.CATEGORIAL_trained.h5',
         history_location='',
         image_base_net='vgg19',
-        loss=0.0843,
-        val_loss=2.7968,
-        accuracy=0.9776,
-        val_accuracy=0.6480,
-        notes='Categorial, 4 options Imaging devices')
+        loss=0.0263 ,
+        val_loss= 0.3516,
+        accuracy=0.9917,
+        val_accuracy=0.9227,
+        notes='Categorial, 2 options Imaging devices, cleaned data before training data',
+        parameter_count=20190786,
+        trainable_parameter_count=165762
+    )
 
-    models = [vgg19_model]
-    insert_models(models)
+
+    # vgg19_model = Model(
+    #     model_location='C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180731_0630_29\\vqa_model_ClassifyStrategies.CATEGORIAL_trained.h5',
+    #     history_location='',
+    #     image_base_net='vgg19',
+    #     loss=0.0843,
+    #     val_loss=2.7968,
+    #     accuracy=0.9776,
+    #     val_accuracy=0.6480,
+    #     notes='Categorial, 4 options Imaging devices')
+
+
+    insert_model(vgg19_model_2_classes)
     # ## Resnet 50:
     # trained_model_location = 'C:\Users\Public\Documents\Data\2018\vqa_models\20180730_0524_48\vqa_model_ClassifyStrategies.CATEGORIAL_trained.h5'
     # loss: 0.1248 - acc: 0.9570 - val_loss: 2.7968 - val_acc: 0.5420
