@@ -12,7 +12,11 @@ df_models.head()
 # In[2]:
 
 
-model_id = 1
+model_id = max(df_models.id)#2
+
+notes = df_models.loc[df_models.id == model_id].notes.values[0]
+
+print(f'Getting model #{model_id} ({notes})')
 model_dal = get_model(model_id)
 model_dal
 
@@ -21,7 +25,7 @@ model_dal
 
 
 #From Step #2:
-vqa_specs_location = 'C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\data\\vqa_specs.pkl'
+vqa_specs_location = 'C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\data\\vqa_specs.pkl'                     
 
 
 # In[4]:
@@ -52,6 +56,7 @@ from common.constatns import images_path_test
 from common.utils import VerboseTimer
 from parsers.VQA18 import Vqa18Base
 from common.functions import get_size, get_highlited_function_code, normalize_data_strucrture
+from common.functions import get_highlited_function_code, get_features, _concat_row, predict
 from vqa_logger import logger
 from common.os_utils import File 
 
@@ -71,6 +76,12 @@ data_location = vqa_specs.data_location
 data_location
 
 
+# In[14]:
+
+
+meta_data = vqa_specs.meta_data
+
+
 # In[9]:
 
 
@@ -85,6 +96,10 @@ logger.debug(f"Loading test data from {data_location}")
 with VerboseTimer("Loading Test Data"):
     with HDFStore(data_location) as store:        
         df_data = store['test']
+        df_training = store['data']
+# The validation is for evaluating
+df_validation = df_training[df_training.group == 'validation'].copy()
+del df_training
 
 
 # In[11]:
@@ -93,66 +108,32 @@ with VerboseTimer("Loading Test Data"):
 df_data.head(2)
 
 
-# ## TODO: Duplicate:
-
 # In[12]:
 
 
-def concate_row(df, col):
-    return np.concatenate(df[col], axis=0)
-
-def get_features_and_labels(df):
-    image_features = np.asarray([np.array(im) for im in df['image']])
-    # np.concatenate(image_features['question_embedding'], axis=0).shape
-    question_features = concate_row(df, 'question_embedding') 
-
-    reshaped_q = np.array([a.reshape(a.shape + (1,)) for a in question_features])
-    
-    features = ([f for f in [reshaped_q, image_features]])    
-    
-    return features
-    
-    
+import importlib
+import common
+importlib.reload(common.functions)
 
 
-# In[13]:
-
-
-features = get_features_and_labels(df_data)
-
-
-# In[14]:
-
-
-
-p = model.predict(features)
+code = get_highlited_function_code(predict,remove_comments=False)
+IPython.display.display(code)
 
 
 # In[15]:
 
 
-p
+df_predictions = predict(model, df_data, meta_data)
+df_predictions.head()
 
 
 # In[16]:
 
 
-predictions = [np.argmax(a, axis=None, out=None) for a in p]
-predictions[:10]
+df_predictions.describe()
 
 
-# In[17]:
-
-
-meta_data = vqa_specs.meta_data
-ix_to_img_device = meta_data['ix_to_img_device']
-results = [ix_to_img_device[i] for i in predictions]
-results[:10]
-
-list(zip(df_data.image_name.values, results))[:10]
-
-
-# In[22]:
+# In[20]:
 
 
 # from IPython.core.interactiveshell import InteractiveShell
@@ -161,24 +142,40 @@ idx = 42
 image_names = df_data.image_name.values
 image_name = image_names[idx]
 
-print(f'Result: {results[idx]}')
-idxs = [index for index, value in enumerate(image_names) if value == image_name]
-all_results_for_image = {results[idx] for idx in idxs}
-print(f'All results for image: {results[idx]}')
-print('DataFrame:')
-      
-df_image = df_data[df_data.image_name==image_name]
+df_image = df_predictions[df_predictions.image_name == image_name]
+print(f'Result: {set(df_image.prediction)}')
 
-image_path = df_image['path'].values[0]
+image_path = df_image.path.values[0]
+df_image
 
 
-df_mini = df_image[['question','answer']]
-df_mini
-
-
-# In[23]:
+# In[21]:
 
 
 from IPython.display import Image
 Image(filename = image_path, width=400, height=400)
+
+
+# In[ ]:
+
+
+validation_prediction = predict(model, df_validation, meta_data)
+
+
+# In[25]:
+
+
+validation_prediction.head(2)
+
+
+# ## Evaluating the Model
+
+# In[28]:
+
+
+from evaluate.VqaMedEvaluatorBase import VqaMedEvaluatorBase
+predictions = validation_prediction.prediction.values
+ground_truth = validation_prediction.answer
+results = VqaMedEvaluatorBase.get_all_evaluation(predictions=predictions, ground_truth=ground_truth)
+results
 

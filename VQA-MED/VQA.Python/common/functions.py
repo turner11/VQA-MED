@@ -8,15 +8,14 @@ import cv2
 import numpy as np
 
 from common.settings import input_length, image_size, get_nlp
-from common.settings import  embedding_dim
+from common.settings import embedding_dim
 from vqa_logger import logger
-
 
 def get_size(file_name):
     suffixes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
     nbytes = os.path.getsize(file_name)
     i = 0
-    while nbytes >= 1024 and i < len(suffixes)-1:
+    while nbytes >= 1024 and i < len(suffixes) - 1:
         nbytes /= 1024.
         i += 1
     f = ('%.2f' % nbytes).rstrip('0').rstrip('.')
@@ -44,10 +43,11 @@ def get_highlited_function_code(foo, remove_comments=False):
     formatter = HtmlFormatter()
     ipython_display_object = \
         IPython.display.HTML('<style type="text/css">{}</style>{}'.format(
-        formatter.get_style_defs('.highlight'),
-        highlight(txt, PythonLexer(), formatter)))
-    return ipython_display_object 
+            formatter.get_style_defs('.highlight'),
+            highlight(txt, PythonLexer(), formatter)))
+    return ipython_display_object
     # print(txt)
+
 
 def get_image(image_file_name):
     ''' Runs the given image_file to VGG 16 model and returns the
@@ -55,8 +55,9 @@ def get_image(image_file_name):
     im = cv2.resize(cv2.imread(image_file_name), image_size)
 
     # convert the image to RGBA
-#     im = im.transpose((2, 0, 1))
+    #     im = im.transpose((2, 0, 1))
     return im
+
 
 def get_text_features(txt):
     ''' For a given txt, a unicode string, returns the time series vector
@@ -83,12 +84,13 @@ def get_text_features(txt):
         raise
     return text_features
 
+
 def pre_process_raw_data(df):
     df['image_name'] = df['image_name'].apply(lambda q: q if q.lower().endswith('.jpg') else q + '.jpg')
     paths = df['path']
 
     dirs = {os.path.split(c)[0] for c in paths}
-    files_by_folder = {dir:os.listdir(dir) for dir in dirs }
+    files_by_folder = {dir: os.listdir(dir) for dir in dirs}
     existing_files = [os.path.join(dir, fn) for dir, fn_arr in files_by_folder.items() for fn in fn_arr]
 
     df = df.loc[df['path'].isin(existing_files)]
@@ -102,27 +104,28 @@ def pre_process_raw_data(df):
     logger.debug('Getting questions embedding')
     df['question_embedding'] = df['question'].apply(lambda q: get_text_features(q))
 
-
     logger.debug('Getting image features')
     df['image'] = df['path'].apply(lambda im_path: get_image(im_path))
 
     logger.debug('Done')
     return df
 
+
 def normalize_data_strucrture(df, group, image_folder):
-   # assert group in ['train', 'validation']
+    # assert group in ['train', 'validation']
     cols = ['image_name', 'question', 'answer']
 
     df_c = df[cols].copy()
     df_c['group'] = group
 
-
     def get_image_path(image_name):
-        return os.path.join(image_folder, image_name+ '.jpg')
+        return os.path.join(image_folder, image_name + '.jpg')
 
-    df_c['path'] = df_c.apply(lambda x:  get_image_path(x['image_name']),axis=1) #x: get_image_path(x['group'],x['image_name'])
+    df_c['path'] = df_c.apply(lambda x: get_image_path(x['image_name']),
+                              axis=1)  # x: get_image_path(x['group'],x['image_name'])
 
     return df_c
+
 
 def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     from pre_processing.known_find_and_replace_items import find_and_replace_collection
@@ -193,15 +196,12 @@ def enrich_data(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-
-
-
 def _add_columns_by_search(df, indicator_words, search_columns):
     from common.utils import has_word
     for word in indicator_words:
         res = None
         for col in search_columns:
-            curr_res = df[col].apply(lambda s: has_word(word,s))
+            curr_res = df[col].apply(lambda s: has_word(word, s))
             if res is None:
                 res = curr_res
             res = res | curr_res
@@ -211,11 +211,11 @@ def _add_columns_by_search(df, indicator_words, search_columns):
             logger.warn("found no matching for '{0}'".format(word))
 
 
-def _concat_row(df, col):
+def _concat_row(df: pd.DataFrame, col: str):
     return np.concatenate(df[col], axis=0)
 
 
-def get_features(df):
+def get_features(df: pd.DataFrame):
     image_features = np.asarray([np.array(im) for im in df['image']])
     # np.concatenate(image_features['question_embedding'], axis=0).shape
     question_features = _concat_row(df, 'question_embedding')
@@ -225,9 +225,41 @@ def get_features(df):
 
     return features
 
+
+def predict(model, df_data: pd.DataFrame, meta_data=None):
+    # predict
+    features = get_features(df_data)
+    p = model.predict(features)
+
+    # vector-to-value
+    predictions = [np.argmax(a, axis=None, out=None) for a in p]
+    results = predictions
+
+    # dictionary for creating a data frame
+    cols_to_transfer = ['image_name', 'question', 'answer', 'path']
+    df_dict = {col_name: df_data[col_name] for col_name in cols_to_transfer}
+
+    if meta_data:
+        ix_to_img_device = meta_data['ix_to_img_device']
+        results = [ix_to_img_device[i] for i in predictions]
+
+        imaging_device_probabilities = {v: [prediction[k] for prediction in p] for k, v in ix_to_img_device.items()}
+        df_dict.update(imaging_device_probabilities)
+
+    df_dict['prediction'] =  results
+    df = pd.DataFrame(df_dict)
+
+    # Arranging in a prettier way
+    sort_columns = ['image_name', 'question', 'answer', 'prediction']
+    oredered_columns = sorted(df.columns, key=lambda v: v in sort_columns, reverse=True)
+    df = df[oredered_columns]
+    return df
+
+
 def main():
     pass
     # print_function_code(get_nlp, remove_comments=True)
+
 
 if __name__ == '__main__':
     main()
