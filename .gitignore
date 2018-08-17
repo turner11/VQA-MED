@@ -324,14 +324,10 @@ VQA-MED/VQA.Python/.idea/*
 VQA-MED/VQA.Python/data/model_input.h5
 .idea/*
 VQA-MED/VQA.Python/data/vqa_specs.pkl
-VQA-MED/VQA.Python/data/vqa_specs.pkl
 VQA-MED/VQA.Python/data/model_input.h5
 VQA-MED/VQA.Python/data/vqa_specs.pkl
 *.h5
 VQA-MED/VQA.Python/models/abdomen_model.h5
 VQA-MED/VQA.Python/models/brain_model.h5
 VQA-MED/VQA.Python/models/ct_model.h5
-*.h5
-VQA-MED/VQA.Python/models/abdomen_model.h5
-VQA-MED/VQA.Python/models/brain_model.h5
-VQA-MED/VQA.Python/models/ct_model.h5
+VQA-MED/VQA.Python/exported_notebooks/.ipynb_checkpoints/*
