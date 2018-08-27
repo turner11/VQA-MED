@@ -331,3 +331,5 @@ VQA-MED/VQA.Python/models/abdomen_model.h5
 VQA-MED/VQA.Python/models/brain_model.h5
 VQA-MED/VQA.Python/models/ct_model.h5
 VQA-MED/VQA.Python/exported_notebooks/.ipynb_checkpoints/*
+VQA-MED/VQA.Python/Untitled.ipynb
+VQA-MED/VQA.Python/data/vqa_specs.pkl_BACKUP

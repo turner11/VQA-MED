@@ -6,9 +6,13 @@
 # In[1]:
 
 
-## VGG 2 Classes (Trainable params: 165,762)
-model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180814_2035_20\\vqa_model_CATEGORIAL.h5'
+## VGG all words are Classes (Trainable params: 1,070,916)
+model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180827_1502_41\\vqa_model_CATEGORIAL.h5'
 strategy_str = 'CATEGORIAL'
+
+## VGG 2 Classes (Trainable params: 165,762)
+# model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180814_2035_20\\vqa_model_CATEGORIAL.h5'
+# strategy_str = 'CATEGORIAL'
 
 ## VGG 4 Classes
 # model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180730_0648_46\\vqa_model_CATEGORIAL.h5'
@@ -31,6 +35,7 @@ strategy_str = 'CATEGORIAL'
 # %%capture
 import os
 import numpy as np
+import pandas as pd
 from pandas import HDFStore
 from vqa_logger import logger 
 from enum import Enum
@@ -39,13 +44,21 @@ from functools import partial
 
 from keras.models import load_model
 from keras.utils import to_categorical
-from keras import backend as keras_backend
+from keras import backend as keras_backend, callbacks
 
 
 # In[3]:
 
 
-get_ipython().run_cell_magic('capture', '', 'import IPython\nfrom common.functions import get_highlited_function_code, get_features, _concat_row\nfrom common.constatns import data_location, vqa_models_folder, vqa_specs_location #train_data, validation_data, \nfrom common.utils import VerboseTimer\nfrom common.settings import classify_strategy\nfrom common.classes import ClassifyStrategies\nfrom common.model_utils import save_model\nfrom common.os_utils import File')
+# %%capture
+import IPython
+from common.functions import get_highlited_function_code, get_features, _concat_row, sentences_to_hot_vector, hot_vector_to_words
+from common.constatns import data_location, vqa_models_folder, vqa_specs_location #train_data, validation_data, 
+from common.utils import VerboseTimer
+from common.settings import classify_strategy
+from common.classes import ClassifyStrategies, EarlyStoppingByAccuracy
+from common.model_utils import save_model
+from common.os_utils import File
 
 
 # #### Loading the Model:
@@ -72,7 +85,13 @@ with VerboseTimer("Loading Data"):
 
 
 vqa_specs = File.load_pickle(vqa_specs_location)
-meta_data = vqa_specs.meta_data
+meta_data_location = vqa_specs.meta_data_location
+
+
+df_meta_answers = pd.read_hdf(meta_data_location,'answers')
+df_meta_words = pd.read_hdf(meta_data_location,'words')
+df_meta_imaging_devices = pd.read_hdf(meta_data_location,'imaging_devices')
+df_meta_answers.tail(2)
 
 
 # In[7]:
@@ -82,33 +101,17 @@ logger.debug(f"df_data Shape: {df_data.shape}")
 df_data.head(2)
 
 
-# ### ATTN: This is for training only on 2 classees: MRI / CT
-
-# In[8]:
-
-
-# df_data = df_data[(df_data.imaging_device == 'ct')|( df_data.imaging_device == 'mri' )].copy()
-# logger.debug(f"df_data Shape: {df_data.shape}")
-# np.unique(df_data.imaging_device)
-
-
-# In[9]:
-
-
-(df_data.imaging_device).head()
-
-
 # #### Packaging the data to be in expected input shape
 
 # ##### It makes no sense to train on imageing devices we don't know thier lables
 
-# In[10]:
+# In[8]:
 
 
-#ATTN: 
+# ATTN: 
 cols_to_remove = ['both', 'unknown']
 def filter_out_unknown_devices(df):
-    valid_devices = meta_data['img_device_to_ix'].keys()
+    valid_devices = df_meta_imaging_devices.imaging_device.values
     return df[df.imaging_device.isin(valid_devices)]
 
 
@@ -116,7 +119,7 @@ df_data_orig = df_data
 df_data = filter_out_unknown_devices(df_data)
 
 
-# In[11]:
+# In[9]:
 
 
 data_train = df_data[df_data.group == 'train'].copy().reset_index()
@@ -129,7 +132,7 @@ data_val = df_data[df_data.group == 'validation'].copy().reset_index()
 
 # ##### The functions for getting the features & labels:
 
-# In[12]:
+# In[10]:
 
 
 from common.functions import get_features, _concat_row
@@ -141,7 +144,7 @@ IPython.display.display(code_concat)
 
 # #### Defining how to get NLP labels
 
-# In[13]:
+# In[11]:
 
 
 def get_nlp_labels():
@@ -151,87 +154,64 @@ def get_nlp_labels():
 
 # #### Defining how to get Categorial fetaures / labels
 
-# In[14]:
+# In[13]:
 
 
-def get_categorial_labels(df, meta):
-    lookup_col = 'img_device_to_ix'
-    # lookup_col = 'img_device_to_ix'
-    ans_to_ix = meta[lookup_col]
-    all_classes =  ans_to_ix.keys()
-   
-    
-    data_classes = df['imaging_device']
-    class_count = len(all_classes)
-
-    classes_indices = [ans_to_ix[ans] for ans in data_classes if ans in ans_to_ix.keys()]
-    categorial_labels = to_categorical(classes_indices, num_classes=class_count)
-    
-    for i in range(len(categorial_labels)):
-        assert np.argmax(categorial_labels[i])== classes_indices[i], 'Expected to get argmax at index of label' 
-
-    return categorial_labels
-
-
-
-# with VerboseTimer("Getting categorial validation labels"):
-#     categorial_labels_val = get_categorial_labels(df_val, meta_data)
-# categorial_labels_train.shape, categorial_labels_val.shape
-# del df_train
-# del df_val
-
-
-# In[15]:
-
-
-meta = meta_data
 df = data_train
-lookup_col = 'img_device_to_ix'
-# lookup_col = 'img_device_to_ix'
-ans_to_ix = meta[lookup_col]
-all_classes =  ans_to_ix.keys()
 
-data_classes = df['imaging_device']
-class_count = len(all_classes)
+class_df = df_meta_words
+class_count = len(class_df)
+# class_df
 
-classes_indices = [ans_to_ix[ans] for ans in data_classes if ans in ans_to_ix.keys()]
-categorial_labels = to_categorical(classes_indices, num_classes=class_count)
+classes_indices_df = [class_df.loc[class_df.word.isin(ans.lower().split())] for ans in  df.answer]
+classes_indices = [list(d.index) for d in classes_indices_df]
 
-
-max(classes_indices),min(classes_indices)
-# data_classes
-categorial_labels
-class_count
+idx_sample = 9
+print(df.answer[idx_sample])
+classes_indices[idx_sample]
 
 
-# In[16]:
+# ### Will transform the sentences into vector and back using the following:
+
+# In[19]:
 
 
-def get_features(df):
-    image_features = np.asarray([np.array(im) for im in df['image']])
-    question_features = _concat_row(df, 'question_embedding')
-    reshaped_q = np.array([a.reshape(a.shape + (1,)) for a in question_features])
+code = get_highlited_function_code(sentences_to_hot_vector,remove_comments=False)
+IPython.display.display(code)    
 
-    features = ([f for f in [reshaped_q, image_features]])
-
-    return features
-def _concat_row(df, col):
-    try:    
-        return np.concatenate(df[col], axis=0)
-    except:        
-        File.dump_pickle(fn="aaa.pkl", obj=df[col])
-        raise
+code = get_highlited_function_code(hot_vector_to_words,remove_comments=False)
+IPython.display.display(code)  
 
 
-# In[17]:
+# #### Check it looks sane by inversing the binarizing:
+
+# In[18]:
 
 
-if classify_strategy == ClassifyStrategies.CATEGORIAL:    
-    p_get_categorial_labels = partial(get_categorial_labels, meta=meta_data)        
-    get_labels = p_get_categorial_labels
+words = df_meta_words.word
+sentences =  data_train.answer
+
+arr_one_hot_vector = sentences_to_hot_vector(sentences, words)
+categorial_labels = arr_one_hot_vector
+
+idx = 100
+answer =  data_train.answer.loc[idx]
+print(f'The sentence:\n{answer}')
+
+one_hot_vector = arr_one_hot_vector[idx]
+label_words = hot_vector_to_words(one_hot_vector, words)
+print('\n\nThe highlighed labels:')
+label_words
+
+
+# In[24]:
+
+
+if classify_strategy == ClassifyStrategies.CATEGORIAL:        
+    get_labels = partial(sentences_to_hot_vector, words_df=df_meta_words.word)            
     
-elif classify_strategy == ClassifyStrategies.NLP:   
-    get_labels = get_nlp_features_and_labels    
+# elif classify_strategy == ClassifyStrategies.NLP:   
+#     get_labels = get_nlp_features_and_labels    
 
 # Note: The shape of answer (for a single recored ) is (number of words, 384)
 else:
@@ -241,39 +221,24 @@ print(f'classify stratagy: {classify_strategy}')
 with VerboseTimer('Getting train features'):
     features_t = get_features(data_train)   
 with VerboseTimer('Getting train labels'):
-    labels_t = get_labels(data_train)        
+    labels_t = get_labels(data_train.answer)        
     
 with VerboseTimer('Getting train features'):
     features_val = get_features(data_val)
 with VerboseTimer('Getting validation labels'):
-    labels_val = get_labels(data_val)
+    labels_val = get_labels(data_val.answer)
 
 # len(features_t[1])
 
 
-# In[18]:
+# In[25]:
 
 
 validation_input = (features_val, labels_val)
 
 
-# In[19]:
+# In[26]:
 
-
-# model.input_layers
-# model.input_layers_node_indices
-# model.input_layers_tensor_indices
-# model.input_mask
-# model.input_names
-
-
-# model.inputs
-# model.input
-# model.input_spec
-
-# print(f'Wrapper shape:{train_features.shape}')
-# model.input_shape, np.concatenate(train_features).shape
-# model.input_shape, train_features[0].shape,  train_features[1].shape
 
 print(f'Expectedt shape: {model.input_shape}')
 print('---------------------------------------------------------------------------')
@@ -284,7 +249,7 @@ print(f'Actual Validation shape:{features_val[0].shape, features_val[1].shape}')
 print(f'Validation Labels shape:{labels_val.shape}')
 
 
-# In[20]:
+# In[ ]:
 
 
 # from utils.gpu_utils import test_gpu
@@ -299,7 +264,7 @@ from keras.utils import plot_model
 # BATCH_SIZE = 20
 
 EPOCHS= 5
-BATCH_SIZE = 30
+BATCH_SIZE = 50
 
 # train_features = image_name_question
 # validation_input = (validation_features, categorial_validation_labels)
@@ -311,7 +276,7 @@ BATCH_SIZE = 30
 # train_generator = aug.flow(train_features, categorial_train_labels)
 
 # stop_callback = callbacks.EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=3, verbose=1,mode='auto')
-
+history = None
 try:
 #     history = model.fit_generator(train_generator,
 #                                   validation_data=validation_input,
@@ -333,7 +298,13 @@ try:
         return tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
 
 
+    stop_callback = callbacks.EarlyStopping(monitor='val_loss', min_delta=0.02, patience=3, verbose=1,mode='auto')
+    acc_early_stop = EarlyStoppingByAccuracy(monitor='accuracy', value=0.98, verbose=1)
     
+    tensor_log_dir = os.path.abspath(os.path.join('.','tensor_board_logd'))
+    File.validate_dir_exists(tensor_log_dir )
+    tensor_board_callback = callbacks.TensorBoard(log_dir=tensor_log_dir )
+    callbacks = [stop_callback, acc_early_stop, tensor_board_callback ]  
 
     with VerboseTimer("Training Model"):
 #         with get_session() as sess:
@@ -343,15 +314,14 @@ try:
         history = model.fit(features_t,labels_t,
                             epochs=EPOCHS,
                             batch_size=BATCH_SIZE,
-                            validation_data=validation_input)
+                            validation_data=validation_input,
+                            shuffle=True,
+                            callbacks=callbacks)
 #             sess.close()
             
 except Exception as ex:
     logger.error("Got an error training model: {0}".format(ex))
     raise
-#     model.summary(print_fn=logger.error)
-#     raise
-# return model, history
 
 
 # ### Save trained model:
@@ -361,11 +331,13 @@ except Exception as ex:
 
 with VerboseTimer("Saving trained Model"):
     name_suffix = f'{classify_strategy}_trained'
-    model_fn, summary_fn, fn_image = save_model(model, vqa_models_folder, name_suffix=name_suffix)
+    model_fn, summary_fn, fn_image, fn_history = save_model(model, vqa_models_folder, name_suffix=name_suffix, history=history)
 
 msg = f"Summary: {summary_fn}\n"
 msg += f"Image: {fn_image}\n"
+msg += f'History: {fn_history or "NONE"}\n' 
 location_message = f"model_location = '{model_fn}'"
+
 
 
 print(msg)

@@ -2,7 +2,7 @@ from collections import namedtuple
 import os
 
 # File Locations -------------------------------------------------------------
-fn_meta            = os.path.abspath('./data/meta_data.json').replace('\\exported_notebooks','')
+fn_meta            = os.path.abspath('./data/meta_data.h5').replace('\\exported_notebooks','')
 raw_data_location  = os.path.abspath('./data/raw_data.h5').replace('\\exported_notebooks','')
 data_location      = os.path.abspath('./data/model_input.h5').replace('\\exported_notebooks','')
 vqa_specs_location = os.path.abspath('./data/vqa_specs.pkl').replace('\\exported_notebooks','')

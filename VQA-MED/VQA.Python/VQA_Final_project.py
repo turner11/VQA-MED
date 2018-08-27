@@ -232,13 +232,13 @@ meta_validation = create_meta(data_prepo_meta, df_val)
 
 from collections import namedtuple
 
-VqaSpecs = namedtuple('VqaSpecs', ['embedding_dim', 'seq_length', 'meta_data'])
+VqaSpecs = namedtuple('VqaSpecs', ['embedding_dim', 'seq_length', 'meta_data_location'])
 
 
-def get_vqa_specs(meta_data):
+def get_vqa_specs(meta_data_location):
     dim = embedding_dim
     s_length = seq_length
-    return VqaSpecs(embedding_dim=dim, seq_length=s_length, meta_data=meta_data)
+    return VqaSpecs(embedding_dim=dim, seq_length=s_length, meta_data_location=meta_data_location)
 
 
 vqa_specs = get_vqa_specs(meta_train)

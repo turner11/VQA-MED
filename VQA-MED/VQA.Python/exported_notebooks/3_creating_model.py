@@ -1,21 +1,23 @@
 
 # coding: utf-8
 
-# In[46]:
+# In[1]:
 
 
 # %%capture
 import os
 import numpy as np
+import pandas as pd
 from enum import Enum
 import time
 import datetime
 import keras.layers as keras_layers
+from pandas import HDFStore
 
 from vqa_logger import logger
 
 
-# In[47]:
+# In[2]:
 
 
 from common.os_utils import File
@@ -25,7 +27,7 @@ from common.model_utils import save_model
 from common.constatns import vqa_models_folder, vqa_specs_location
 
 
-# In[48]:
+# In[3]:
 
 
 DEFAULT_IMAGE_WIEGHTS = 'imagenet'
@@ -35,14 +37,15 @@ DEFAULT_IMAGE_WIEGHTS = 'imagenet'
 image_size_by_base_models = {'imagenet': (224, 224)}
 
 
-# In[49]:
+# In[4]:
 
 
-# categorial_column = 'ix_to_ans'
-categorial_column = 'ix_to_img_device'
+# categorial_data_frame = 'answers'
+categorial_data_frame = 'imaging_devices'
+categorial_data_frame = 'words'
 
 
-# In[50]:
+# In[5]:
 
 
 #Available merge strategies:
@@ -52,23 +55,33 @@ categorial_column = 'ix_to_img_device'
 merge_strategy = keras_layers.concatenate
 
 
-# In[51]:
+# In[6]:
 
 
 vqa_specs = File.load_pickle(vqa_specs_location)
-meta_data = vqa_specs.meta_data
+meta_data_location = vqa_specs.meta_data_location
 
 
-# In[52]:
+# In[7]:
 
 
-print(vqa_specs_location)
-meta_data.keys()
+print(meta_data_location)
+with pd.HDFStore(meta_data_location, 'r') as hdf:
+    keys = list(hdf.keys())
+    print(f"meta Keys: {keys}")
+
+
+
+
+df_meta_answers = pd.read_hdf(meta_data_location,'answers')
+df_meta_words = pd.read_hdf(meta_data_location,'words')
+df_meta_imaging_devices = pd.read_hdf(meta_data_location,'imaging_devices')
+df_meta_answers.tail(2)
 
 
 # Before we start, just for making sure, lets clear the session:
 
-# In[53]:
+# In[8]:
 
 
 from keras import backend as keras_backend
@@ -81,7 +94,7 @@ keras_backend.clear_session()
 
 # Define how to build the word-to vector branch:
 
-# In[54]:
+# In[9]:
 
 
 #  Input 0 is incompatible with layer lstm_1: expected ndim=3, found ndim=2
@@ -123,7 +136,7 @@ def word_2_vec_model(input_tensor):
 
 # In the same manner, define how to build the image representation branch:
 
-# In[55]:
+# In[10]:
 
 
 from keras.applications.vgg19 import VGG19
@@ -152,28 +165,28 @@ def get_image_model(base_model_weights=DEFAULT_IMAGE_WIEGHTS, out_put_dim=1024):
 
 # And finally, building the model itself:
 
-# In[56]:
+# In[11]:
 
 
 model_output_num_units = None
 if classify_strategy == ClassifyStrategies.CATEGORIAL:    
-    model_output_num_units = 2#len(list(meta_data[categorial_column].keys()) )
+    model_output_num_units = len(pd.read_hdf(meta_data_location,categorial_data_frame))
 elif classify_strategy == ClassifyStrategies.NLP:
     model_output_num_units = embedded_sentence_length    
 else:
     raise Exception(f'Unfamilier strategy: {strat}')
 
-logger.debug(f'Model will have {model_output_num_units} output units (Strategy: {classify_strategy})')
+logger.debug(f'Model will have {model_output_num_units} output units (Strategy: {classify_strategy}). Categorial coolumn: "{categorial_data_frame}"')
 
 
-# In[57]:
+# In[12]:
 
 
 from keras import Model, models, Input, callbacks
 from keras.utils import plot_model, to_categorical
 from keras.layers import Dense, Embedding, LSTM, BatchNormalization, Activation, Flatten#, GlobalAveragePooling2D, Merge, Flatten
 
-def get_vqa_model(meta):
+def get_vqa_model():
 #     import tensorflow as tf
 #     g = tf.Graph()
 #     with g.as_default():
@@ -181,9 +194,10 @@ def get_vqa_model(meta):
     DENSE_ACTIVATION = 'relu'
 
     OPTIMIZER = 'rmsprop'
-    LOSS = 'categorical_crossentropy'
-    METRICS = 'accuracy'
-    num_classes = len(meta['ix_to_ans'].keys())
+#     LOSS, ACTIVATION = 'categorical_crossentropy', 'softmax' #good for a model to predict multiple mutually-exclusive classes.
+    LOSS, ACTIVATION = 'binary_crossentropy', 'sigmoid'
+    
+    METRICS = 'accuracy'    
     image_model, lstm_model, fc_model = None, None, None
     try:     
         # ATTN:
@@ -206,8 +220,7 @@ def get_vqa_model(meta):
         fc_tensors = Activation(DENSE_ACTIVATION)(fc_tensors)
 
         #ATTN:
-        fc_tensors = Dense(units=model_output_num_units, activation='softmax', name='model_output_sofmax_dense')(fc_tensors)
-        #fc_tensors = Dense(units=num_classes, activation='softmax', name='model_output_sofmax_dense')(fc_tensors)
+        fc_tensors = Dense(units=model_output_num_units, activation=ACTIVATION, name='model_output_sofmax_dense')(fc_tensors)        
 
         fc_model = Model(inputs=[lstm_input_tensor, image_input_tensor], output=fc_tensors)
         fc_model.compile(optimizer=OPTIMIZER, loss=LOSS, metrics=[METRICS])
@@ -225,19 +238,19 @@ def get_vqa_model(meta):
 
     return fc_model
 
-model = get_vqa_model(meta_data)
+model = get_vqa_model()
 model
 
 
 # ##### We better save it:
 
-# In[58]:
+# In[14]:
 
 
 strategy_str = get_stratagy_str()
 
 
-model_fn, summary_fn, fn_image = save_model(model, vqa_models_folder, name_suffix=strategy_str)
+model_fn, summary_fn, fn_image, _ = save_model(model, vqa_models_folder, name_suffix=strategy_str)
 
 msg = f"Summary: {summary_fn}\n"
 msg += f"Image: {fn_image}\n"
@@ -248,21 +261,32 @@ print(msg)
 print (location_message)
 
 
-# ##### Display a plot + summary:
+# ### Display a plot + summary:
 
-# In[59]:
+# #### Where are the trainable parameters?
 
-
-# %matplotlib inline
-# from matplotlib import pyplot as plt
-# %pylab inline
+# In[17]:
 
 
-# plt.imshow(img,cmap='gray')
-# plt.show()
+import pandas as pd
+K = keras_backend
+names_and_trainable_params = {w.name: np.prod(K.get_value(w).shape) for w in model.trainable_weights}
+names_and_trainable_params = {(w.name, np.prod(K.get_value(w).shape)) for w in model.trainable_weights}
+a = {'layer': [tpl[0] for tpl in names_and_trainable_params],
+     'trainable_params': [tpl[1] for tpl in names_and_trainable_params]
+    }
+df = pd.DataFrame.from_dict(a)
+df_sorted = df.sort_values(['trainable_params'], ascending=[False]).reset_index()
+df_sorted['pretty_value'] = df_sorted.apply(lambda x: "{:,}".format(x['trainable_params']), axis=1)
+top = df_sorted[df_sorted.trainable_params > 1000]
+print(f'Got a total of {"{:,}".format(sum(df_sorted.trainable_params))} trainable parameters')
+top
+
+
+# In[18]:
+
 
 from IPython.display import Image, display
-
 listOfImageNames = [fn_image]
 
 for imageName in listOfImageNames:
@@ -272,7 +296,7 @@ model.summary()
 
 # Copy these items to the next notebook of training the model
 
-# In[60]:
+# In[19]:
 
 
 # logger.debug('Done')

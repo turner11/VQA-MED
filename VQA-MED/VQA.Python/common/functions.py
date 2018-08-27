@@ -226,6 +226,27 @@ def get_features(df: pd.DataFrame):
     return features
 
 
+def sentences_to_hot_vector(sentences, words_df):
+    from sklearn.preprocessing import MultiLabelBinarizer
+    labels = [words_df.values]
+
+    splatted_answers = [ans.lower().split() for ans in sentences]
+    clean_splitted_answers = [[w for w in arr if w in words_df.values] for arr in splatted_answers]
+    # ----------------------------
+    mlb = MultiLabelBinarizer()
+    mlb.fit(labels)
+    MultiLabelBinarizer(classes=None, sparse_output=False)
+    print(f'Classes: {mlb.classes_}')
+    arr_one_hot_vector = mlb.transform(clean_splitted_answers)
+    return arr_one_hot_vector
+
+def hot_vector_to_words(hot_vector, words_df):
+    max_val = hot_vector.max()
+    max_loc = np.argwhere(hot_vector == max_val)
+    max_loc = max_loc.reshape(max_loc.shape[0])
+    return words_df.iloc[max_loc]
+
+
 def predict(model, df_data: pd.DataFrame, meta_data=None):
     # predict
     features = get_features(df_data)
