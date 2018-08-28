@@ -112,17 +112,17 @@ def main():
     #                      notes ='Categorial, 4 options Imaging devices')
 
     # loss: - acc:  - val_loss: - val_acc:  Training Model: 3:50:30.246880
-    vgg19_model_2_classes = Model(
-        model_location='C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180815_0137_53\\vqa_model_ClassifyStrategies.CATEGORIAL_trained.h5',
+    vgg19_model_multi_classes = Model(
+        model_location='C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180827_2146_48\\vqa_model_ClassifyStrategies.CATEGORIAL_trained.h5',
         history_location='',
         image_base_net='vgg19',
-        loss=0.0263 ,
-        val_loss= 0.3516,
-        accuracy=0.9917,
-        val_accuracy=0.9227,
-        notes='Categorial, 2 options Imaging devices, cleaned data before training data',
-        parameter_count=20190786,
-        trainable_parameter_count=165762
+        loss=0.1098 ,
+        val_loss=  0.0133,
+        accuracy=0.9893,
+        val_accuracy=0.9992,
+        notes='Categorial, class for each word',
+        parameter_count=21061245,
+        trainable_parameter_count=1036221
     )
 
 
@@ -137,7 +137,7 @@ def main():
     #     notes='Categorial, 4 options Imaging devices')
 
 
-    insert_model(vgg19_model_2_classes)
+    insert_model(vgg19_model_multi_classes)
     # ## Resnet 50:
     # trained_model_location = 'C:\Users\Public\Documents\Data\2018\vqa_models\20180730_0524_48\vqa_model_ClassifyStrategies.CATEGORIAL_trained.h5'
     # loss: 0.1248 - acc: 0.9570 - val_loss: 2.7968 - val_acc: 0.5420

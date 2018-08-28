@@ -263,8 +263,8 @@ from keras.utils import plot_model
 # EPOCHS=25
 # BATCH_SIZE = 20
 
-EPOCHS= 5
-BATCH_SIZE = 50
+EPOCHS= 1
+BATCH_SIZE = 75
 
 # train_features = image_name_question
 # validation_input = (validation_features, categorial_validation_labels)
@@ -298,7 +298,7 @@ try:
         return tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
 
 
-    stop_callback = callbacks.EarlyStopping(monitor='val_loss', min_delta=0.02, patience=3, verbose=1,mode='auto')
+    stop_callback = callbacks.EarlyStopping(monitor='val_loss', min_delta=0.02, patience=0, verbose=1,mode='auto')
     acc_early_stop = EarlyStoppingByAccuracy(monitor='accuracy', value=0.98, verbose=1)
     
     tensor_log_dir = os.path.abspath(os.path.join('.','tensor_board_logd'))

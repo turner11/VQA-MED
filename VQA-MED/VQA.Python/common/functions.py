@@ -226,7 +226,7 @@ def get_features(df: pd.DataFrame):
     return features
 
 
-def sentences_to_hot_vector(sentences, words_df):
+def sentences_to_hot_vector(sentences, words_df:pd.DataFrame):
     from sklearn.preprocessing import MultiLabelBinarizer
     labels = [words_df.values]
 
@@ -247,27 +247,37 @@ def hot_vector_to_words(hot_vector, words_df):
     return words_df.iloc[max_loc]
 
 
-def predict(model, df_data: pd.DataFrame, meta_data=None):
+def predict(model, df_data: pd.DataFrame, meta_data_location=None):
+    # def apredict(model, df_data: pd.DataFrame, meta_data_location=None):
+    PERCENTILE = 99.8
     # predict
     features = get_features(df_data)
     p = model.predict(features)
 
+    percentiles = [np.percentile(curr_pred, PERCENTILE) for curr_pred in p]
+    enumrated_p = [[(i, v) for i, v in enumerate(curr_p)] for curr_p in p]
+    pass_vals = [([(i, curr_pred) for i, curr_pred in curr_pred_arr if curr_pred >= curr_percentile]) for
+                 curr_pred_arr, curr_percentile in zip(enumrated_p, percentiles)]
+
+    # [(i,len(curr_pass_arr)) for i, curr_pass_arr in  pass_vals]
+
     # vector-to-value
-    predictions = [np.argmax(a, axis=None, out=None) for a in p]
-    results = predictions
+    predictions = [i for curr_pass_arr in pass_vals for i, curr_p in curr_pass_arr]
+    results = [curr_p for curr_pass_arr in pass_vals for i, curr_p in curr_pass_arr]
 
     # dictionary for creating a data frame
     cols_to_transfer = ['image_name', 'question', 'answer', 'path']
     df_dict = {col_name: df_data[col_name] for col_name in cols_to_transfer}
 
-    if meta_data:
-        ix_to_img_device = meta_data['ix_to_img_device']
-        results = [ix_to_img_device[i] for i in predictions]
+    if meta_data_location:
+        df_meta_words = pd.read_hdf(meta_data_location, 'words')
+        results = df_meta_words.loc[predictions]
 
-        imaging_device_probabilities = {v: [prediction[k] for prediction in p] for k, v in ix_to_img_device.items()}
+        imaging_device_probabilities = {row.word: [prediction[index] for prediction in p] for index, row in
+                                        results.iterrows()}
         df_dict.update(imaging_device_probabilities)
 
-    df_dict['prediction'] =  results
+    df_dict['prediction'] = " ".join([r for r in results.word.values])
     df = pd.DataFrame(df_dict)
 
     # Arranging in a prettier way
