@@ -2,7 +2,6 @@ from evaluate.VqaMedEvaluatorBase import VqaMedEvaluatorBase
 from nltk.corpus import wordnet as wn
 from scipy import spatial
 
-
 class WbssEvaluator(VqaMedEvaluatorBase):
     """"""
 
@@ -24,6 +23,9 @@ class WbssEvaluator(VqaMedEvaluatorBase):
     NO VALIDATION OF THE RUNFILE SHOULD BE IMPLEMENTED HERE
     We assume that the predictions in the parameter are valid
     Validation should be handled in the load_predictions method
+        :param predictions:
+        :param ground_truth:
+        :return:
     """
         count = 0
         totalscore_wbss = 0.0
@@ -128,3 +130,8 @@ class WbssEvaluator(VqaMedEvaluatorBase):
 
     def _calculateCosineSimilarity(self, vector1, vector2):
         return 1 - spatial.distance.cosine(vector1, vector2)
+
+
+def wbss_score(y_true: iter, y_pred: iter) -> float:
+    evaluator = WbssEvaluator(predictions=y_pred, ground_truth=y_true)
+    return evaluator.evaluate()

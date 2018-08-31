@@ -69,7 +69,7 @@ def save_model(model, base_folder, name_suffix="", history=None):
             logger.debug("History saved to '{0}'".format(history_fn))
             history_res_path = history_fn
         except Exception as ex:
-            logger.warning("Failed to write history:\n{0}".format(ex))
+            logger.warning("Failed to write history:\n\t{0}".format(ex))
 
 
     return model_fn, summary_fn, fn_image, history_res_path

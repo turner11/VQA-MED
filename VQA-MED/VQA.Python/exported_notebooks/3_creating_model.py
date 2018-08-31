@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
 # %%capture
@@ -17,7 +17,7 @@ from pandas import HDFStore
 from vqa_logger import logger
 
 
-# In[2]:
+# In[ ]:
 
 
 from common.os_utils import File
@@ -25,9 +25,11 @@ from common.settings import classify_strategy, embedded_sentence_length, get_str
 from common.classes import ClassifyStrategies, VqaSpecs
 from common.model_utils import save_model
 from common.constatns import vqa_models_folder, vqa_specs_location
+from evaluate.statistical import f1_score, recall_score, precision_score
+from evaluate.WbssEvaluator import wbss_score
 
 
-# In[3]:
+# In[ ]:
 
 
 DEFAULT_IMAGE_WIEGHTS = 'imagenet'
@@ -37,7 +39,7 @@ DEFAULT_IMAGE_WIEGHTS = 'imagenet'
 image_size_by_base_models = {'imagenet': (224, 224)}
 
 
-# In[4]:
+# In[ ]:
 
 
 # categorial_data_frame = 'answers'
@@ -45,7 +47,7 @@ categorial_data_frame = 'imaging_devices'
 categorial_data_frame = 'words'
 
 
-# In[5]:
+# In[ ]:
 
 
 #Available merge strategies:
@@ -55,14 +57,14 @@ categorial_data_frame = 'words'
 merge_strategy = keras_layers.concatenate
 
 
-# In[6]:
+# In[ ]:
 
 
 vqa_specs = File.load_pickle(vqa_specs_location)
 meta_data_location = vqa_specs.meta_data_location
 
 
-# In[7]:
+# In[ ]:
 
 
 print(meta_data_location)
@@ -81,7 +83,7 @@ df_meta_answers.tail(2)
 
 # Before we start, just for making sure, lets clear the session:
 
-# In[8]:
+# In[ ]:
 
 
 from keras import backend as keras_backend
@@ -94,7 +96,7 @@ keras_backend.clear_session()
 
 # Define how to build the word-to vector branch:
 
-# In[9]:
+# In[ ]:
 
 
 #  Input 0 is incompatible with layer lstm_1: expected ndim=3, found ndim=2
@@ -136,7 +138,7 @@ def word_2_vec_model(input_tensor):
 
 # In the same manner, define how to build the image representation branch:
 
-# In[10]:
+# In[ ]:
 
 
 from keras.applications.vgg19 import VGG19
@@ -165,7 +167,7 @@ def get_image_model(base_model_weights=DEFAULT_IMAGE_WIEGHTS, out_put_dim=1024):
 
 # And finally, building the model itself:
 
-# In[11]:
+# In[ ]:
 
 
 model_output_num_units = None
@@ -179,7 +181,7 @@ else:
 logger.debug(f'Model will have {model_output_num_units} output units (Strategy: {classify_strategy}). Categorial coolumn: "{categorial_data_frame}"')
 
 
-# In[12]:
+# In[ ]:
 
 
 from keras import Model, models, Input, callbacks
@@ -195,9 +197,10 @@ def get_vqa_model():
 
     OPTIMIZER = 'rmsprop'
 #     LOSS, ACTIVATION = 'categorical_crossentropy', 'softmax' #good for a model to predict multiple mutually-exclusive classes.
-    LOSS, ACTIVATION = 'binary_crossentropy', 'sigmoid'
+#     LOSS, ACTIVATION = 'binary_crossentropy', 'sigmoid'
+    LOSS, ACTIVATION = 'categorical_crossentropy', 'sigmoid'
     
-    METRICS = 'accuracy'    
+    METRICS = [f1_score, recall_score, precision_score, 'accuracy']#[f1_score, 'accuracy']#['accuracy'] #'f1score', 'recall','precision'
     image_model, lstm_model, fc_model = None, None, None
     try:     
         # ATTN:
@@ -223,7 +226,7 @@ def get_vqa_model():
         fc_tensors = Dense(units=model_output_num_units, activation=ACTIVATION, name='model_output_sofmax_dense')(fc_tensors)        
 
         fc_model = Model(inputs=[lstm_input_tensor, image_input_tensor], output=fc_tensors)
-        fc_model.compile(optimizer=OPTIMIZER, loss=LOSS, metrics=[METRICS])
+        fc_model.compile(optimizer=OPTIMIZER, loss=LOSS, metrics=METRICS)
     except Exception as ex:
         logger.error("Got an error while building vqa model:\n{0}".format(ex))
         models = [(image_model, 'image_model'), (lstm_model, 'lstm_model'), (fc_model, 'lstm_model')]
@@ -244,7 +247,7 @@ model
 
 # ##### We better save it:
 
-# In[14]:
+# In[ ]:
 
 
 strategy_str = get_stratagy_str()
@@ -265,7 +268,7 @@ print (location_message)
 
 # #### Where are the trainable parameters?
 
-# In[17]:
+# In[ ]:
 
 
 import pandas as pd
@@ -283,7 +286,7 @@ print(f'Got a total of {"{:,}".format(sum(df_sorted.trainable_params))} trainabl
 top
 
 
-# In[18]:
+# In[ ]:
 
 
 from IPython.display import Image, display
@@ -296,7 +299,7 @@ model.summary()
 
 # Copy these items to the next notebook of training the model
 
-# In[19]:
+# In[ ]:
 
 
 # logger.debug('Done')

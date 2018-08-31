@@ -26,7 +26,7 @@ class VqaMedEvaluatorBase(object):
     def get_name(self):
         raise NotImplementedError("Evaluation should be implemented by a concrete class")
 
-    def evaluate(self):
+    def evaluate(self) -> float:
         """
         This is the only method that will be called by the framework
         Parameter 'submission_file_path': Path of the submitted runfile

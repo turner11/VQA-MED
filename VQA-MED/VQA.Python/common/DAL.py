@@ -21,11 +21,41 @@ class Model(Base):
     class_strategy = Column(String(15))
     parameter_count = Column('parameter_count', Integer)
     trainable_parameter_count = Column('trainable_parameter_count', Integer)
+
+    f1_score = Column(Float())
+    f1_score_val = Column(Float())
+    recall = Column(Float())
+    recall_val = Column(Float())
+    precsision = Column(Float())
+    precsision_val = Column(Float())
+    loss_function  = Column(String(50))
+    activation  = Column(String(50))
+
+
+
     notes = Column('notes',String(200))
 
     
     
-    def __init__(self, model_location, history_location, image_base_net, loss, val_loss, accuracy, val_accuracy,notes, parameter_count, trainable_parameter_count):
+    def __init__(self,
+                 model_location,
+                 history_location,
+                 image_base_net,
+                 loss,
+                 val_loss,
+                 accuracy,
+                 val_accuracy,
+                 notes,
+                 parameter_count, trainable_parameter_count,
+                 f1_score,
+                 f1_score_val,
+                 recall,
+                 recall_val,
+                 precsision,
+                 precsision_val,
+                 loss_function,
+                 activation
+    ):
         """"""
         self.model_location = model_location  
         self.history_location = history_location  
@@ -37,6 +67,17 @@ class Model(Base):
         self.notes = notes
         self.parameter_count = parameter_count
         self.trainable_parameter_count = trainable_parameter_count
+        self.f1_score = f1_score
+        self.f1_score_val = f1_score_val
+        self.recall = recall
+        self.recall_val = recall_val
+        self.precsision = precsision
+        self.precsision_val = precsision_val
+        self.loss_function = loss_function
+        self.activation = activation
+
+
+
 
     def __repr__(self):
         return f'{self.__class__.__name__}(id={self.id},\n'\
@@ -47,7 +88,15 @@ class Model(Base):
                     f'\tval_loss={self.val_loss},\n' \
                     f'\taccuracy={self.accuracy},\n' \
                     f'\tval_accuracy={self.val_accuracy},\n' \
-                    f'\tclass_strategy={self.class_strategy})'
+                    f'\tclass_strategy={self.class_strategy})'\
+                    f'\tf1_score = {self.f1_score},\n'\
+                    f'\tf1_score_val = {self.f1_score_val},\n'\
+                    f'\trecall = {self.recall},\n'\
+                    f'\trecall_val = {self.recall_val},\n'\
+                    f'\tprecsision = {self.precsision},\n'\
+                    f'\tprecsision_val = {self.precsision_val},\n'\
+                    f'\tloss_function = {self.loss_function},\n'\
+                    f'\tactivation = {self.activation},\n'.rstrip()
 
 def create_db():
     Base.metadata.create_all(_engine)
@@ -113,18 +162,45 @@ def main():
 
     # loss: - acc:  - val_loss: - val_acc:  Training Model: 3:50:30.246880
     vgg19_model_multi_classes = Model(
-        model_location='C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180827_2146_48\\vqa_model_ClassifyStrategies.CATEGORIAL_trained.h5',
+        model_location='C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180829_1113_47\\vqa_model_ClassifyStrategies.CATEGORIAL_trained.h5',
         history_location='',
         image_base_net='vgg19',
-        loss=0.1098 ,
-        val_loss=  0.0133,
-        accuracy=0.9893,
-        val_accuracy=0.9992,
-        notes='Categorial, class for each word',
+        loss=26.7192,
+        val_loss=18.9696,
+        accuracy=0.066,
+        val_accuracy=0.0064,
+        notes='',
         parameter_count=21061245,
-        trainable_parameter_count=1036221
+        trainable_parameter_count=1036221,
+        f1_score=0.0579,
+        f1_score_val=0.0520,
+        recall=0.0318,
+        recall_val=0.0296,
+        precsision=0.3887,
+        precsision_val=0.2135,
+        loss_function='categorical_crossentropy',
+        activation='softmax'
     )
 
+    # model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180829_1113_47\\vqa_model_ClassifyStrategies.CATEGORIAL_trained.h5',
+    # history_location = '',
+    # image_base_net = 'vgg19',
+    # loss = 26.7192,
+    # val_loss = 18.9696,
+    # accuracy = 0.066,
+    # val_accuracy = 0.0064,
+    # notes = '',
+    # parameter_count = 21061245,
+    # trainable_parameter_count = 1036221,
+    # f1_score = 0.0579,
+    # f1_score_val = 0.0520,
+    # recall = 0.0318,
+    # recall_val = 0.0296,
+    # precsision = 0.3887,
+    # precsision_val = 0.2135,
+    # loss_function = 'categorical_crossentropy',
+    # activation = 'softmax',
+    str()
 
     # vgg19_model = Model(
     #     model_location='C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180731_0630_29\\vqa_model_ClassifyStrategies.CATEGORIAL_trained.h5',

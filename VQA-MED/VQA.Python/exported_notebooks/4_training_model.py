@@ -6,9 +6,20 @@
 # In[1]:
 
 
-## VGG all words are Classes (Trainable params: 1,070,916)
-model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180827_1502_41\\vqa_model_CATEGORIAL.h5'
+## VGG all words are Classes (Trainable params: 1,070,916). 'categorical_crossentropy', 'sigmoid' .With f1_score, recall_score, precision_score + accuracy metrics
+model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180830_1046_30\\vqa_model_CATEGORIAL.h5'
 strategy_str = 'CATEGORIAL'
+## VGG all words are Classes (Trainable params: 1,070,916). 'categorical_crossentropy', 'softmax' .With f1_score, recall_score, precision_score + accuracy metrics
+# model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180829_0830_48\\vqa_model_CATEGORIAL.h5'
+# strategy_str = 'CATEGORIAL'
+
+## VGG all words are Classes (Trainable params: 1,070,916) With f1_score, recall_score, precision_score + accuracy metrics
+# model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180828_2149_37\\vqa_model_CATEGORIAL.h5'
+# strategy_str = 'CATEGORIAL'
+
+## VGG all words are Classes (Trainable params: 1,070,916)
+# model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180827_1502_41\\vqa_model_CATEGORIAL.h5'
+# strategy_str = 'CATEGORIAL'
 
 ## VGG 2 Classes (Trainable params: 165,762)
 # model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180814_2035_20\\vqa_model_CATEGORIAL.h5'
@@ -59,20 +70,23 @@ from common.settings import classify_strategy
 from common.classes import ClassifyStrategies, EarlyStoppingByAccuracy
 from common.model_utils import save_model
 from common.os_utils import File
+from evaluate.statistical import f1_score, recall_score, precision_score
+from evaluate.WbssEvaluator import wbss_score
 
 
 # #### Loading the Model:
 
-# In[4]:
+# In[6]:
 
 
 with VerboseTimer("Loading Model"):
-    model = load_model(model_location)
+    model = load_model(model_location, custom_objects= {'f1_score': f1_score, 'recall_score':recall_score, 'precision_score':precision_score})
+    
 
 
 # #### Loading the data:
 
-# In[5]:
+# In[ ]:
 
 
 logger.debug(f"Loading the data from {data_location}")
@@ -81,7 +95,7 @@ with VerboseTimer("Loading Data"):
         df_data = store['data']  
 
 
-# In[6]:
+# In[ ]:
 
 
 vqa_specs = File.load_pickle(vqa_specs_location)
@@ -94,7 +108,7 @@ df_meta_imaging_devices = pd.read_hdf(meta_data_location,'imaging_devices')
 df_meta_answers.tail(2)
 
 
-# In[7]:
+# In[ ]:
 
 
 logger.debug(f"df_data Shape: {df_data.shape}")
@@ -105,7 +119,7 @@ df_data.head(2)
 
 # ##### It makes no sense to train on imageing devices we don't know thier lables
 
-# In[8]:
+# In[ ]:
 
 
 # ATTN: 
@@ -119,7 +133,7 @@ df_data_orig = df_data
 df_data = filter_out_unknown_devices(df_data)
 
 
-# In[9]:
+# In[ ]:
 
 
 data_train = df_data[df_data.group == 'train'].copy().reset_index()
@@ -132,7 +146,7 @@ data_val = df_data[df_data.group == 'validation'].copy().reset_index()
 
 # ##### The functions for getting the features & labels:
 
-# In[10]:
+# In[ ]:
 
 
 from common.functions import get_features, _concat_row
@@ -144,7 +158,7 @@ IPython.display.display(code_concat)
 
 # #### Defining how to get NLP labels
 
-# In[11]:
+# In[ ]:
 
 
 def get_nlp_labels():
@@ -154,7 +168,7 @@ def get_nlp_labels():
 
 # #### Defining how to get Categorial fetaures / labels
 
-# In[13]:
+# In[ ]:
 
 
 df = data_train
@@ -173,7 +187,7 @@ classes_indices[idx_sample]
 
 # ### Will transform the sentences into vector and back using the following:
 
-# In[19]:
+# In[ ]:
 
 
 code = get_highlited_function_code(sentences_to_hot_vector,remove_comments=False)
@@ -185,7 +199,7 @@ IPython.display.display(code)
 
 # #### Check it looks sane by inversing the binarizing:
 
-# In[18]:
+# In[ ]:
 
 
 words = df_meta_words.word
@@ -204,7 +218,7 @@ print('\n\nThe highlighed labels:')
 label_words
 
 
-# In[24]:
+# In[ ]:
 
 
 if classify_strategy == ClassifyStrategies.CATEGORIAL:        
@@ -231,13 +245,13 @@ with VerboseTimer('Getting validation labels'):
 # len(features_t[1])
 
 
-# In[25]:
+# In[ ]:
 
 
 validation_input = (features_val, labels_val)
 
 
-# In[26]:
+# In[ ]:
 
 
 print(f'Expectedt shape: {model.input_shape}')
