@@ -1,19 +1,7 @@
 import spacy
-from common.classes import ClassifyStrategies
 from vqa_logger import logger
 
 nlp=None
-
-# How do we classify?-----------------------------------------------------------------------------
-classify_strategy = ClassifyStrategies.CATEGORIAL
-# classify_strategy = ClassifyStrategies.NLP
-
-
-def get_stratagy_str():
-    strategy_str = str(classify_strategy).split('.')[-1]
-    return strategy_str
-
-
 # NLP & Embedding-----------------------------------------------------------------------------
 vectors = ['en_core_web_lg', 'en_core_web_md', 'en_core_web_sm']  # 'en_vectors_web_lg'
 nlp_vector = vectors[2]

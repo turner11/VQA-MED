@@ -2,10 +2,11 @@ from collections import namedtuple
 import os
 
 # File Locations -------------------------------------------------------------
-fn_meta            = os.path.abspath('./data/meta_data.h5').replace('\\exported_notebooks','')
-raw_data_location  = os.path.abspath('./data/raw_data.h5').replace('\\exported_notebooks','')
-data_location      = os.path.abspath('./data/model_input.h5').replace('\\exported_notebooks','')
-vqa_specs_location = os.path.abspath('./data/vqa_specs.pkl').replace('\\exported_notebooks','')
+vqa_python_pbase_path = os.path.join(os.path.abspath('.').split('VQA.Python')[0],'VQA.Python')
+fn_meta            = os.path.abspath(os.path.join(vqa_python_pbase_path, 'data/meta_data.h5'))
+raw_data_location  = os.path.abspath(os.path.join(vqa_python_pbase_path, 'data/raw_data.h5'))
+data_location      = os.path.abspath(os.path.join(vqa_python_pbase_path, 'data/model_input.h5'))
+vqa_specs_location = os.path.abspath(os.path.join(vqa_python_pbase_path, 'data/vqa_specs.pkl'))
 
 images_folder_train = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-images'
 images_folder_validation = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Valid\\VQAMed2018Valid-images'

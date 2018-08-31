@@ -1,6 +1,7 @@
 import inspect
 import os
 import re
+import textwrap
 from collections import defaultdict
 
 import pandas as pd
@@ -40,11 +41,17 @@ def get_highlited_function_code(foo, remove_comments=False):
         lines = [l for l in lines if not l.lstrip().startswith('#')]
         txt = '\n'.join(lines)
 
+    textwrap.dedent(txt)
+
     formatter = HtmlFormatter()
     ipython_display_object = \
         IPython.display.HTML('<style type="text/css">{}</style>{}'.format(
             formatter.get_style_defs('.highlight'),
             highlight(txt, PythonLexer(), formatter)))
+
+
+
+
     return ipython_display_object
     # print(txt)
 
@@ -226,16 +233,15 @@ def get_features(df: pd.DataFrame):
     return features
 
 
-def sentences_to_hot_vector(sentences, words_df:pd.DataFrame):
+def sentences_to_hot_vector(sentences:pd.Series, words_df:pd.DataFrame)->iter:
     from sklearn.preprocessing import MultiLabelBinarizer
-    labels = [words_df.values]
-
+    classes = words_df.values
     splatted_answers = [ans.lower().split() for ans in sentences]
-    clean_splitted_answers = [[w for w in arr if w in words_df.values] for arr in splatted_answers]
-    # ----------------------------
-    mlb = MultiLabelBinarizer()
-    mlb.fit(labels)
-    MultiLabelBinarizer(classes=None, sparse_output=False)
+    clean_splitted_answers = [[w for w in arr if w in classes] for arr in splatted_answers]
+
+    mlb = MultiLabelBinarizer(classes=classes.reshape(classes.shape[0]), sparse_output=False)
+    mlb.fit(classes)
+
     print(f'Classes: {mlb.classes_}')
     arr_one_hot_vector = mlb.transform(clean_splitted_answers)
     return arr_one_hot_vector
@@ -247,14 +253,14 @@ def hot_vector_to_words(hot_vector, words_df):
     return words_df.iloc[max_loc]
 
 
-def predict(model, df_data: pd.DataFrame, meta_data_location=None):
+def predict(model, df_data: pd.DataFrame, meta_data_location=None, percentile=99.8):
     # def apredict(model, df_data: pd.DataFrame, meta_data_location=None):
-    PERCENTILE = 99.8
+
     # predict
     features = get_features(df_data)
     p = model.predict(features)
 
-    percentiles = [np.percentile(curr_pred, PERCENTILE) for curr_pred in p]
+    percentiles = [np.percentile(curr_pred, percentile) for curr_pred in p]
     enumrated_p = [[(i, v) for i, v in enumerate(curr_p)] for curr_p in p]
     pass_vals = [([(i, curr_pred) for i, curr_pred in curr_pred_arr if curr_pred >= curr_percentile]) for
                  curr_pred_arr, curr_percentile in zip(enumrated_p, percentiles)]

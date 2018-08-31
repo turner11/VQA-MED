@@ -1,12 +1,14 @@
-import datetime
 import graphviz
-import os
 import pydot
+import datetime
+import os
 import time
 from keras.utils import plot_model
-
+import numpy as np
+import pandas as pd
 from common.os_utils import File
 from vqa_logger import logger
+from keras import Model
 
 
 def _get_time_stamp():
@@ -73,3 +75,36 @@ def save_model(model, base_folder, name_suffix="", history=None):
 
 
     return model_fn, summary_fn, fn_image, history_res_path
+
+
+def get_trainable_params_distribution(model: Model, params_threshold: int = 1000) -> pd.DataFrame:
+    from keras import backend as K
+
+    names_and_trainable_params = {(w.name, np.prod(K.get_value(w).shape)) for w in model.trainable_weights}
+    a = {'layer': [tpl[0] for tpl in names_and_trainable_params],
+         'trainable_params': [tpl[1] for tpl in names_and_trainable_params]
+         }
+    df = pd.DataFrame.from_dict(a)
+    df_sorted = df.sort_values(['trainable_params'], ascending=[False]).reset_index()
+    df_sorted['pretty_value'] = df_sorted.apply(lambda x: "{:,}".format(x['trainable_params']), axis=1)
+    top = df_sorted[df_sorted.trainable_params > params_threshold]
+    print(f'Got a total of {"{:,}".format(sum(df_sorted.trainable_params))} trainable parameters')
+    return top
+
+
+def main():
+    pass
+    # from common import DAL
+    # from keras.models import load_model
+    # from evaluate.statistical import f1_score, recall_score, precision_score
+    # model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180831_1244_55\\vqa_model_.h5'
+    # model = load_model(model_location,
+    #                    custom_objects={'f1_score': f1_score,
+    #                                    'recall_score': recall_score,
+    #                                    'precision_score': precision_score})
+    #
+    # DAL.insert_models(model)
+
+
+if __name__ == '__main__':
+    main()

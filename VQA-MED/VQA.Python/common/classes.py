@@ -3,15 +3,7 @@ from collections import namedtuple
 from enum import Enum
 
 from keras.callbacks import Callback
-
-
-class ClassifyStrategies(Enum):
-    NLP = 1
-    CATEGORIAL = 2
-
-
 VqaSpecs = namedtuple('VqaSpecs', ['embedding_dim', 'seq_length', 'data_location', 'meta_data_location'])
-
 
 class EarlyStoppingByAccuracy(Callback):
     def __init__(self, monitor='accuracy', value=0.98, verbose=0):

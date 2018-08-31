@@ -1,5 +1,4 @@
 import argparse
-
 from utils.gpu_utils import test_gpu
 from vqa_flow.main import main as main_flow
 
@@ -25,8 +24,3 @@ if __name__ == '__main__':
         print("Got an error:\n{0}".format(e))
         raise
         # sys.exit(1)
-
-
-
-
-
