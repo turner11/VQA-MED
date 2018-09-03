@@ -13,19 +13,21 @@ logging.basicConfig(filemode='a',
                     format=format,
                     datefmt='%H:%M:%S',
                     level=log_level,
-                    stream=sys.stdout)
+                    # stream=sys.stdout,
+                    filename=logname)
 
-ch = logging.StreamHandler(sys.stdout)
+
 # coloredlogs.install()
 logger = logging.getLogger('pythonVQA')
+
 #
-# ch = logging.StreamHandler(sys.stdout)
-# ch.setLevel(log_level)
-# # formatter = logging.Formatter(format)
-# # ch.setFormatter(formatter)
-# if not logger.handlers:
-#     logger.removeHandler(ch)
-#     logger.addHandler(ch)
+ch = logging.StreamHandler(sys.stdout)
+ch.setLevel(log_level)
+formatter = logging.Formatter(format)
+ch.setFormatter(formatter)
+if not logger.handlers:
+    logger.removeHandler(ch)
+    logger.addHandler(ch)
 
 
 # LOGNAME = "vqa"

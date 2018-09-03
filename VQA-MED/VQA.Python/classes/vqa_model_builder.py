@@ -23,13 +23,22 @@ DEFAULT_IMAGE_WIEGHTS = 'imagenet'
 # is required to go through the same transformation
 image_size_by_base_models = {'imagenet': (224, 224)}
 
+LSTM_UNITS = 64
+POST_CONCAT_DENSE_UNITS = 64#256
+DENSE_ACTIVATION = 'relu'
+OPTIMIZER = 'rmsprop'
 
 class VqaModelBuilder(object):
     """"""
 
     CATEGORIAL_DATA_FRAME = 'words'
 
-    def __init__(self, loss_function, output_activation_function):
+    def __init__(self, loss_function, output_activation_function,
+                 lstm_units=LSTM_UNITS,
+                 post_concat_dense_units=POST_CONCAT_DENSE_UNITS,
+                 dense_activation=DENSE_ACTIVATION,
+                 optimizer=OPTIMIZER
+    ):
         """"""
         super(VqaModelBuilder, self).__init__()
         self.loss_function = loss_function
@@ -42,6 +51,11 @@ class VqaModelBuilder(object):
         self.df_meta_answers = df_meta_answers
         self.df_meta_words = df_meta_words
         self.df_meta_imaging_devices = df_meta_imaging_devices
+
+        self.lstm_units = lstm_units
+        self.post_concat_dense_units = post_concat_dense_units
+        self.dense_activation = dense_activation
+        self.optimizer = optimizer
 
         self.model_location = ''
 
@@ -57,7 +71,7 @@ class VqaModelBuilder(object):
         return df_meta_answers, df_meta_words, df_meta_imaging_devices
 
     @staticmethod
-    def word_2_vec_model(input_tensor):
+    def word_2_vec_model(input_tensor,lstm_units):
         # print(dir(input_tensor))
         #         print('---------------------------------------------')
         #         print('Tensor shape: {0}'.format(input_tensor.get_shape()))
@@ -67,13 +81,12 @@ class VqaModelBuilder(object):
         #         print('embedded_sentence_length: {0}'.format(embedded_sentence_length))
         #         print('---------------------------------------------')
         #         return
-        LSTM_UNITS = 64
-        # DENSE_UNITS = 256
-        # DENSE_ACTIVATION = 'relu'
+
+
         logger.debug("Creating Embedding model")
         x = input_tensor  # Since using spacy
 
-        x = LSTM(units=LSTM_UNITS, return_sequences=False, name='embbeding_LSTM',
+        x = LSTM(units=lstm_units, return_sequences=False, name='embbeding_LSTM',
                  input_shape=(1, embedded_sentence_length))(x)
         x = BatchNormalization(name='embbeding_batch_normalization')(x)
 
@@ -105,17 +118,8 @@ class VqaModelBuilder(object):
         return base_model.input, model
 
     def get_vqa_model(self):
-        #     import tensorflow as tf
-        #     g = tf.Graph()
-        #     with g.as_default():
-        DENSE_UNITS = 256
-        DENSE_ACTIVATION = 'relu'
-        OPTIMIZER = 'rmsprop'
+        metrics = [f1_score, recall_score, precision_score, 'accuracy']
 
-        ACTIVATION = self.output_activation_function
-        LOSS = self.loss_function
-
-        METRICS = [f1_score, recall_score, precision_score, 'accuracy']
         model_output_num_units = len(pd.read_hdf(self.meta_data_location, self.CATEGORIAL_DATA_FRAME))
 
         image_model, lstm_model, fc_model = None, None, None
@@ -124,7 +128,7 @@ class VqaModelBuilder(object):
             lstm_input_tensor = Input(shape=(embedded_sentence_length, 1), name='embedding_input')
 
             logger.debug("Getting embedding (lstm model)")
-            lstm_model = self.word_2_vec_model(input_tensor=lstm_input_tensor)
+            lstm_model = self.word_2_vec_model(input_tensor=lstm_input_tensor, lstm_units=self.lstm_units)
 
             logger.debug("Getting image model")
 
@@ -135,16 +139,15 @@ class VqaModelBuilder(object):
             # keras_layers.average, keras_layers.co, keras_layers.dot, keras_layers.maximum
             fc_tensors = keras_layers.concatenate([image_model, lstm_model])
             #         fc_tensors = BatchNormalization()(fc_tensors)
-            fc_tensors = Dense(units=DENSE_UNITS)(fc_tensors)
+            fc_tensors = Dense(units=self.post_concat_dense_units)(fc_tensors)
             fc_tensors = BatchNormalization()(fc_tensors)
-            fc_tensors = Activation(DENSE_ACTIVATION)(fc_tensors)
+            fc_tensors = Activation(self.dense_activation)(fc_tensors)
 
-            # ATTN:
-            fc_tensors = Dense(units=model_output_num_units, activation=ACTIVATION
+            fc_tensors = Dense(units=model_output_num_units, activation=self.output_activation_function
                                , name=f'model_output_{self.output_activation_function}_dense')(fc_tensors)
 
             fc_model = Model(inputs=[lstm_input_tensor, image_input_tensor], output=fc_tensors)
-            fc_model.compile(optimizer=OPTIMIZER, loss=LOSS, metrics=METRICS)
+            fc_model.compile(optimizer=self.optimizer, loss=self.loss_function, metrics=metrics)
         except Exception as ex:
             logger.error("Got an error while building vqa model:\n{0}".format(ex))
             models = [(image_model, 'image_model'), (lstm_model, 'lstm_model'), (fc_model, 'fc_model')]

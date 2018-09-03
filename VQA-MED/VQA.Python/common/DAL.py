@@ -130,9 +130,9 @@ def get_models():
 
     return models
 
-def get_model(id):
+def get_model(model_id):
     models = get_models()
-    return next(m for m in models if m.id == id)
+    return next(m for m in models if m.id == model_id)
 
 
 

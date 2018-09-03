@@ -253,44 +253,7 @@ def hot_vector_to_words(hot_vector, words_df):
     return words_df.iloc[max_loc]
 
 
-def predict(model, df_data: pd.DataFrame, meta_data_location=None, percentile=99.8):
-    # def apredict(model, df_data: pd.DataFrame, meta_data_location=None):
 
-    # predict
-    features = get_features(df_data)
-    p = model.predict(features)
-
-    percentiles = [np.percentile(curr_pred, percentile) for curr_pred in p]
-    enumrated_p = [[(i, v) for i, v in enumerate(curr_p)] for curr_p in p]
-    pass_vals = [([(i, curr_pred) for i, curr_pred in curr_pred_arr if curr_pred >= curr_percentile]) for
-                 curr_pred_arr, curr_percentile in zip(enumrated_p, percentiles)]
-
-    # [(i,len(curr_pass_arr)) for i, curr_pass_arr in  pass_vals]
-
-    # vector-to-value
-    predictions = [i for curr_pass_arr in pass_vals for i, curr_p in curr_pass_arr]
-    results = [curr_p for curr_pass_arr in pass_vals for i, curr_p in curr_pass_arr]
-
-    # dictionary for creating a data frame
-    cols_to_transfer = ['image_name', 'question', 'answer', 'path']
-    df_dict = {col_name: df_data[col_name] for col_name in cols_to_transfer}
-
-    if meta_data_location:
-        df_meta_words = pd.read_hdf(meta_data_location, 'words')
-        results = df_meta_words.loc[predictions]
-
-        imaging_device_probabilities = {row.word: [prediction[index] for prediction in p] for index, row in
-                                        results.iterrows()}
-        df_dict.update(imaging_device_probabilities)
-
-    df_dict['prediction'] = " ".join([r for r in results.word.values])
-    df = pd.DataFrame(df_dict)
-
-    # Arranging in a prettier way
-    sort_columns = ['image_name', 'question', 'answer', 'prediction']
-    oredered_columns = sorted(df.columns, key=lambda v: v in sort_columns, reverse=True)
-    df = df[oredered_columns]
-    return df
 
 
 def main():

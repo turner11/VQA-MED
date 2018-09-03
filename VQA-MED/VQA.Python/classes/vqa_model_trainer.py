@@ -178,12 +178,12 @@ class VqaModelTrainer(object):
 
 
     @staticmethod
-    def model_2_db(mt, model_fn, fn_history='', notes=''):
+    def model_2_db(model, model_fn, fn_history='', notes=''):
         from keras import backend as K
         from common import DAL
         from common.DAL import Model as DalModel
 
-        model = mt.model
+
         h = model.history.history
         loss = model.loss
         out_put_layer = model.layers[-1]

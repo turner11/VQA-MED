@@ -64,10 +64,10 @@ def save_model(model, base_folder, name_suffix="", history=None):
         logger.warning("{0}".format(ex))
 
     history_res_path = ''
-    if history:
+    if history is not None:
         try:
             logger.debug("Saving History")
-            File.dump_pickle(history,history_fn)
+            File.dump_pickle(history.history,history_fn)
             logger.debug("History saved to '{0}'".format(history_fn))
             history_res_path = history_fn
         except Exception as ex:
