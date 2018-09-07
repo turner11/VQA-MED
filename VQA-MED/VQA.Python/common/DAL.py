@@ -1,4 +1,6 @@
-from sqlalchemy import Column, Integer, String, Float, create_engine
+from typing import Iterable
+
+from sqlalchemy import Column, Integer, String, Float, create_engine, ForeignKey, PrimaryKeyConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker
 import pandas as pd
@@ -6,11 +8,27 @@ from common.constatns import _DB_FILE_LOCATION
 
 Base = declarative_base()
 
-
 _engine = create_engine(f'sqlite:///{_DB_FILE_LOCATION }', echo=False)
+class ModelScore(Base):
+    __tablename__ = 'scores'
+    # __table_args__ = (
+    #     PrimaryKeyConstraint('model_id'),
+    # )
+
+    # id = Column('id', primary_key=True)
+    model_id = Column('model_id', ForeignKey('models.id'), primary_key=True)
+    bleu = Column('bleu', Float)
+    wbss = Column('wbss', Float)
+
+    def __init__(self, model_id, bleu, wbss):
+        """"""
+        self.model_id = model_id
+        self.bleu = bleu
+        self.wbss = wbss
+
 class Model(Base):
     __tablename__ = 'models'
-    id = Column('id',Integer, primary_key=True)
+    id = Column('id', Integer, primary_key=True)
     model_location = Column(String(50))
     history_location = Column(String(50))
     image_base_net = Column(String(50))
@@ -28,15 +46,11 @@ class Model(Base):
     recall_val = Column(Float())
     precsision = Column(Float())
     precsision_val = Column(Float())
-    loss_function  = Column(String(50))
-    activation  = Column(String(50))
+    loss_function = Column(String(50))
+    activation = Column(String(50))
 
+    notes = Column('notes', String(200))
 
-
-    notes = Column('notes',String(200))
-
-    
-    
     def __init__(self,
                  model_location,
                  history_location,
@@ -55,14 +69,14 @@ class Model(Base):
                  precsision_val,
                  loss_function,
                  activation
-    ):
+                 ):
         """"""
-        self.model_location = model_location  
-        self.history_location = history_location  
-        self.image_base_net = image_base_net  
-        self.loss = loss  
-        self.val_loss = val_loss  
-        self.accuracy = accuracy  
+        self.model_location = model_location
+        self.history_location = history_location
+        self.image_base_net = image_base_net
+        self.loss = loss
+        self.val_loss = val_loss
+        self.accuracy = accuracy
         self.val_accuracy = val_accuracy
         self.notes = notes
         self.parameter_count = parameter_count
@@ -76,46 +90,50 @@ class Model(Base):
         self.loss_function = loss_function
         self.activation = activation
 
-
-
-
     def __repr__(self):
-        return f'{self.__class__.__name__}(id={self.id},\n'\
-                    f'\tmodel_location={self.model_location},\n' \
-                    f'\thistory_location={self.history_location},\n'\
-                    f'\timage_base_net={self.image_base_net},\n' \
-                    f'\tloss={self.loss},\n' \
-                    f'\tval_loss={self.val_loss},\n' \
-                    f'\taccuracy={self.accuracy},\n' \
-                    f'\tval_accuracy={self.val_accuracy},\n' \
-                    f'\tclass_strategy={self.class_strategy})'\
-                    f'\tf1_score = {self.f1_score},\n'\
-                    f'\tf1_score_val = {self.f1_score_val},\n'\
-                    f'\trecall = {self.recall},\n'\
-                    f'\trecall_val = {self.recall_val},\n'\
-                    f'\tprecsision = {self.precsision},\n'\
-                    f'\tprecsision_val = {self.precsision_val},\n'\
-                    f'\tloss_function = {self.loss_function},\n'\
-                    f'\tactivation = {self.activation},\n'.rstrip()
+        return f'{self.__class__.__name__}(id={self.id},\n' \
+               f'\tmodel_location={self.model_location},\n' \
+               f'\thistory_location={self.history_location},\n' \
+               f'\timage_base_net={self.image_base_net},\n' \
+               f'\tloss={self.loss},\n' \
+               f'\tval_loss={self.val_loss},\n' \
+               f'\taccuracy={self.accuracy},\n' \
+               f'\tval_accuracy={self.val_accuracy},\n' \
+               f'\tclass_strategy={self.class_strategy})' \
+               f'\tf1_score = {self.f1_score},\n' \
+               f'\tf1_score_val = {self.f1_score_val},\n' \
+               f'\trecall = {self.recall},\n' \
+               f'\trecall_val = {self.recall_val},\n' \
+               f'\tprecsision = {self.precsision},\n' \
+               f'\tprecsision_val = {self.precsision_val},\n' \
+               f'\tloss_function = {self.loss_function},\n' \
+               f'\tactivation = {self.activation},\n'.rstrip()
+
+
+
+
+
+
 
 def create_db():
     Base.metadata.create_all(_engine)
 
 
-
-def insert_models(models):
+def insert_dals(dal_obj_arr: Iterable[Base]) -> None:
     session = get_session()
 
     try:
-        session.add_all(models)
+        session.add_all(dal_obj_arr)
         # session.flush()
         session.commit()
     except Exception as ex:
         session.rollback()
         raise
 
-def insert_model(model):
-    return insert_models([model])
+
+def insert_dal(dal_obj: Base) -> None:
+    return insert_dals([dal_obj])
+
 
 def get_session():
     Session = sessionmaker(bind=_engine, autocommit=False, autoflush=False)
@@ -130,9 +148,15 @@ def get_models():
 
     return models
 
-def get_model(model_id):
+
+def get_model(predicate: callable) -> Model:
     models = get_models()
-    return next(m for m in models if m.id == model_id)
+    return next(model for model in models if predicate(model))
+
+
+
+def get_model_by_id(model_id: int) -> Model:
+    return get_model(lambda model: model.id == model_id)
 
 
 
@@ -146,7 +170,9 @@ def get_models_data_frame():
 
 
 def main():
+    return
     # create_db()
+    # return
     # # ms = get_models()
     # df_models = get_models_data_frame()
     #
@@ -212,8 +238,7 @@ def main():
     #     val_accuracy=0.6480,
     #     notes='Categorial, 4 options Imaging devices')
 
-
-    insert_model(vgg19_model_multi_classes)
+    insert_dal(vgg19_model_multi_classes)
     # ## Resnet 50:
     # trained_model_location = 'C:\Users\Public\Documents\Data\2018\vqa_models\20180730_0524_48\vqa_model_ClassifyStrategies.CATEGORIAL_trained.h5'
     # loss: 0.1248 - acc: 0.9570 - val_loss: 2.7968 - val_acc: 0.5420
@@ -223,5 +248,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-

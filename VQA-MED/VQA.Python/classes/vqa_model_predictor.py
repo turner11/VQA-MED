@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 from evaluate.VqaMedEvaluatorBase import VqaMedEvaluatorBase
-from common.DAL import get_models_data_frame, get_model
+from common.DAL import get_models_data_frame, get_model_by_id
 from pandas import HDFStore
 from common.functions import get_features
 from keras.models import load_model
@@ -45,7 +45,7 @@ class VqaModelPredictor(object):
             df_models = df_models if df_models is not None else get_models_data_frame()
             notes = df_models.loc[df_models.id == model_idx_in_db].notes.values[0]
             logger.debug(f'Getting model #{model_idx_in_db} ({notes})')
-            model_dal = get_model(model_idx_in_db)
+            model_dal = get_model_by_id(model_idx_in_db)
             model_location = model_dal.model_location
             with VerboseTimer("Loading Model"):
                 model = load_model(model_location, custom_objects={'f1_score': f1_score, 'recall_score': recall_score,

@@ -3,11 +3,16 @@ import logging
 import sys
 
 # import coloredlogs
+import datetime
+import time
 
 log_level = logging.DEBUG
 # format = '%(asctime)s,%(msecs)d %(name)s %(levelname)s ## %(message)s'
 format = '[%(asctime)s][%(levelname)s] %(message)s'
-logname = "vqa.log"
+
+now = time.time()
+ts = datetime.datetime.fromtimestamp(now).strftime('%Y%m%d')
+logname = f"{ts}_vqa.log"
 
 logging.basicConfig(filemode='a',
                     format=format,

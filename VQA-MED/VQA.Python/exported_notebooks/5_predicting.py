@@ -4,7 +4,7 @@
 # In[1]:
 
 
-from common.DAL import get_models_data_frame, get_model
+from common.DAL import get_models_data_frame, get_model_by_id
 df_models = get_models_data_frame()
 df_models
 
@@ -17,7 +17,7 @@ model_id = max(df_models.id)#2
 notes = df_models.loc[df_models.id == model_id].notes.values[0]
 
 print(f'Getting model #{model_id} ({notes})')
-model_dal = get_model(model_id)
+model_dal = get_model_by_id(model_id)
 model_dal
 
 

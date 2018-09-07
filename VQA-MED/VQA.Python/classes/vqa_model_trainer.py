@@ -155,7 +155,7 @@ class VqaModelTrainer(object):
         return history
 
     @staticmethod
-    def save(model, history=None):
+    def save(model, history=None, notes=None):
         with VerboseTimer("Saving trained Model"):
             model_fn, summary_fn, fn_image, fn_history = save_model(model, vqa_models_folder,history=history)
 
@@ -171,7 +171,8 @@ class VqaModelTrainer(object):
         print(win_file_name)
 
         try:
-            VqaModelTrainer.model_2_db(model, model_fn, fn_history, notes=location_message)
+            notes = f'{notes or ""}\n\n{location_message}'
+            VqaModelTrainer.model_2_db(model, model_fn, fn_history, notes=notes)
         except Exception as ex:
             warnings.warn(f'Failed to insert model to DB:\n{ex}')
         return model_fn, summary_fn, fn_image, fn_history
@@ -214,7 +215,7 @@ class VqaModelTrainer(object):
             loss_function=loss,
             activation=activation)
 
-        DAL.insert_model(dal_model)
+        DAL.insert_dal(dal_model)
 
 
 def main():
