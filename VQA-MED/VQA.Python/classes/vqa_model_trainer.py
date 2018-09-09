@@ -170,6 +170,7 @@ class VqaModelTrainer(object):
         win_file_name = location_message.replace('\\', '\\\\')
         print(win_file_name)
 
+
         try:
             notes = f'{notes or ""}\n\n{location_message}'
             VqaModelTrainer.model_2_db(model, model_fn, fn_history, notes=notes)

@@ -1,4 +1,6 @@
 import itertools
+
+from common.DAL import ModelScore
 from vqa_logger import logger
 from common.utils import VerboseTimer
 from collections import namedtuple
@@ -173,6 +175,8 @@ def train_all():
             with VerboseTimer("Saving trained Model"):
                 notes = f'post_concat_dense_units: {post_concat_dense_units};\n' \
                         f'Optimizer: {opt}\n' \
+                        f'loss: {loss}\n' \
+                        f'activation: {activation}\n' \
                         f'epochs: {epochs}\n' \
                         f'batch_size: {batch_size}'
                 model_fn, summary_fn, fn_image, fn_history = VqaModelTrainer.save(mt.model, history, notes)
@@ -185,26 +189,42 @@ def train_all():
             ground_truth = validation_prediction.answer.values
             results = VqaMedEvaluatorBase.get_all_evaluation(predictions=predictions, ground_truth=ground_truth)
 
-            mr = ModelResults(loss=loss, activation=activation, bleu=results['bleu'], wbss=results['wbss'])
-            DAL.insert_dal(mr)
+            ms = ModelScore(model_id=mp.model_idx_in_db, bleu=results['bleu'], wbss=results['wbss'])
+            DAL.insert_dal(ms)
             logger.info('----------------------------------------------------------------------------------------')
             logger.info(f'@@@For:\tLoss: {loss}\tActivation: {activation}: Got results of {results}@@@')
             logger.info('----------------------------------------------------------------------------------------')
 
             print(f"###Completed full flow for {loss} and {activation}")
         except Exception as ex:
-            print(f"^^^Failed full flow for {loss} and {activation}")
+            print(f"^^^Failed full flow for {loss} and {activation}\n:{ex}")
 
 
 if __name__ == '__main__':
-    # from keras.models import load_model
-    # from evaluate.statistical import f1_score, recall_score, precision_score
-    # model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180831_1715_15\\vqa_model_.h5'
-    # model = load_model(model_location,
-    #            custom_objects={'f1_score': f1_score,
-    #                            'recall_score': recall_score,
-    #                            'precision_score': precision_score})
+    # from evaluate.VqaMedEvaluatorBase import VqaMedEvaluatorBase
+    # from classes.vqa_model_builder import VqaModelBuilder
+    # from classes.vqa_model_predictor import VqaModelPredictor
+    # from classes.vqa_model_trainer import VqaModelTrainer
+    # from keras import backend as keras_backend
+    #
+    # mp = VqaModelPredictor(model=None)
+    #
+    # validation_prediction = mp.predict(mp.df_validation)
+    # predictions = validation_prediction.prediction.values
+    # ground_truth = validation_prediction.answer.values
+    # results = VqaMedEvaluatorBase.get_all_evaluation(predictions=predictions, ground_truth=ground_truth)
+    #
+    # loss, activation =('mean_absolute_error', 'relu')
+    # ms = ModelScore(model_id=mp.model_idx_in_db, bleu=results['bleu'], wbss=results['wbss'])
+    #
+    #
+    # DAL.insert_dal(ms)
     #
     # model_fn =model_location
     # VqaModelTrainer.model_2_db(model, model_fn, fn_history=None, notes='')
+
+
+
+
+
     main()

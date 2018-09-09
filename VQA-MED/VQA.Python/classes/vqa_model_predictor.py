@@ -27,7 +27,8 @@ class VqaModelPredictor(object):
         super(VqaModelPredictor, self).__init__()
 
         self.vqa_specs = File.load_pickle(vqa_specs_location)
-        self.model = self.get_model(model)
+        self.model, model_idx_in_db = self.get_model(model)
+        self.model_idx_in_db = model_idx_in_db
         df_test, df_validation = self.get_data(df_test, df_validation)
         self.df_validation = df_validation
         self.df_test = df_test
@@ -37,6 +38,7 @@ class VqaModelPredictor(object):
 
     def get_model(self, model):
         df_models = None
+        model_idx_in_db = None
         if model is None:
             df_models = get_models_data_frame()
             model = max(df_models.id)
@@ -51,7 +53,7 @@ class VqaModelPredictor(object):
                 model = load_model(model_location, custom_objects={'f1_score': f1_score, 'recall_score': recall_score,
                                                                    'precision_score': precision_score})
 
-        return model
+        return model, model_idx_in_db
 
     def get_data(self, df_test=None, df_validation=None):
 
