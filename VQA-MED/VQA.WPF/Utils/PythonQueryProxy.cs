@@ -28,14 +28,14 @@ namespace Utils
         public Dictionary<string,object> GetImageData(string imageName)
         {
             var command = $"get_image_data(image_name='{imageName}', dataframe_path='{this.dataFramePath}')";
-            var retDict = this.CommandToDictionay(command);
+            var retDict = this.CommandToDictionay<string, object>(command);
             return retDict;
         }
 
         public Dictionary<string, object> QuryData(string substring)
         {
             var command = $"query_data(query_string='{substring}', dataframe_path='{this.dataFramePath}')";
-            var retDict = this.CommandToDictionay(command);
+            var retDict = this.CommandToDictionay<string, object>(command);
             return retDict;
         }
         

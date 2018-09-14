@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Windows.Navigation;
 using System.Threading.Tasks;
 using VQA.GUI;
+using Types;
 
 namespace SDKSamples.ImageSample
 {
@@ -60,13 +61,17 @@ namespace SDKSamples.ImageSample
         }
 
         internal UIElementGenerator UiElementGenerator { get; }
-
+        public ViewModel _viewModel => this.DataContext as ViewModel;
+            
         private VqaLogics logics;
 
         public MainWindow()
         {
             InitializeComponent();
             this.UiElementGenerator = new UIElementGenerator(this);
+            this.DataContext = new ViewModel();
+
+            
         }
 
         private void Init_CmbImages()
@@ -105,6 +110,14 @@ namespace SDKSamples.ImageSample
             if (this.ImagesDir.SelectedItem is VqaData vqaData)
             {
                 this.logics = new VqaLogics(vqaData.Captions, vqaData.PixelMaps, vqaData.PythonHandler);
+
+                var models = this.logics.GetModels();
+                this._viewModel.ModelsList.Clear();
+
+                foreach (var m in models)
+                    this._viewModel.ModelsList.Add(m);
+
+
                 this.Photos.Path = vqaData.Images;
                 this.Photos.Captions = vqaData.Captions;
                 this.Photos.PixelMaps = vqaData.PixelMaps;

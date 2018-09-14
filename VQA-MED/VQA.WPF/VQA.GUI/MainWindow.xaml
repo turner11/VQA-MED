@@ -10,7 +10,54 @@
 
     <!-- Styles and Templates -->
     <Window.Resources>
+        <DataTemplate x:Key="ModelDataTemplate">
+            <Grid Background="LightGoldenrodYellow">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="160"/>
+                    <ColumnDefinition Width="60"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="20"></RowDefinition>
+                    <RowDefinition Height="20"></RowDefinition>
+                    <RowDefinition Height="20"></RowDefinition>
+                    <RowDefinition Height="20"></RowDefinition>
+                    <RowDefinition Height="20"></RowDefinition>
+                    <RowDefinition Height="20*"></RowDefinition>
+                    
+                </Grid.RowDefinitions>
+                <!--<Border Margin="5" BorderBrush="Black" BorderThickness="1">
+                    <Image Source="{Binding Path=Image}" Stretch="Fill" Width="50" Height="50" />
+                </Border>-->
+                <!--<WrapPanel Grid.Column="0" Grid.Row="0" Margin="0" >-->
+                <StackPanel Orientation="Horizontal" TextBlock.FontWeight="Bold" Grid.Row="0" Grid.Column="0" >
+                        <TextBlock Text="{Binding Path=Activation, FallbackValue=Activation}" />
+                        <TextBlock Text=", " />
+                        <TextBlock Text="{Binding Path=Loss_Function, FallbackValue=Loss}" Padding="3,0,0,0"/>
+                    </StackPanel>
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Model Id:"  FontWeight="Bold"/>
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Path=Model_Id, FallbackValue=Model_Id}" />
 
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="# Trainable params:"  FontWeight="Bold" />
+                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Path=Trainable_Parameter_Count, FallbackValue=Trainable_Parameter_Count}" />
+
+                <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="0">
+                    <TextBlock  Text="BLEU:"  FontWeight="Bold" Padding="0,5,0,0"/>
+                    <TextBlock Text="{Binding Path=Bleu, FallbackValue=Bleu}" Padding="5"/>
+
+                    <TextBlock  Text="WBSS:"  FontWeight="Bold" Padding="5"/>
+                    <TextBlock Text="{Binding Path=Wbss, FallbackValue=Wbss}" Padding="5"/>
+                </StackPanel>
+
+
+
+                <TextBlock Grid.Row="4" Grid.Column="0" Text="Notes:"  FontWeight="Bold" Padding="0,5,0,0"/>
+                <TextBlock Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Grid.RowSpan="2"
+                            Text="{Binding Path=Notes, FallbackValue=Notes}" TextWrapping="WrapWithOverflow"/>
+                <!--</WrapPanel>-->
+            </Grid>
+        </DataTemplate>
+        
+        
         <!-- Photo Template -->
         <DataTemplate DataType="{x:Type er:Photo}">
             <Grid VerticalAlignment="Center" HorizontalAlignment="Center" Margin="6">
@@ -38,11 +85,11 @@
             </Grid>
         </DataTemplate>
 
-
+        
         <!-- Main photo catalog view -->
 
         <Style TargetType="{x:Type ListBox}" x:Key="PhotoListBoxStyle">
-            <Setter Property="Foreground" Value="White" />            
+            <Setter Property="Foreground" Value="White" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type ListBox}">
@@ -161,65 +208,70 @@
     </Window.Resources>
 
     <!-- Master Container -->
-    <Grid DataContext="{Binding Source={StaticResource Photos}}" 
+    <Grid>
+        <TabControl>
+            <TabItem Header="Images">
+
+
+                <Grid DataContext="{Binding Source={StaticResource Photos}}" 
         Margin="10">
 
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="350" />
-        </Grid.ColumnDefinitions>
-
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-
-        <!-- Photo Management Canvas -->
-        <DockPanel Grid.Column="0" Grid.Row="0" Margin="0,0,0,10" Grid.ColumnSpan="2">            
-            <Label DockPanel.Dock="Left" Margin="0,0,10,0">Path:</Label>
-            <ComboBox Name="ImagesDir" Margin="10,0" SelectionChanged="ImagesDir_SelectionChanged" HorizontalAlignment="Stretch"/>
-        </DockPanel>
-
-        <GroupBox Grid.Column="0" Grid.Row="1" >
-            <Grid Background="BurlyWood">
-
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />                    
-                </Grid.ColumnDefinitions>
-
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="75" />
-                    
-                </Grid.RowDefinitions>
-
-                <Image Grid.Row="0"  Name="imgSelected" Source="{Binding ElementName=lstPhotos, Path=SelectedItem.Path}" />
-                <Grid Grid.Row="1"  Background="BurlyWood">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="40" />
-                        
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="350" />
                     </Grid.ColumnDefinitions>
+
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <TextBox Grid.Row="0"  Grid.Column="0" Name="txbQuestion" TextWrapping="Wrap" AcceptsReturn="True" AcceptsTab="True" SpellCheck.IsEnabled="True" KeyDown="txbQuestion_KeyDown"></TextBox>
-                    <Button  Grid.Row="0" Grid.Column="1" Name="btnAsk" Click="btnAsk_Click" Content="Go" Background="LightGreen" Grid.RowSpan="2"></Button>
-                    <TextBlock Grid.Row="1" Name="txbResponce" Background="LightGray" Height="Auto"></TextBlock>
-                  
-                </Grid>
-                
-            </Grid>
-        </GroupBox>
 
-            <GroupBox Grid.Column="1" Grid.Row="1">
-            <!--<ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">-->
+                    <!-- Photo Management Canvas -->
+                    <DockPanel Grid.Column="0" Grid.Row="0" Margin="0,0,0,10" Grid.ColumnSpan="2">
+                        <Label DockPanel.Dock="Left" Margin="0,0,10,0">Path:</Label>
+                        <ComboBox Name="ImagesDir" Margin="10,0" SelectionChanged="ImagesDir_SelectionChanged" HorizontalAlignment="Stretch"/>
+                    </DockPanel>
 
-            <!--IsSynchronizedWithCurrentItem="True"-->
-           <!--IsSynchronizedWithCurrentItem="False"-->
-            <ListBox 
+                    <GroupBox Grid.Column="0" Grid.Row="1" >
+                        <Grid Background="BurlyWood">
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="75" />
+
+                            </Grid.RowDefinitions>
+
+                            <Image Grid.Row="0"  Name="imgSelected" Source="{Binding ElementName=lstPhotos, Path=SelectedItem.Path}" />
+                            <Grid Grid.Row="1"  Background="BurlyWood">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="40" />
+
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBox Grid.Row="0"  Grid.Column="0" Name="txbQuestion" TextWrapping="Wrap" AcceptsReturn="True" AcceptsTab="True" SpellCheck.IsEnabled="True" KeyDown="txbQuestion_KeyDown"></TextBox>
+                                <Button  Grid.Row="0" Grid.Column="1" Name="btnAsk" Click="btnAsk_Click" Content="Go" Background="LightGreen" Grid.RowSpan="2"></Button>
+                                <TextBlock Grid.Row="1" Name="txbResponce" Background="LightGray" Height="Auto"></TextBlock>
+
+                            </Grid>
+
+                        </Grid>
+                    </GroupBox>
+
+                    <GroupBox Grid.Column="1" Grid.Row="1">
+                        <!--<ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">-->
+
+                        <!--IsSynchronizedWithCurrentItem="True"-->
+                        <!--IsSynchronizedWithCurrentItem="False"-->
+                        <ListBox 
                 Name="lstPhotos"                     
                 ItemsSource="{Binding}" 
                 Margin="5" 
@@ -237,39 +289,39 @@
                 
                 Style="{StaticResource PhotoListBoxStyle}">
 
-                
 
-                <!--ItemHeight="{Binding ElementName=ZoomSlider, Path='Value'}" 
+
+                            <!--ItemHeight="{Binding ElementName=ZoomSlider, Path='Value'}" 
                             ItemWidth="{Binding ElementName=ZoomSlider, Path='Value'}"-->
 
 
-                <ListBox.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem Header="Edit" Click="editPhoto"/>
-                    </ContextMenu>
-                </ListBox.ContextMenu>
+                            <ListBox.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Edit" Click="editPhoto"/>
+                                </ContextMenu>
+                            </ListBox.ContextMenu>
 
-                <ListBox.ItemContainerStyle>
-                    <Style TargetType="ListBoxItem">
-                        <EventSetter Event="RequestBringIntoView" Handler="ListBoxItem_RequestBringIntoView"/>
-                    </Style>
-                </ListBox.ItemContainerStyle>
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <EventSetter Event="RequestBringIntoView" Handler="ListBoxItem_RequestBringIntoView"/>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
 
-            </ListBox>
-            <!--</VirtualizingStackPanel>-->
-            <!--</ScrollViewer>-->
-        </GroupBox>
+                        </ListBox>
+                        <!--</VirtualizingStackPanel>-->
+                        <!--</ScrollViewer>-->
+                    </GroupBox>
 
-        <!-- Splitter -->
-        <GridSplitter Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Stretch" Width="15" Background="Transparent" ShowsPreview="True"/>
+                    <!-- Splitter -->
+                    <GridSplitter Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Stretch" Width="15" Background="Transparent" ShowsPreview="True"/>
 
-        <!-- Right Hand Panel -->
-        <DockPanel Grid.Row="0" Grid.Column="2" Grid.RowSpan="2" Margin="15,0,0,0">
+                    <!-- Right Hand Panel -->
+                    <DockPanel Grid.Row="0" Grid.Column="2" Grid.RowSpan="2" Margin="15,0,0,0">
 
-            <!--Zoom Control-->
-            <DockPanel DockPanel.Dock="Bottom" Margin="5">
-                <Label DockPanel.Dock="Left">Zoom:</Label>
-                <Slider Name="ZoomSlider" 
+                        <!--Zoom Control-->
+                        <DockPanel DockPanel.Dock="Bottom" Margin="5">
+                            <Label DockPanel.Dock="Left">Zoom:</Label>
+                            <Slider Name="ZoomSlider" 
                 Margin="10,0,0,0" 
           Orientation="Horizontal" 
           Minimum="80" 
@@ -279,13 +331,13 @@
           TickPlacement="BottomRight" 
           SmallChange="5"
           LargeChange="20" />
-            </DockPanel>
+                        </DockPanel>
 
-            <!--Metadata Panel-->
-            <GroupBox >
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" >
-                    <StackPanel Name="spImageData">
-                        <!--<Label Style="{StaticResource MetadataHeader}">Source:</Label>
+                        <!--Metadata Panel-->
+                        <GroupBox >
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" >
+                                <StackPanel Name="spImageData">
+                                    <!--<Label Style="{StaticResource MetadataHeader}">Source:</Label>
                         <Label Content="{Binding Path=Source}" />
                         <Label Style="{StaticResource MetadataHeader}">Size:</Label>
                         <Label>
@@ -318,12 +370,25 @@
                         <Label Content="{Binding Path=Metadata.WhiteBalanceMode}" />
                         <Label Style="{StaticResource MetadataHeader}">Color Representation:</Label>
                         <Label Content="{Binding Path=Metadata.ColorRepresentation}" />-->
-                    </StackPanel>
-                </ScrollViewer>
-            </GroupBox>
-        </DockPanel>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </GroupBox>
+                    </DockPanel>
 
 
+                </Grid>
+
+            </TabItem>
+            <TabItem Header="Settings" >
+                <ListView Margin="10" Name="lvModels"
+                           ItemsSource="{Binding ModelsList}"
+                           ItemTemplate="{StaticResource ModelDataTemplate}">
+                    <!--<ListViewItem>A ListView</ListViewItem>
+                    <ListViewItem IsSelected="True">with several</ListViewItem>
+                    <ListViewItem>items</ListViewItem>-->
+                </ListView>
+            </TabItem>
+        </TabControl>
     </Grid>
 </Window>
     

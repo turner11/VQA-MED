@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Utils;
+using Interfaces;
 
 namespace VQA.Logic
 {
@@ -64,9 +65,10 @@ namespace VQA.Logic
             if (caption is IEnumerable<object> en2)
             {
                 var a = en2.FirstOrDefault();
+                a.ToString();
                 try
                 {
-                    JsonConvert.DeserializeObject<string>(a.ToString());
+                    var b= JsonConvert.DeserializeObject<object>(a.ToString());
                 }
                 catch (Exception e)
                 {
@@ -84,7 +86,7 @@ namespace VQA.Logic
 
         public async Task<Dictionary<string, object>> GetImageData(string imageName)
         {
-            var data = await Task.Run(() => this._pythonProxy.GetImageData(imageName));
+            var data = await Task.Run(() => this._pythonProxy?.GetImageData(imageName));
 
             if (data != null && !data.ContainsKey("Image Path"))
             {
@@ -94,14 +96,17 @@ namespace VQA.Logic
             var pixelMapImage = new FileInfo(Path.Combine(this.pixalMapPath, fi.Name).ToLower().Replace(".jpg", ".png"));
             if (pixelMapImage.Exists)
             {
-                data["Pixel Map"] = pixelMapImage.FullName;
+                data["Pixel Map"] = pixelMapImage.FullName; 
             }
             return data;
 
         }
 
-
-
-
+        public IEnumerable<IModelInfo> GetModels()
+        {
+            var a = new PythonModelInfo();
+            var ms = a.GetModels();
+            return ms;
+        }
     }
 }

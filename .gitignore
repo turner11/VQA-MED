@@ -336,3 +336,5 @@ VQA-MED/VQA.Python/data/vqa_specs.pkl_BACKUP
 VQA-MED/VQA.Python/*/tensor_board_logd/*
 VQA-MED/VQA.Python/tensor_board_logd/*
 
+*AssemblyInfo.cs
+

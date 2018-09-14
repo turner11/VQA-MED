@@ -64,6 +64,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="UIElementGenerator.cs" />
+    <Compile Include="ViewModel.cs" />
     <Compile Include="VirtualizingWrapPanel.cs" />
     <Page Include="MainWindow.xaml">
       <SubType>
@@ -117,6 +118,14 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Interfaces\Interfaces.csproj">
+      <Project>{B364820C-1F1C-4B4D-909C-B579973370A7}</Project>
+      <Name>Interfaces</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Types\Types.csproj">
+      <Project>{BCF972CA-6ECB-42C0-B709-845D1602EAD6}</Project>
+      <Name>Types</Name>
+    </ProjectReference>
     <ProjectReference Include="..\VQA.Logic\VQA.Logic.csproj">
       <Project>{b03f76cb-581f-4a20-8d60-5a25ed188201}</Project>
       <Name>VQA.Logic</Name>
