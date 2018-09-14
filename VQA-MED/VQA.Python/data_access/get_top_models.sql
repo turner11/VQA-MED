@@ -3,6 +3,8 @@ SELECT s.*
 	   , bleu + wbss as combined
 	   ,models.loss_function
 	   ,models.activation
+	   ,models.notes
+	   ,models.trainable_parameter_count 
 	   ,"('"||models.loss_function || "', '"|| models.activation ||"')," as str 
 	   , models.loss_function || ' | '|| models.activation || ' | '|| models.trainable_parameter_count || ' | '|| printf("%.4f",bleu) || ' | '|| printf("%.4f",wbss) || ' | '|| model_id || ' |' as markdown
 	   --,models.*	  

@@ -136,23 +136,49 @@ def train_all():
 
     optimizers = ['SGD', 'Adagrad', 'Adadelta', 'RMSprop', 'Adam']
     dense_units = [16, 32]
-    top_models = [  ('mean_absolute_error', 'relu'),
+    top_models = [
+                    ('cosine_proximity', 'sigmoid'),
+                    ('cosine_proximity', 'tanh'),
+                    ('cosine_proximity', 'relu'),
+                    ('poisson', 'softmax'),
+                    ('kullback_leibler_divergence', 'softmax'),
                     ('mean_absolute_percentage_error', 'relu'),
                     ('mean_squared_logarithmic_error', 'relu'),
                     ('logcosh', 'relu'),
                     ('mean_squared_error', 'relu'),
-                    ('poisson', 'softmax'),
-                    ('kullback_leibler_divergence', 'softmax'),
-                    ('cosine_proximity', 'sigmoid'),
-                    ('cosine_proximity', 'tanh'),
-                    ('cosine_proximity', 'relu')]
+                    ('mean_absolute_error', 'relu'),]
 
     la_units_opts = list(itertools.product(top_models, dense_units,optimizers))
+
+    existing_scores = DAL.get_scores()
+    models_ids = [s.model_id for s in existing_scores ]
+    existing_models = DAL.get_models()
+    models_with_scores = [m for m in existing_models if m.id in models_ids]
 
     # for loss, activation in losses_and_activations:
     for (loss, activation), post_concat_dense_units, opt in la_units_opts:
         try:
-            keras_backend.clear_session()
+
+            def match(m):
+                notes = (m.notes or '')
+                is_curr_model =  m.loss_function == loss \
+                       and m.activation == activation \
+                       and opt in notes \
+                       and str(post_concat_dense_units) in notes
+                return is_curr_model
+
+
+
+
+
+            match_model = next((m for m in models_with_scores if match(m)), None)
+            if match_model is not None:
+                print(f'Continuing for model:\n{match_model.notes}')
+                continue
+
+
+
+            # keras_backend.clear_session()
 
 
             mb = VqaModelBuilder(loss, activation,post_concat_dense_units=post_concat_dense_units, optimizer=opt)
@@ -197,7 +223,10 @@ def train_all():
 
             print(f"###Completed full flow for {loss} and {activation}")
         except Exception as ex:
+            import traceback as tb
             print(f"^^^Failed full flow for {loss} and {activation}\n:{ex}")
+            tb.print_exc()
+            tb.print_stack()
 
 
 if __name__ == '__main__':

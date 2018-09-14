@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Iterable
 
 from sqlalchemy import Column, Integer, String, Float, create_engine, ForeignKey, PrimaryKeyConstraint
@@ -141,12 +142,16 @@ def get_session():
     return session
 
 
-def get_models():
+def get_items(dal_type):
     session = get_session()
-    res_q = session.query(Model)
+    res_q = session.query(dal_type)
     models = list(res_q)
 
     return models
+
+get_models = partial(get_items,Model)
+get_scores = partial(get_items,ModelScore)
+
 
 
 def get_model(predicate: callable) -> Model:
@@ -166,7 +171,24 @@ def get_models_data_frame():
         return pd.DataFrame()
     variables = [v for v in models[0].__dict__.keys() if not v.startswith('_')]
     df = pd.DataFrame([[getattr(i, j) for j in variables] for i in models], columns=variables)
-    return df
+
+    scores = get_scores()
+    s_variables = [v for v in scores[0].__dict__.keys() if not v.startswith('_')]
+    s_df = pd.DataFrame([[getattr(i, j) for j in s_variables] for i in scores], columns=s_variables)
+
+    merged_df = s_df.merge(df, left_on='model_id', right_on='id',  how='left')
+    return merged_df
+
+
+def execute_sql(txt):
+    from sqlalchemy.sql import text
+    with _engine.connect() as con:
+        con.execute(text(txt))
+
+def execute_sql_from_file(file_name):
+    with open(file_name, 'r') as f:
+        txt = f.read()
+    return execute_sql(txt)
 
 
 def main():
