@@ -6,15 +6,20 @@
     xmlns:er="clr-namespace:SDKSamples.ImageSample" 
         Activated="Window_Activated"
         
-    xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase">
+        xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase"
+        xmlns:converters="clr-namespace:VQA.GUI.Converters">
 
     <!-- Styles and Templates -->
     <Window.Resources>
+
+        <converters:ModelColorConverter x:Key="ModelColorConverter" />
+        
         <DataTemplate x:Key="ModelDataTemplate">
-            <Grid Background="LightGoldenrodYellow">
+            <Grid Background="{Binding Converter={StaticResource ModelColorConverter}}">
+                <!--Background="LightGoldenrodYellow"-->
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="160"/>
-                    <ColumnDefinition Width="60"/>
+                    <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="20"></RowDefinition>
@@ -382,10 +387,8 @@
             <TabItem Header="Settings" >
                 <ListView Margin="10" Name="lvModels"
                            ItemsSource="{Binding ModelsList}"
-                           ItemTemplate="{StaticResource ModelDataTemplate}">
-                    <!--<ListViewItem>A ListView</ListViewItem>
-                    <ListViewItem IsSelected="True">with several</ListViewItem>
-                    <ListViewItem>items</ListViewItem>-->
+                           ItemTemplate="{StaticResource ModelDataTemplate}"
+                           SelectionChanged="lvModels_SelectionChanged">
                 </ListView>
             </TabItem>
         </TabControl>

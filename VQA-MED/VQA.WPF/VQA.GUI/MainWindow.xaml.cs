@@ -14,6 +14,7 @@ using System.Windows.Navigation;
 using System.Threading.Tasks;
 using VQA.GUI;
 using Types;
+using Interfaces;
 
 namespace SDKSamples.ImageSample
 {
@@ -70,8 +71,13 @@ namespace SDKSamples.ImageSample
             InitializeComponent();
             this.UiElementGenerator = new UIElementGenerator(this);
             this.DataContext = new ViewModel();
-
             
+            
+        }
+
+        private void LvModels_TargetUpdated(object sender, DataTransferEventArgs e)
+        {
+            throw new NotImplementedException();
         }
 
         private void Init_CmbImages()
@@ -257,6 +263,15 @@ namespace SDKSamples.ImageSample
         private void ListBoxItem_RequestBringIntoView(object sender, RequestBringIntoViewEventArgs e)
         {
             e.Handled = true;
+        }
+
+        private void lvModels_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var model = lvModels.SelectedItem as IModelInfo;
+            if (model == null)
+                return;
+
+            this.logics.SetModel(model.Model_Id);
         }
     }
 }

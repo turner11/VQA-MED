@@ -22,6 +22,7 @@ namespace VQA.Logic
         public readonly string pixalMapPath;
         public readonly string pythonHandler;
         private PythonQueryProxy _pythonProxy;
+        private PythonModelInfo _pythonModelProxy;
 
         public VqaLogics(string jsonPath, string pixalMapPath, string pythonHandler)
         {
@@ -31,6 +32,7 @@ namespace VQA.Logic
             this.pixalMapPath = pixalMapPath;
             this.pythonHandler = pythonHandler;
             this._pythonProxy = PythonQueryProxy.Factory();
+            this._pythonModelProxy = new PythonModelInfo();
         }
         public async Task<string> Ask(string question, FileInfo imagePath)
         {
@@ -42,9 +44,14 @@ namespace VQA.Logic
         {
             if (substrig.ToLower() == "reset".ToLower())
             {
+                
                 var old = this._pythonProxy;
+                var old_model = this._pythonModelProxy;
                 this._pythonProxy = PythonQueryProxy.Factory();
+                this._pythonModelProxy = new PythonModelInfo();
+
                 old.Dispose();
+                old_model.Dispose();
                 return new List<string>();
             }
             var data = await Task.Run(() => this._pythonProxy.QuryData(substrig));
@@ -104,9 +111,13 @@ namespace VQA.Logic
 
         public IEnumerable<IModelInfo> GetModels()
         {
-            var a = new PythonModelInfo();
-            var ms = a.GetModels();
+            var ms = this._pythonModelProxy.GetModels();
             return ms;
+        }
+
+        public void SetModel(int modelId)
+        {
+            this._pythonModelProxy.SetModel(modelId);
         }
     }
 }

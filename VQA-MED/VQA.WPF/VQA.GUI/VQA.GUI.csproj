@@ -63,6 +63,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Converters\ModelColorConverter.cs" />
     <Compile Include="UIElementGenerator.cs" />
     <Compile Include="ViewModel.cs" />
     <Compile Include="VirtualizingWrapPanel.cs" />
