@@ -98,7 +98,7 @@ namespace Utils
             {
                 var command = $"set_model({modelId})";
                 var result = this.ExecutePythonCommand(command);
-                success = result.ToLower() == 'true';
+                success = result.ToLower() == "true";
             }
             catch (Exception)
             {
