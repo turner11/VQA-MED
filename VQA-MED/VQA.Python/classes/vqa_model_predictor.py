@@ -1,8 +1,10 @@
+from typing import Union
+from keras import Model as keras_model
 import pandas as pd
 import numpy as np
 
 from evaluate.VqaMedEvaluatorBase import VqaMedEvaluatorBase
-from common.DAL import get_models_data_frame, get_model_by_id
+from common.DAL import get_models_data_frame, get_model_by_id, Model as ModelDal
 from pandas import HDFStore
 from common.functions import get_features
 from keras.models import load_model
@@ -36,24 +38,37 @@ class VqaModelPredictor(object):
     def __repr__(self):
         return super(VqaModelPredictor, self).__repr__()
 
-    def get_model(self, model):
+    def get_model(self, model: Union[int,keras_model,None]) -> (keras_model, int):
         df_models = None
         model_idx_in_db = None
+        model_dal = None
+
         if model is None:
             df_models = get_models_data_frame()
             model = max(df_models.id)
+
         if isinstance(model, int):
             model_idx_in_db = model
             df_models = df_models if df_models is not None else get_models_data_frame()
             notes = df_models.loc[df_models.id == model_idx_in_db].notes.values[0]
             logger.debug(f'Getting model #{model_idx_in_db} ({notes})')
             model_dal = get_model_by_id(model_idx_in_db)
-            model_location = model_dal.model_location
-            with VerboseTimer("Loading Model"):
-                model = load_model(model_location, custom_objects={'f1_score': f1_score, 'recall_score': recall_score,
-                                                                   'precision_score': precision_score})
 
-        return model, model_idx_in_db
+        if isinstance(model, ModelDal):
+            model_dal = model
+
+        assert model_dal is not None, f'Unexpectedly got a None model dal \n(Model is "{model.__class__.__name__}"\n{model})'
+        assert isinstance(model, ModelDal), f'Expected model to be of type "{ModelDal.__name__}" ' \
+                                            f'but got: "{model.__class__.__name__}" ({model})'
+
+        model_location = model_dal.model_location
+        with VerboseTimer("Loading Model"):
+            model = load_model(model_location, custom_objects={'f1_score': f1_score, 'recall_score': recall_score,
+                                                               'precision_score': precision_score})
+            model_id = model_dal.id
+
+
+        return model, model_id
 
     def get_data(self, df_test=None, df_validation=None):
 
@@ -61,7 +76,7 @@ class VqaModelPredictor(object):
         logger.debug(f"Loading test data from {data_location}")
         with VerboseTimer("Loading Test & validation Data"):
             with HDFStore(data_location) as store:
-                df_test = df_test or store['test']
+                df_test = df_test if df_test is not None else store['test']
 
                 if df_validation is None:
                     df_training = store['data']

@@ -3,7 +3,7 @@ from typing import Iterable
 
 from sqlalchemy import Column, Integer, String, Float, create_engine, ForeignKey, PrimaryKeyConstraint
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.orm import scoped_session, sessionmaker, relationship
 import pandas as pd
 from common.constatns import _DB_FILE_LOCATION
 
@@ -20,12 +20,17 @@ class ModelScore(Base):
     model_id = Column('model_id', ForeignKey('models.id'), primary_key=True)
     bleu = Column('bleu', Float)
     wbss = Column('wbss', Float)
+    models = relationship("Model",lazy='subquery',  back_populates="model_scores")
 
     def __init__(self, model_id, bleu, wbss):
         """"""
         self.model_id = model_id
         self.bleu = bleu
         self.wbss = wbss
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}(model_id={self.model_id}, bleu={self.bleu}, wbss={self.wbss})'
+
 
 class Model(Base):
     __tablename__ = 'models'
@@ -51,6 +56,14 @@ class Model(Base):
     activation = Column(String(50))
 
     notes = Column('notes', String(200))
+    # model_scores = relationship(ModelScore, backref='models')
+    model_scores = relationship("ModelScore",  lazy='subquery', back_populates="models")
+
+    @property
+    def score(self):
+        assert len(self.model_scores) <= 1, f'Unexpectedly Got multiple scores for model {self.id}'
+        s = next((m for m in self.model_scores), None)
+        return s
 
     def __init__(self,
                  model_location,
@@ -137,8 +150,8 @@ def insert_dal(dal_obj: Base) -> None:
 
 
 def get_session():
-    Session = sessionmaker(bind=_engine, autocommit=False, autoflush=False)
-    session = Session()
+    SessionMaker = sessionmaker(bind=_engine, autocommit=False, autoflush=False)
+    session = SessionMaker()
     return session
 
 

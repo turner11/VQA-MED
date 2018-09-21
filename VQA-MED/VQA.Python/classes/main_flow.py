@@ -7,9 +7,40 @@ from collections import namedtuple
 ModelResults = namedtuple('ModelResults', ['loss', 'activation', 'bleu', 'wbss'])
 from common import DAL
 
+
+
+
+
 def main():
-    train_all()
+    evaluate_missing_models()
+    # train_all()
     # add_scores()
+
+def evaluate_missing_models():
+    from classes.vqa_model_predictor import VqaModelPredictor
+    from evaluate.VqaMedEvaluatorBase import VqaMedEvaluatorBase
+    models = DAL.get_models()
+    df_test, df_validation = None, None
+    for model in models:
+        if model.score:
+            logger.debug(f'Model {model.id} has score: {model.score}')
+        else:
+            logger.debug(f'Model {model.id} did not have a score')
+            logger.debug('Loading predictor')
+            mp = VqaModelPredictor(model=model, df_test=df_test, df_validation=df_validation )
+            df_test, df_validation = mp.df_test, mp.df_validation
+
+            logger.debug('predicting')
+            validation_prediction = mp.predict(mp.df_validation)
+            predictions = validation_prediction.prediction.values
+            ground_truth = validation_prediction.answer.values
+            logger.debug('evaluating')
+            results = VqaMedEvaluatorBase.get_all_evaluation(predictions=predictions, ground_truth=ground_truth)
+
+            ms = ModelScore(model_id=mp.model_idx_in_db, bleu=results['bleu'], wbss=results['wbss'])
+            logger.debug(f'Created for {model.id}: {model.score}')
+            logger.debug(f'inserting to db (model:{model.id})')
+            DAL.insert_dal(ms)
 
 
 def add_scores():
