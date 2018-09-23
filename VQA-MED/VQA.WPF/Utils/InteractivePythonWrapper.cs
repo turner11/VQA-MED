@@ -128,15 +128,28 @@ namespace Utils
 
         protected virtual string ExecutePythonCommand(string cmd)
         {
-            this._safeCommands.Add(cmd);
-            this._signalGotResponceEvent.WaitOne();
-
+            bool success = false;
             string res = "No Responce";
-            if (this._responces.Count > 0)
+            try
             {
-                res = this._responces[0];
-                this._responces.RemoveAt(0);
+                this._responces.Clear();
+                this._safeCommands.Clear();
+                this._safeCommands.Add(cmd);
+                this._signalGotResponceEvent.WaitOne();
+
+                
+                if (this._responces.Count > 0)
+                {
+                    res = this._responces[0];
+                    this._responces.RemoveAt(0);
+                }
+                success = true;
             }
+            finally
+            {
+                Debug.WriteLine($"{cmd } was {(success ? "SUCCESS" : "FAILURE")}");
+            }
+            
             return res;
 
         }
@@ -171,6 +184,43 @@ namespace Utils
 
             
             return values;
+        }
+
+        protected dynamic CommandToDynamic(string command)
+        {
+            var dynamics = this.CommandToDynamics(command).ToList();
+            Debug.Assert(dynamics.Count == 1, $"Expected 1 prediction, got {dynamics.Count}");
+            dynamic d = dynamics[0];
+            return d;
+        }
+        protected IEnumerable<dynamic> CommandToDynamics(string command)
+        {
+            
+            var resDict = this.CommandToDictionay<string, Dictionary<int, object>>(command);
+
+            IEnumerable<Dictionary<int, object>> data_dictionaries = resDict.Values.Select(p => p);
+            IEnumerable<int> firstKeys = data_dictionaries.FirstOrDefault().Keys.ToList();
+            List<int> keys = data_dictionaries.Aggregate(firstKeys, (ks, d) => ks.Intersect(d.Keys)).ToList();
+
+
+            //System.Dynamic.DynamicObject a = new System.Dynamic.DynamicObject();
+            var dObjects = keys.Select((i, k) => new { Idx = i, Obj = new System.Dynamic.ExpandoObject() }).ToList();
+
+            var properties = resDict.Keys;
+            foreach (var pair in dObjects)
+            {
+                System.Dynamic.ExpandoObject currDynamic = pair.Obj;
+                int idx = pair.Idx;
+
+                foreach (var propertyName in properties)
+                {
+                    var propertyValue = resDict[propertyName][idx];
+                    Debug.WriteLine($"{propertyName}: {propertyValue}");
+                    ((IDictionary<string, object>)currDynamic)[propertyName] = propertyValue;
+                }
+            }
+
+            return dObjects.Select(pair=> pair.Obj).ToList();
         }
 
         protected  Dictionary<TKey, TVal> CommandToDictionay<TKey, TVal>(string cmd)
@@ -232,6 +282,7 @@ namespace Utils
 
             var reproduceCmds = new List<String>();
             reproduceCmds.Add($"\n\ncd {this._workDir}");
+            reproduceCmds.Add($"set PYTHONPATH={this._workDir}");
             reproduceCmds.Add($"{this._interpeter} {argStr}\n");
             reproduceCmds.Add($"import sys");
             reproduceCmds.Add($"sys.path.append(r'{this._workDir}')");

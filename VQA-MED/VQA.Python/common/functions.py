@@ -106,6 +106,8 @@ def pre_process_raw_data(df):
     # df = df.where(df['path'].isin(existing_files))
     logger.debug('Getting answers embedding')
     # Note: Test has noanswer...
+    if 'answer' not in df.columns:
+        df['answer'] = ''
     df['answer_embedding'] = df['answer'].apply(lambda q: get_text_features(q) if isinstance(q, str) else "")
 
     logger.debug('Getting questions embedding')

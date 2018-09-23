@@ -34,7 +34,7 @@
       <!-- Tools -->
       <Border Grid.Column="0" Grid.Row="1" Padding="4">
         <StackPanel Orientation="Horizontal">
-          <Label Name="ViewedCaption" HorizontalAlignment="Left"/>
+          <Label Name="ViewedCaption" HorizontalAlignment="Left" MouseRightButtonUp="ViewedCaption_MouseRightButtonUp"/>
           <Button Click="Crop" Content="Crop" />
           <Button Click="Rotate" Content="Rotate" />
           <Button Click="BlackAndWhite" Content="BlackAndWhite" />

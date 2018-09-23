@@ -57,7 +57,6 @@
     <Compile Include="PythonModelInfo.cs" />
     <Compile Include="PythonQueryProxy.cs" />
     <Content Include="testPy.py" />
-    <Compile Include="PythonPredictor.cs" />
     <Compile Include="InteractivePythonWrapper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -73,6 +72,9 @@
       <Project>{BCF972CA-6ECB-42C0-B709-845D1602EAD6}</Project>
       <Name>Types</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Types\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

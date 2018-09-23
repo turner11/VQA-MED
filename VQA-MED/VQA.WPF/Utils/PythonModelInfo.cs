@@ -1,4 +1,5 @@
 ﻿using Interfaces;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -30,28 +31,22 @@ namespace Utils
             var command = $"get_models()";
             var responce = this.ExecutePythonCommand(command);
             start:
-            try
+            IEnumerable<dynamic> dynamics = this.CommandToDynamics(command);
+
+
+            foreach (dynamic currDynamic in dynamics)
             {
-                var resDict = this.CommandToDictionay<string, Dictionary<int, object>>(command);
-
-
-                IEnumerable<Dictionary<int, object>> data_dictionaries = resDict.Values.Select(p => p);
-                IEnumerable<int> firstKeys = data_dictionaries.FirstOrDefault().Keys.ToList();
-                List<int> keys = data_dictionaries.Aggregate(firstKeys, (ks, d) => ks.Intersect(d.Keys)).ToList();
-                foreach (int k in keys)
+                try
                 {
-                    if (!int.TryParse(resDict["model_id"][k].ToString(), out int model_id))
-                        model_id = -1;
-                    string loss_function = (resDict["loss_function"][k] ?? "").ToString();
-                    string activation = (resDict["activation"][k] ?? "").ToString();
-
-                    if (!int.TryParse(resDict["trainable_parameter_count"][k].ToString(), out int trainable_parameter_count))
-                        trainable_parameter_count = -1;
-
-                    double bleu = resDict["bleu"][k] as double? ?? double.NaN;
-                    double wbss = resDict["wbss"][k] as double? ?? double.NaN;
-                    string notes = (resDict["notes"][k] ?? "").ToString();
-                    notes = notes.Replace(@"\n", Environment.NewLine);
+                    int model_id = Convert.ToInt32(currDynamic.model_id);
+                    string loss_function = currDynamic.loss_function?.ToString() ?? "";
+                    string activation = currDynamic.activation?.ToString() ?? "";
+                    int trainable_parameter_count = Convert.ToInt32(currDynamic.trainable_parameter_count ?? -1);
+                    double bleu = Convert.ToDouble(currDynamic.bleu ?? Double.NaN);
+                    double wbss = Convert.ToDouble(currDynamic.wbss ?? Double.NaN);
+                    string notes = currDynamic.notes?.ToString() ?? "";
+                    notes = notes.Replace("\\n", Environment.NewLine);
+                    
 
                     var modelInfo = new ModelInfo(model_id: model_id
                                                  , loss_function: loss_function
@@ -60,21 +55,70 @@ namespace Utils
                                                  , bleu: bleu
                                                  , wbss: wbss
                                                  , notes: notes);
-
+                    
                     models.Add(modelInfo);
-
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("\n\n");
+                    Debug.WriteLine(ex);
+                    1.ToString();
+                    throw;
                 }
 
+            }
+            //goto start;
+            models = models.OrderBy(m => m.Bleu + m.Wbss).Reverse().ToList();
+            return models;
+        }
+
+        public bool SetModel(int modelId)
+        {
+            bool success = false;
+            var command = $"set_model({modelId})";
+            try
+            {
+                var result = this.ExecutePythonCommand(command);
+                success = result.ToLower() == "true";
+            }
+            catch (Exception)
+            {
+                success = false;
+            }
+            return success;
+
+        }
+
+        public Prediction Predict(string question, FileInfo imagePath)
+        {
+            bool success = false;
+            Prediction result = null;
+            var command = $"predict(question='{question}',image_path=r'{imagePath}')";
+            var dynamicObj = this.CommandToDynamic(command);
+
+            start:
+            try
+            {
+                string image_name = dynamicObj.image_name;
+                string path = dynamicObj?.path ?? "";
+                var returned_path = new FileInfo(path);
+                string q = dynamicObj.question;
+
+                Debug.Assert(question == q, "Unexpectedly got a different question then expected.");
+                Debug.Assert(returned_path.FullName == imagePath.FullName, "Unexpectedly got a different question then expected.");
+                string rawPrediction = dynamicObj.prediction;
+                var cleanPredictions = rawPrediction.Split(' ');
+
+                var probText = dynamicObj.probabilities.ToString();
+                var rawProbs = (List<string>)Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(probText);
+                var cleanProbs = rawProbs[0].Replace("(", String.Empty).Replace(")", String.Empty)
+                                    .Split(',')
+                                    .Select(v => Convert.ToDouble(v)).ToList();
+
+                var predictions = cleanPredictions.Zip(cleanProbs, (pred, prob) => new PredictionProbability(pred, prob));
+                result = new Prediction(imagePath, question, predictions);
 
 
-                //foreach (var pair in test)
-                //{
-                //    var key = pair.Key;
-                //    var val = pair.Value;                   
-                //    foreach (var p in val)
-                //        Console.WriteLine($"{key}:\tKey: {p.Key} ;\t Value: {p.Value} ({(p.Value ?? new object()).GetType()})");
-
-                //}
 
             }
             catch (Exception ex)
@@ -82,31 +126,13 @@ namespace Utils
                 Debug.WriteLine("\n\n");
                 Debug.WriteLine(ex);
                 1.ToString();
-                throw;
+
+                result = new Prediction(imagePath, ex.Message, new List<PredictionProbability>());
             }
+            
             //goto start;
-            models = models.OrderBy(m => m.Bleu + m.Wbss).Reverse().ToList();
-            return models;
-        }
 
-
-
-        public bool SetModel(int modelId)
-        {
-            bool success = false;
-            try
-            {
-                var command = $"set_model({modelId})";
-                var result = this.ExecutePythonCommand(command);
-                success = result.ToLower() == "true";
-            }
-            catch (Exception)
-            {
-                success = false;
-                Debug.WriteLine("Failed...");
-            }
-            return success;
-
+            return result;
         }
     }
 

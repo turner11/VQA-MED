@@ -111,13 +111,13 @@ namespace SDKSamples.ImageSample
             //this.setCurrnetDataPaths();
         }
 
-        private void setCurrnetDataPaths()
+        private async Task setCurrnetDataPaths()
         {
             if (this.ImagesDir.SelectedItem is VqaData vqaData)
             {
                 this.logics = new VqaLogics(vqaData.Captions, vqaData.PixelMaps, vqaData.PythonHandler);
 
-                var models = this.logics.GetModels();
+                var models = await this.logics.GetModels();
                 this._viewModel.ModelsList.Clear();
 
                 foreach (var m in models)
@@ -141,31 +141,37 @@ namespace SDKSamples.ImageSample
 
         private async void btnAsk_Click(object sender, RoutedEventArgs e)
         {
-         
 
-            bool query = true;
+            this.txbResponce.Text = String.Empty;
+            bool query = this.rdbQuery.IsChecked ?? false;
             if (query)
-            {
                 await this.QueryImaeghs();
-            }
             else
-                await this.Ask();
+                await this.Predict();
            
 
         }
 
-        private async Task Ask()
+        private async Task Predict()
         {
+            const int MAX_WORDS_TO_TAKE = 20;
             var question = this.txbQuestion.Text;
             var imagePath = (this.lstPhotos.SelectedItem as Photo)?.Path ?? "";
             var imagesDirectory = this.ImagesDir.Text;
-            var hasData = !String.IsNullOrWhiteSpace(question) && File.Exists(imagePath) && Directory.Exists(imagesDirectory);
+            var hasData = !String.IsNullOrWhiteSpace(question) && File.Exists(imagePath) ;
             string responce;
-            if (!hasData)            
+            if (!hasData)
                 responce = "Got invalid data to query";
-            
-            else            
-                responce = await this.logics.Ask(question, new FileInfo(imagePath));
+
+            else
+            {
+                var prediction = await this.logics.Predict(question, new FileInfo(imagePath));
+                responce = String.Join(" ", prediction.Predictions.Take(MAX_WORDS_TO_TAKE).Select(p => p.Prediction));
+                var probs = String.Join("; ", prediction.Predictions.Take(MAX_WORDS_TO_TAKE).Select(p => $"{p.Prediction} ({p.Probability})"));
+                responce += "\n" + probs;
+
+            }
+
             
 
             Debug.WriteLine(responce);
@@ -255,9 +261,9 @@ namespace SDKSamples.ImageSample
         {
         }
 
-        private void ImagesDir_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void ImagesDir_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            this.setCurrnetDataPaths();            
+            await this.setCurrnetDataPaths();            
         }
 
         private void ListBoxItem_RequestBringIntoView(object sender, RequestBringIntoViewEventArgs e)
@@ -271,7 +277,7 @@ namespace SDKSamples.ImageSample
             if (model == null)
                 return;
 
-            this.logics.SetModel(model.Model_Id);
+            bool success = this.logics.SetModel(model.Model_Id);
         }
     }
 }

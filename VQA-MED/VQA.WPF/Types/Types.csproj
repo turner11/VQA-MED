@@ -41,6 +41,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ModelInfo.cs" />
+    <Compile Include="Prediction.cs" />
+    <Compile Include="PredictionProbability.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

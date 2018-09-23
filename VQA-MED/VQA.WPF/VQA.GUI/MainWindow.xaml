@@ -18,6 +18,7 @@
             <Grid Background="{Binding Converter={StaticResource ModelColorConverter}}">
                 <!--Background="LightGoldenrodYellow"-->
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="50"/>
                     <ColumnDefinition Width="160"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
@@ -34,18 +35,26 @@
                     <Image Source="{Binding Path=Image}" Stretch="Fill" Width="50" Height="50" />
                 </Border>-->
                 <!--<WrapPanel Grid.Column="0" Grid.Row="0" Margin="0" >-->
-                <StackPanel Orientation="Horizontal" TextBlock.FontWeight="Bold" Grid.Row="0" Grid.Column="0" >
+                <Viewbox Grid.Row="0" Grid.Column="0" Grid.RowSpan="6" >
+                    <TextBlock  Padding="2"
+                           Text="{Binding Path=Model_Id, FallbackValue=Model_Id}" 
+                           TextBlock.FontWeight="ExtraLight"/>
+
+                
+                   
+                </Viewbox>
+                <StackPanel Orientation="Horizontal" TextBlock.FontWeight="Bold" 
+                            Grid.Row="0" Grid.Column="1" >
                         <TextBlock Text="{Binding Path=Activation, FallbackValue=Activation}" />
                         <TextBlock Text=", " />
                         <TextBlock Text="{Binding Path=Loss_Function, FallbackValue=Loss}" Padding="3,0,0,0"/>
-                    </StackPanel>
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Model Id:"  FontWeight="Bold"/>
-                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Path=Model_Id, FallbackValue=Model_Id}" />
+                    </StackPanel>                
 
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="# Trainable params:"  FontWeight="Bold" />
-                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Path=Trainable_Parameter_Count, FallbackValue=Trainable_Parameter_Count}" />
+                <TextBlock Grid.Row="2" Grid.Column="1" Text="# Trainable params:"  FontWeight="Bold" />
+                <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding Path=Trainable_Parameter_Count, FallbackValue=Trainable_Parameter_Count}" />
 
-                <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="0">
+                <StackPanel Orientation="Horizontal" 
+                            Grid.Row="3" Grid.Column="1">
                     <TextBlock  Text="BLEU:"  FontWeight="Bold" Padding="0,5,0,0"/>
                     <TextBlock Text="{Binding Path=Bleu, FallbackValue=Bleu}" Padding="5"/>
 
@@ -55,8 +64,8 @@
 
 
 
-                <TextBlock Grid.Row="4" Grid.Column="0" Text="Notes:"  FontWeight="Bold" Padding="0,5,0,0"/>
-                <TextBlock Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Grid.RowSpan="2"
+                <TextBlock Grid.Row="4" Grid.Column="1" Text="Notes:"  FontWeight="Bold" Padding="0,5,0,0"/>
+                <TextBlock Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2" Grid.RowSpan="2"
                             Text="{Binding Path=Notes, FallbackValue=Notes}" TextWrapping="WrapWithOverflow"/>
                 <!--</WrapPanel>-->
             </Grid>
@@ -260,11 +269,20 @@
                                 </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="*" />
+                                    <RowDefinition Height="*" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
-                                <TextBox Grid.Row="0"  Grid.Column="0" Name="txbQuestion" TextWrapping="Wrap" AcceptsReturn="True" AcceptsTab="True" SpellCheck.IsEnabled="True" KeyDown="txbQuestion_KeyDown"></TextBox>
-                                <Button  Grid.Row="0" Grid.Column="1" Name="btnAsk" Click="btnAsk_Click" Content="Go" Background="LightGreen" Grid.RowSpan="2"></Button>
-                                <TextBlock Grid.Row="1" Name="txbResponce" Background="LightGray" Height="Auto"></TextBlock>
+                                
+                                <GroupBox Grid.Row="0"  Grid.Column="0" Grid.ColumnSpan="2">
+                                    <WrapPanel>
+                                        <RadioButton Name="rdbPredict" IsChecked="true">Predict</RadioButton>
+                                        <RadioButton Name="rdbQuery">Query</RadioButton>
+                                    </WrapPanel>
+                                </GroupBox>
+                                
+                                <TextBox Grid.Row="1"  Grid.Column="0" Name="txbQuestion" TextWrapping="Wrap" AcceptsReturn="True" AcceptsTab="True" SpellCheck.IsEnabled="True" KeyDown="txbQuestion_KeyDown"></TextBox>
+                                <Button  Grid.Row="1" Grid.Column="1" Name="btnAsk" Click="btnAsk_Click" Content="Go" Background="LightGreen" Grid.RowSpan="2"></Button>
+                                <TextBlock Grid.Row="2" Name="txbResponce" Background="LightGray" Height="Auto"></TextBlock>
 
                             </Grid>
 

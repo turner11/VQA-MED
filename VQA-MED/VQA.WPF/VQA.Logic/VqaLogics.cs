@@ -34,9 +34,10 @@ namespace VQA.Logic
             this._pythonProxy = PythonQueryProxy.Factory();
             this._pythonModelProxy = new PythonModelInfo();
         }
-        public async Task<string> Ask(string question, FileInfo imagePath)
+        public async Task<IPrediction> Predict(string question, FileInfo imagePath)
         {
-            throw new NotImplementedException();
+            var result = await Task.Run(()=>this._pythonModelProxy.Predict(question, imagePath));
+            return result;
         }
 
 
@@ -109,15 +110,15 @@ namespace VQA.Logic
 
         }
 
-        public IEnumerable<IModelInfo> GetModels()
+        public async Task<IEnumerable<IModelInfo>> GetModels()
         {
-            var ms = this._pythonModelProxy.GetModels();
+            var ms = await Task.Run(() =>this._pythonModelProxy.GetModels());
             return ms;
         }
 
-        public void SetModel(int modelId)
+        public bool SetModel(int modelId)
         {
-            this._pythonModelProxy.SetModel(modelId);
+            return this._pythonModelProxy.SetModel(modelId);
         }
     }
 }

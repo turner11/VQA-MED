@@ -60,5 +60,21 @@ namespace SDKSamples.ImageSample
 
             ViewedPhoto.Source = _photo.Image;
         }
+
+        private void ViewedCaption_MouseRightButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (this.ViewedCaption.ContextMenu != null)
+            {
+                return;
+            }
+            var cMenu = new ContextMenu();
+            var miTextToClipBoard = new MenuItem();
+            cMenu.Items.Add(miTextToClipBoard);
+
+            miTextToClipBoard.Header = "Copy text to clipboard";
+            miTextToClipBoard.Click += (s, args) => Clipboard.SetText(this.ViewedCaption.Content?.ToString() ?? "No Content");
+            this.ViewedCaption.ContextMenu = cMenu;
+            
+        }
     }
 }
