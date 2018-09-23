@@ -24,21 +24,18 @@ from vqa_logger import logger
 class VqaModelPredictor(object):
     """"""
 
-    def __init__(self, model, df_test=None, df_validation=None):
+    def __init__(self, model):
         """"""
         super(VqaModelPredictor, self).__init__()
 
         self.vqa_specs = File.load_pickle(vqa_specs_location)
         self.model, model_idx_in_db = self.get_model(model)
         self.model_idx_in_db = model_idx_in_db
-        df_test, df_validation = self.get_data(df_test, df_validation)
-        self.df_validation = df_validation
-        self.df_test = df_test
 
     def __repr__(self):
         return super(VqaModelPredictor, self).__repr__()
 
-    def get_model(self, model: Union[int,keras_model,None]) -> (keras_model, int):
+    def get_model(self, model: Union[int, keras_model, None]) -> (keras_model, int):
         df_models = None
         model_idx_in_db = None
         model_dal = None
@@ -67,25 +64,7 @@ class VqaModelPredictor(object):
                                                                'precision_score': precision_score})
             model_id = model_dal.id
 
-
         return model, model_id
-
-    def get_data(self, df_test=None, df_validation=None):
-
-        data_location = self.vqa_specs.data_location
-        logger.debug(f"Loading test data from {data_location}")
-        with VerboseTimer("Loading Test & validation Data"):
-            with HDFStore(data_location) as store:
-                df_test = df_test if df_test is not None else store['test']
-
-                if df_validation is None:
-                    df_training = store['data']
-
-                    # The validation is for evaluating
-                    df_validation = df_training[df_training.group == 'validation'].copy()
-                    del df_training
-
-        return df_test, df_validation
 
     def predict(self, df_data: pd.DataFrame, percentile=99.8):
 
@@ -139,6 +118,32 @@ class VqaModelPredictor(object):
         ret = ret[oredered_columns]
         return ret
 
+
+class DefaultVqaModelPredictor(VqaModelPredictor):
+    """"""
+
+    def __init__(self, model, df_test=None, df_validation=None):
+        """"""
+        super(DefaultVqaModelPredictor, self).__init__(model)
+        df_test, df_validation = self.get_data(df_test, df_validation)
+        self.df_validation = df_validation
+        self.df_test = df_test
+
+    def get_data(self, df_test=None, df_validation=None):
+        data_location = self.vqa_specs.data_location
+        logger.debug(f"Loading test data from {data_location}")
+        with VerboseTimer("Loading Test & validation Data"):
+            with HDFStore(data_location) as store:
+                df_test = df_test if df_test is not None else store['test']
+
+                if df_validation is None:
+                    df_training = store['data']
+
+                    # The validation is for evaluating
+                    df_validation = df_training[df_training.group == 'validation'].copy()
+                    del df_training
+
+        return df_test, df_validation
 
 
 def main():
