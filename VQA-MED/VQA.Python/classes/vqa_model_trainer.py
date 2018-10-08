@@ -3,6 +3,8 @@ import warnings
 
 import pandas as pd
 from pandas import HDFStore
+
+from classes.DataGenerator import DataGenerator
 from vqa_logger import logger
 from keras.models import load_model
 
@@ -33,9 +35,14 @@ class VqaModelTrainer(object):
     def class_df(self):
         return self.df_meta_words
 
-    def __init__(self, model_location, epochs, batch_size, data_location=default_data_location):
+    @property
+    def epochs(self):
+        return 1#20 if self.use_augmentation else 1
+
+    def __init__(self, model_location, use_augmentation , batch_size, data_location=default_data_location):
         super(VqaModelTrainer, self).__init__()
-        self.epochs = epochs
+        self.use_augmentation  = use_augmentation
+
         self.batch_size = batch_size
         self.data_location = data_location
         self.model_location = model_location
@@ -74,7 +81,7 @@ class VqaModelTrainer(object):
 
 
     def print_shape_sanity(self, features_t, labels_t, features_val, labels_val):
-        print(f'Expectedt shape: {self.model.input_shape}')
+        print(f'Expected shape: {self.model.input_shape}')
         print('---------------------------------------------------------------------------')
         print(f'Actual training shape:{features_t[0].shape, features_t[1].shape}')
         print(f'Train Labels shape:{labels_t.shape}')
@@ -83,16 +90,12 @@ class VqaModelTrainer(object):
         print(f'Validation Labels shape:{labels_val.shape}')
 
     def train(self):
-        with VerboseTimer('Getting train features'):
-            features_t = get_features(self.data_train)
-        with VerboseTimer('Getting train labels'):
-            labels_t = self.get_labels(self.data_train)
+
         with VerboseTimer('Getting train features'):
             features_val = get_features(self.data_val)
         with VerboseTimer('Getting validation labels'):
             labels_val = self.get_labels(self.data_val)
 
-        self.print_shape_sanity(features_t, labels_t, features_val, labels_val)
 
         validation_input = (features_val, labels_val)
 
@@ -132,20 +135,44 @@ class VqaModelTrainer(object):
 
             tensor_log_dir = os.path.abspath(os.path.join('.', 'tensor_board_logd'))
             File.validate_dir_exists(tensor_log_dir)
-            tensor_board_callback = K_callbacks.TensorBoard(log_dir=tensor_log_dir)
+            tensor_board_callback = None#K_callbacks.TensorBoard(log_dir=tensor_log_dir)
             callbacks = [stop_callback, acc_early_stop, tensor_board_callback]
+            callbacks = [c for c in callbacks if c is not None]
 
             with VerboseTimer("Training Model"):
                 #         with get_session() as sess:
                 #             ktf.set_session(sess)
                 #             sess.run(tf.global_variables_initializer())
+                use_augmentation = True
+                if not use_augmentation:
 
-                history = model.fit(features_t, labels_t,
-                                    epochs=self.epochs,
-                                    batch_size=self.batch_size,
-                                    validation_data=validation_input,
-                                    shuffle=True,
-                                    callbacks=callbacks)
+                    with VerboseTimer('Getting train features'):
+                        features_t = get_features(self.data_train)
+                    with VerboseTimer('Getting train labels'):
+                        labels_t = self.get_labels(self.data_train)
+                    self.print_shape_sanity(features_t, labels_t, features_val, labels_val)
+
+
+                    history = model.fit(features_t, labels_t,
+                                        epochs=self.epochs,
+                                        batch_size=self.batch_size,
+                                        validation_data=validation_input,
+                                        shuffle=True,
+                                        callbacks=callbacks)
+
+                else:
+                    dg = DataGenerator(vqa_specs_location, shuffle=True, batch_size=self.batch_size)
+
+                    features_t, labels_t = dg[0]
+                    self.print_shape_sanity(features_t, labels_t, features_val, labels_val)
+
+                    history = model.fit_generator(generator=dg,
+                                                  validation_data=validation_input,
+                                                  epochs=self.epochs,
+                                                  callbacks=callbacks,
+                                                  use_multiprocessing=True,
+                                                  workers=3)
+
         #             sess.close()
 
         except Exception as ex:

@@ -6,6 +6,7 @@ vqa_python_pbase_path = os.path.join(os.path.abspath('.').split('VQA.Python')[0]
 fn_meta            = os.path.abspath(os.path.join(vqa_python_pbase_path, 'data/meta_data.h5'))
 raw_data_location  = os.path.abspath(os.path.join(vqa_python_pbase_path, 'data/raw_data.h5'))
 data_location      = os.path.abspath(os.path.join(vqa_python_pbase_path, 'data/model_input.h5'))
+augmented_data_location      = os.path.abspath(os.path.join(vqa_python_pbase_path, 'data/augmented_model_input.gzip'))
 vqa_specs_location = os.path.abspath(os.path.join(vqa_python_pbase_path, 'data/vqa_specs.pkl'))
 
 images_folder_train = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-images'

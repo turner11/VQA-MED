@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[18]:
 
 
 # %%capture
@@ -19,7 +19,7 @@ from vqa_logger import logger
 from common.os_utils import File
 
 
-# In[2]:
+# In[19]:
 
 
 from common.constatns import train_data, validation_data, data_location, raw_data_location
@@ -32,7 +32,7 @@ from common.utils import VerboseTimer
 
 # #### Getting the nlp engine
 
-# In[3]:
+# In[20]:
 
 
 nlp = get_nlp()
@@ -40,14 +40,14 @@ nlp = get_nlp()
 
 # #### Where get_nlp is defined as:
 
-# In[4]:
+# In[21]:
 
 
 code = get_highlited_function_code(get_nlp,remove_comments=True)
 IPython.display.display(code)
 
 
-# In[5]:
+# In[22]:
 
 
 with HDFStore(raw_data_location) as store:
@@ -62,7 +62,7 @@ with HDFStore(raw_data_location) as store:
 
 # ##### This is just for performance and quick debug cycles! remove before actual trainining:
 
-# In[6]:
+# In[23]:
 
 
 # image_name_question = image_name_question.head(5)
@@ -73,7 +73,7 @@ with HDFStore(raw_data_location) as store:
 
 # #### get_text_features:
 
-# In[7]:
+# In[24]:
 
 
 code = get_highlited_function_code(get_text_features,remove_comments=True)
@@ -82,7 +82,7 @@ IPython.display.display(code)
 
 # #### get_image:
 
-# In[8]:
+# In[25]:
 
 
 code = get_highlited_function_code(get_image,remove_comments=True)
@@ -91,7 +91,7 @@ IPython.display.display(code)
 
 # #### pre_process_raw_data:
 
-# In[9]:
+# In[26]:
 
 
 code = get_highlited_function_code(pre_process_raw_data,remove_comments=True)
@@ -100,7 +100,7 @@ IPython.display.display(code)
 
 # ### Clean and enrich the data
 
-# In[10]:
+# In[27]:
 
 
 from common.functions import enrich_data, clean_data
@@ -109,14 +109,14 @@ image_name_question = clean_data(image_name_question)
 image_name_question = enrich_data(image_name_question)
 
 
-# In[11]:
+# In[28]:
 
 
 image_name_question[image_name_question.image_name == '0392-100X-33-350-g002.jpg'].head()
 image_name_question.head()
 
 
-# In[12]:
+# In[29]:
 
 
 image_name_question.groupby('group').describe()
@@ -127,7 +127,7 @@ image_name_question[['imaging_device','image_name']].groupby('imaging_device').d
 # Note:  
 # This might take a while...
 
-# In[13]:
+# In[30]:
 
 
 logger.debug('----===== Preproceccing train data =====----')
@@ -136,7 +136,7 @@ with VerboseTimer("Pre processing training data"):
     image_name_question_processed = pre_process_raw_data(image_name_question)
 
 
-# In[14]:
+# In[31]:
 
 
 # logger.debug('----===== Preproceccing validation data =====----')
@@ -147,7 +147,7 @@ with VerboseTimer("Pre processing training data"):
 
 # #### Saving the data, so later on we don't need to compute it again
 
-# In[15]:
+# In[32]:
 
 
 logger.debug("Saving the data")
@@ -176,7 +176,7 @@ size = get_size(data_location)
 logger.debug(f"training data's file size was: {size}")
 
 
-# In[16]:
+# In[33]:
 
 
 # import numpy as np
@@ -185,7 +185,7 @@ logger.debug(f"training data's file size was: {size}")
 # print(np.unique(d.imaging_device))
 
 
-# In[18]:
+# In[34]:
 
 
 print('Data saved at:')

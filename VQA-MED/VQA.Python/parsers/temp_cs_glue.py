@@ -92,8 +92,8 @@ def main():
 
     # set_model(args.model_id)
     # question = 'what does CT show?'
-    # image_path = r'C:\Users\Public\Documents\Data\2018\VQAMed2018Train\VQAMed2018Train-images\0392-100X-30-209-g003.jpg'
-    # predict(question=question,image_path=image_path)
+    # curr_image_path = r'C:\Users\Public\Documents\Data\2018\VQAMed2018Train\VQAMed2018Train-images\0392-100X-30-209-g003.jpg'
+    # predict(question=question,curr_image_path=curr_image_path)
     # ms =  get_models()
 
 

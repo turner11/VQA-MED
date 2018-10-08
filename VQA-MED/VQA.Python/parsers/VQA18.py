@@ -76,7 +76,7 @@ class Vqa18Base(object):
         data = self.get_all_data()
         _, fn = os.path.split(image_path)
         clean_image_name, ext = os.path.splitext(fn)
-        # clean_image_name = os.path.basename(image_path).split('\\')[-1].replace(".j")
+        # clean_image_name = os.path.basename(curr_image_path).split('\\')[-1].replace(".j")
 
         i_question_rows = data[self.COL_IMAGE_NAME] == clean_image_name
         image_data = data[i_question_rows]

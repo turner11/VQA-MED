@@ -10,9 +10,9 @@ from common import DAL
 
 
 
-
 def main():
-    evaluate_missing_models()
+    train_model(model_id=85, optimizer='Adam', post_concat_dense_units=16)
+    # evaluate_missing_models()
     # train_all()
     # add_scores()
 
@@ -151,6 +151,53 @@ def add_scores():
         score_dals.append(ms)
     DAL.insert_dals(score_dals)
 
+def train_model(model_id, optimizer, post_concat_dense_units=16):
+    # Doing all of this here in order to not import tensor flow for other functions
+    from evaluate.VqaMedEvaluatorBase import VqaMedEvaluatorBase
+    from classes.vqa_model_predictor import DefaultVqaModelPredictor
+    from classes.vqa_model_trainer import VqaModelTrainer
+    from classes.vqa_model_builder import VqaModelBuilder
+    from keras import backend as keras_backend
+    keras_backend.clear_session()
+
+    # Get------------------------------------------------------------------------
+    model_dal = DAL.get_model_by_id(model_id=model_id)
+    mb = VqaModelBuilder(model_dal.loss_function, model_dal.activation, post_concat_dense_units=post_concat_dense_units, optimizer=optimizer)
+    model = mb.get_vqa_model()
+    model_location, summary_fn, fn_image = VqaModelBuilder.save_model(model)
+
+    # Train ------------------------------------------------------------------------
+
+    batch_size = 75
+    use_augmentation = True
+
+    mt = VqaModelTrainer(model_location, use_augmentation=use_augmentation, batch_size=batch_size)
+    history = mt.train()
+    with VerboseTimer("Saving trained Model"):
+        notes = f'post_concat_dense_units: {post_concat_dense_units};\n' \
+                f'Optimizer: {optimizer}\n' \
+                f'loss: {mb.loss_function}\n' \
+                f'activation: {mb.dense_activation}\n' \
+                f'epochs: {mt.epochs}\n' \
+                f'batch_size: {batch_size}'
+        model_fn, summary_fn, fn_image, fn_history = VqaModelTrainer.save(mt.model, history, notes)
+    print(model_fn)
+
+    # Evaluate ------------------------------------------------------------------------
+    mp = DefaultVqaModelPredictor(model=None)
+    validation_prediction = mp.predict(mp.df_validation)
+    predictions = validation_prediction.prediction.values
+    ground_truth = validation_prediction.answer.values
+    results = VqaMedEvaluatorBase.get_all_evaluation(predictions=predictions, ground_truth=ground_truth)
+
+    ms = ModelScore(model_id=mp.model_idx_in_db, bleu=results['bleu'], wbss=results['wbss'])
+    DAL.insert_dal(ms)
+    logger.info('----------------------------------------------------------------------------------------')
+    logger.info(f'@@@For:\tLoss: {mb.loss_function}\tActivation: {mb.dense_activation}: Got results of {results}@@@')
+    logger.info('----------------------------------------------------------------------------------------')
+
+    print(f"###Completed full flow for {mb.loss_function} and {mb.dense_activation}")
+
 
 def train_all():
     # Doing all of this here in order to not import tensor flow for other functions
@@ -171,7 +218,7 @@ def train_all():
     losses_and_activations = list(itertools.product(losses, activations))
 
 
-    optimizers = ['SGD', 'Adagrad', 'Adadelta', 'RMSprop', 'Adam']
+    optimizers = [ 'RMSprop', 'Adam']#['SGD', 'Adagrad', 'Adadelta', 'RMSprop', 'Adam']
     dense_units = [16, 32]
     top_models = [
                     ('cosine_proximity', 'sigmoid'),
@@ -227,13 +274,14 @@ def train_all():
             # epochs=25
             # batch_size = 20
             keras_backend.clear_session()
-            epochs = 1
+
             batch_size = 75
+            use_augmentation = True
 
 
 
             model_location = model_fn
-            mt = VqaModelTrainer(model_location, epochs=epochs, batch_size=batch_size)
+            mt = VqaModelTrainer(model_location, use_augmentation =use_augmentation , batch_size=batch_size)
             history = mt.train()
             with VerboseTimer("Saving trained Model"):
                 notes = f'post_concat_dense_units: {post_concat_dense_units};\n' \

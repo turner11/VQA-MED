@@ -295,9 +295,9 @@ class VqaPredictorFactory(object):
     #         except Exception as ex:
     #             logger.warning("Failed to train tag {0}:\n{1}".format(tag, ex))
 
-    # def Image2Features(image_path, base_model=None):
+    # def Image2Features(curr_image_path, base_model=None):
     #     model = get_image_model(base_model)
-    #     x = image_to_preprocess_input(image_path)
+    #     x = image_to_preprocess_input(curr_image_path)
     #     block4_pool_features = model.predict(x)
     #     return block4_pool_features
 
