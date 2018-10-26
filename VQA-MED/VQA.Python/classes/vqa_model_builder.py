@@ -36,7 +36,6 @@ class VqaModelBuilder(object):
     def __init__(self, loss_function, output_activation_function,
                  lstm_units=LSTM_UNITS,
                  post_concat_dense_units=POST_CONCAT_DENSE_UNITS,
-                 dense_activation=DENSE_ACTIVATION,
                  optimizer=OPTIMIZER
     ):
         """"""
@@ -54,7 +53,6 @@ class VqaModelBuilder(object):
 
         self.lstm_units = lstm_units
         self.post_concat_dense_units = post_concat_dense_units
-        self.dense_activation = dense_activation
         self.optimizer = optimizer
 
         self.model_location = ''
@@ -141,7 +139,7 @@ class VqaModelBuilder(object):
             #         fc_tensors = BatchNormalization()(fc_tensors)
             fc_tensors = Dense(units=self.post_concat_dense_units)(fc_tensors)
             fc_tensors = BatchNormalization()(fc_tensors)
-            fc_tensors = Activation(self.dense_activation)(fc_tensors)
+            fc_tensors = Activation(DENSE_ACTIVATION)(fc_tensors)
 
             fc_tensors = Dense(units=model_output_num_units, activation=self.output_activation_function
                                , name=f'model_output_{self.output_activation_function}_dense')(fc_tensors)
