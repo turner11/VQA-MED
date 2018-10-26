@@ -189,7 +189,7 @@ def get_models_data_frame():
     s_variables = [v for v in scores[0].__dict__.keys() if not v.startswith('_')]
     s_df = pd.DataFrame([[getattr(i, j) for j in s_variables] for i in scores], columns=s_variables)
 
-    merged_df = s_df.merge(df, left_on='model_id', right_on='id',  how='left')
+    merged_df = s_df.merge(df, left_on='model_id', right_on='id',  how='outer')#how='left')
     return merged_df
 
 
