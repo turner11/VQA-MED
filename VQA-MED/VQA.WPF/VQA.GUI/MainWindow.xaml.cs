@@ -18,6 +18,8 @@ using Interfaces;
 
 namespace SDKSamples.ImageSample
 {
+
+
     public sealed partial class MainWindow : Window
     {
 
@@ -172,6 +174,8 @@ namespace SDKSamples.ImageSample
 
             }
 
+
+
             
 
             Debug.WriteLine(responce);
@@ -278,6 +282,11 @@ namespace SDKSamples.ImageSample
                 return;
 
             bool success = this.logics.SetModel(model.Model_Id);
+        }
+
+        private void OnPhotoClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+
         }
     }
 }

@@ -113,6 +113,10 @@ namespace VQA.Logic
         public async Task<IEnumerable<IModelInfo>> GetModels()
         {
             var ms = await Task.Run(() =>this._pythonModelProxy.GetModels());
+            //var filter = new int[] {77 ,98 ,85 ,93, 95 ,79 ,89 ,87 ,83 ,162};
+            //ms = ms.Where(m => filter.Contains(m.Model_Id)).ToList();
+
+
             return ms;
         }
 
