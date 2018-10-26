@@ -11,10 +11,38 @@ from common import DAL
 
 
 def main():
+    ev = predict_test(126)
+    print (ev)
+    return
+    evaluate_model(162)
+    return
     train_model(model_id=85, optimizer='Adam', post_concat_dense_units=16)
     # evaluate_missing_models()
     # train_all()
     # add_scores()
+
+
+def predict_test(model_id):
+    # 162: 	WBSS: 0.143	BLEU 0.146
+
+    from classes.vqa_model_predictor import DefaultVqaModelPredictor
+    mp = DefaultVqaModelPredictor(model=model_id)
+    validation_prediction = mp.predict(mp.df_test)
+    predictions = validation_prediction.prediction.values
+
+    strs = []
+    for i, row in mp.df_test.iterrows():
+        image = row["path"].rsplit('\\')[-1].rsplit('.',1)[0]
+        s = f'{i+1}\t{image}\t{predictions[i]}'
+        strs.append(s)
+
+    res = '\n'.join(strs)
+    return res
+
+    str()
+
+
+
 
 def evaluate_missing_models():
     from classes.vqa_model_predictor import DefaultVqaModelPredictor
@@ -153,8 +181,7 @@ def add_scores():
 
 def train_model(model_id, optimizer, post_concat_dense_units=16):
     # Doing all of this here in order to not import tensor flow for other functions
-    from evaluate.VqaMedEvaluatorBase import VqaMedEvaluatorBase
-    from classes.vqa_model_predictor import DefaultVqaModelPredictor
+
     from classes.vqa_model_trainer import VqaModelTrainer
     from classes.vqa_model_builder import VqaModelBuilder
     from keras import backend as keras_backend
@@ -180,23 +207,35 @@ def train_model(model_id, optimizer, post_concat_dense_units=16):
                 f'activation: {mb.dense_activation}\n' \
                 f'epochs: {mt.epochs}\n' \
                 f'batch_size: {batch_size}'
+        logger.debug(f'Saving model')
         model_fn, summary_fn, fn_image, fn_history = VqaModelTrainer.save(mt.model, history, notes)
-    print(model_fn)
+    logger.debug(f'Model saved to:\n\t{model_fn}')
+
 
     # Evaluate ------------------------------------------------------------------------
-    mp = DefaultVqaModelPredictor(model=None)
-    validation_prediction = mp.predict(mp.df_validation)
-    predictions = validation_prediction.prediction.values
-    ground_truth = validation_prediction.answer.values
-    results = VqaMedEvaluatorBase.get_all_evaluation(predictions=predictions, ground_truth=ground_truth)
+    results = evaluate_model()
 
-    ms = ModelScore(model_id=mp.model_idx_in_db, bleu=results['bleu'], wbss=results['wbss'])
-    DAL.insert_dal(ms)
     logger.info('----------------------------------------------------------------------------------------')
     logger.info(f'@@@For:\tLoss: {mb.loss_function}\tActivation: {mb.dense_activation}: Got results of {results}@@@')
     logger.info('----------------------------------------------------------------------------------------')
 
+
     print(f"###Completed full flow for {mb.loss_function} and {mb.dense_activation}")
+
+
+def evaluate_model(model=None):
+    from evaluate.VqaMedEvaluatorBase import VqaMedEvaluatorBase
+    from classes.vqa_model_predictor import DefaultVqaModelPredictor
+
+    mp = DefaultVqaModelPredictor(model=model)
+    validation_prediction = mp.predict(mp.df_validation)
+    predictions = validation_prediction.prediction.values
+    ground_truth = validation_prediction.answer.values
+    results = VqaMedEvaluatorBase.get_all_evaluation(predictions=predictions, ground_truth=ground_truth)
+    ms = ModelScore(model_id=mp.model_idx_in_db, bleu=results['bleu'], wbss=results['wbss'])
+    DAL.insert_dal(ms)
+    return results
+
 
 
 def train_all():
@@ -281,6 +320,7 @@ def train_all():
 
 
             model_location = model_fn
+
             mt = VqaModelTrainer(model_location, use_augmentation =use_augmentation , batch_size=batch_size)
             history = mt.train()
             with VerboseTimer("Saving trained Model"):
