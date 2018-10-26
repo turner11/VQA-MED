@@ -55,7 +55,7 @@ class VqaModelPredictor(object):
             model_dal = model
 
         assert model_dal is not None, f'Unexpectedly got a None model dal \n(Model is "{model.__class__.__name__}"\n{model})'
-        assert isinstance(model, ModelDal), f'Expected model to be of type "{ModelDal.__name__}" ' \
+        assert isinstance(model_dal, ModelDal), f'Expected model to be of type "{ModelDal.__name__}" ' \
                                             f'but got: "{model.__class__.__name__}" ({model})'
 
         model_location = model_dal.model_location
