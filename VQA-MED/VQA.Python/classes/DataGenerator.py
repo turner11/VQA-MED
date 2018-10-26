@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import keras
 
+
 from common.functions import get_features, sentences_to_hot_vector, get_image
 from common.os_utils import File
 from common.utils import VerboseTimer
@@ -121,3 +122,15 @@ class DataGenerator(keras.utils.Sequence):
         y = labels
         return X,y
         # return X, keras.utils.to_categorical(y, num_classes=self.n_classes)
+def main():
+    from common.constatns import vqa_specs_location
+    a = DataGenerator(vqa_specs_location=vqa_specs_location)
+    str()
+    res = []
+    for i in range(10):
+        d = a[i]
+        res.append(d)
+
+
+if __name__ == '__main__':
+    main()
