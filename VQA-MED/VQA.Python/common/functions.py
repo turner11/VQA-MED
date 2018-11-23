@@ -257,7 +257,7 @@ def _add_columns_by_search(df, indicator_words, search_columns):
             logger.warn("found no matching for '{0}'".format(word))
 
 
-def _concat_row(df: pd.DataFrame, col: str):
+def concat_row(df: pd.DataFrame, col: str):
     # return np.concatenate(df[col], axis=0)
     return np.concatenate([row for row in df[col]])
 
@@ -265,7 +265,7 @@ def _concat_row(df: pd.DataFrame, col: str):
 def get_features(df: pd.DataFrame):
     image_features = np.asarray([np.array(get_image(im_path)) for im_path in df['path']])
     # np.concatenate(df['question_embedding'], axis=0).shape
-    question_features = _concat_row(df, 'question_embedding')
+    question_features = concat_row(df, 'question_embedding')
     # question_features = np.concatenate([row for row in df.question_embedding])
     reshaped_q = np.array([a.reshape(a.shape + (1,)) for a in question_features])
 

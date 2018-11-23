@@ -9,7 +9,7 @@ from vqa_logger import logger
 from keras.models import load_model
 
 from keras import callbacks as K_callbacks #, backend as keras_backend,
-from common.functions import get_features, _concat_row, sentences_to_hot_vector, hot_vector_to_words
+from common.functions import get_features, concat_row, sentences_to_hot_vector, hot_vector_to_words
 from common.constatns import data_location as default_data_location, vqa_models_folder, vqa_specs_location  # train_data, validation_data,
 from common.utils import VerboseTimer
 from common.classes import EarlyStoppingByAccuracy

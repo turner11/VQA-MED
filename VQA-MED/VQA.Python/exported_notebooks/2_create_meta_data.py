@@ -110,6 +110,8 @@ def create_meta(df, hdf_output_location):
 
 #         df_ix_to_word = pd.DataFrame.from_dict(metadata['ix_to_word'])
 #         light.to_hdf(data_location, 'light', mode='w', data_columns=['image_name', 'imaging_device', 'path'], format='table')
+
+        return metadata_store
         
 
 

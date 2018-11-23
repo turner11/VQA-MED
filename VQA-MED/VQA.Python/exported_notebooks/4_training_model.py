@@ -63,7 +63,7 @@ from keras import backend as keras_backend, callbacks
 
 # %%capture
 import IPython
-from common.functions import get_highlited_function_code, get_features, _concat_row, sentences_to_hot_vector, hot_vector_to_words
+from common.functions import get_highlited_function_code, get_features, concat_row, sentences_to_hot_vector, hot_vector_to_words
 from common.constatns import data_location, vqa_models_folder, vqa_specs_location #train_data, validation_data, 
 from common.utils import VerboseTimer
 from common.settings import classify_strategy
@@ -149,9 +149,9 @@ data_val = df_data[df_data.group == 'validation'].copy().reset_index()
 # In[ ]:
 
 
-from common.functions import get_features, _concat_row
+from common.functions import get_features, concat_row
 code_get_features = get_highlited_function_code( get_features, remove_comments=True)
-code_concat = get_highlited_function_code(_concat_row, remove_comments=True)
+code_concat = get_highlited_function_code(concat_row, remove_comments=True)
 IPython.display.display(code_get_features)
 IPython.display.display(code_concat)
 
@@ -162,7 +162,7 @@ IPython.display.display(code_concat)
 
 
 def get_nlp_labels():
-    labels =  _concat_row(df, 'answer_embedding')
+    labels =  concat_row(df, 'answer_embedding')
     return labels
 
 

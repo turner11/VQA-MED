@@ -49,7 +49,7 @@ from common.constatns import images_path_test, vqa_specs_location
 from common.utils import VerboseTimer
 from parsers.VQA18 import Vqa18Base
 from common.functions import get_size, get_highlited_function_code, normalize_data_strucrture
-from common.functions import get_highlited_function_code, get_features, _concat_row, predict
+from common.functions import get_highlited_function_code, get_features, concat_row, predict
 from vqa_logger import logger
 from common.os_utils import File
 
