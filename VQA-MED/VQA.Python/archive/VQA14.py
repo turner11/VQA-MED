@@ -71,7 +71,7 @@ class Vqa14DataParser(object):
         caption = ""
         image_info = {}
         try:
-            image_id = int(os.path.basename(image_path).split("_")[-1].split(".")[0])
+            image_id = int(os.path.basename(image_path).split('_')[-1].split('.')[0])
             image_folder, image_name = os.path.split(image_path)
             image_an = [an for an in annot_dict if an.get('image_id',-999) == image_id]
          

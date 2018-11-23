@@ -257,7 +257,7 @@ def main():
     batch_size = 75
 
     model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180831_1244_55\\vqa_model_.h5'
-    mt = VqaModelTrainer(model_location, epochs=epochs, batch_size=batch_size)
+    mt = VqaModelTrainer(model_location, use_augmentation=True, batch_size=batch_size)
     history = mt.train()
     with VerboseTimer("Saving trained Model"):
         model_fn, summary_fn, fn_image, fn_history = VqaModelTrainer.save(mt.model, history)

@@ -77,7 +77,7 @@ for i,  (curr_image_path, file_name, ext, output_dir) in enumerate(non_existing_
 # In[6]:
 
 
-a = images_info[:1]
+aa = images_info[:1]
 a = images_info
 aug_dict = {image_path:output_dir for (image_path, file_name, ext, output_dir) in a}
 

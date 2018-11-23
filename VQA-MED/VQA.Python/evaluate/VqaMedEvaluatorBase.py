@@ -1,6 +1,6 @@
 from argparse import ArgumentError
 from collections import namedtuple
-from typing import List, Union
+from typing import List, Union, Iterable
 import nltk
 
 Prediction = namedtuple('Prediction', ['q_id', 'image_id', 'answer'])
@@ -47,7 +47,7 @@ class VqaMedEvaluatorBase(object):
         nltk.download('stopwords')
 
     @classmethod
-    def get_all_evaluation(cls, predictions: List[tuple], ground_truth: List[tuple]):
+    def get_all_evaluation(cls, predictions: Iterable[str], ground_truth: Iterable[str]):
         # cls.update_nltk()
         from evaluate.BleuEvaluator import BleuEvaluator
         from evaluate.WbssEvaluator import WbssEvaluator
