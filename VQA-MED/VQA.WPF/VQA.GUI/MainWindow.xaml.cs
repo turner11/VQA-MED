@@ -164,13 +164,20 @@ namespace SDKSamples.ImageSample
             string responce;
             if (!hasData)
                 responce = "Got invalid data to query";
-
             else
             {
-                var prediction = await this.logics.Predict(question, new FileInfo(imagePath));
-                responce = String.Join(" ", prediction.Predictions.Take(MAX_WORDS_TO_TAKE).Select(p => p.Prediction));
-                var probs = String.Join("; ", prediction.Predictions.Take(MAX_WORDS_TO_TAKE).Select(p => $"{p.Prediction} ({p.Probability})"));
-                responce += "\n" + probs;
+                try
+                {
+                    var prediction = await this.logics.Predict(question, new FileInfo(imagePath));
+                    responce = String.Join(" ", prediction.Predictions.Take(MAX_WORDS_TO_TAKE).Select(p => p.Prediction));
+                    var probs = String.Join("; ", prediction.Predictions.Take(MAX_WORDS_TO_TAKE).Select(p => $"{p.Prediction} ({p.Probability})"));
+                    responce += "\n" + probs;
+                }
+                catch (Exception ex)
+                {
+                    responce = $"An Error occured: {ex.Message}";
+                    MessageBox.Show(ex.ToString());
+                }
 
             }
 
