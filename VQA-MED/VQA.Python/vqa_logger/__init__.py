@@ -1,4 +1,5 @@
 import logging
+import os
 
 import sys
 
@@ -6,20 +7,24 @@ import sys
 import datetime
 import time
 
+from common.os_utils import File
+
 log_level = logging.DEBUG
 # format = '%(asctime)s,%(msecs)d %(name)s %(levelname)s ## %(message)s'
 format = '[%(asctime)s][%(levelname)s] %(message)s'
 
 now = time.time()
 ts = datetime.datetime.fromtimestamp(now).strftime('%Y%m%d')
-logname = f"{ts}_vqa.log"
+file_name = os.path.join(os.getcwd(),'logs',f"{ts}_vqa.log")
+folder, _ = os.path.split(file_name)
+File.validate_dir_exists(folder)
 
 logging.basicConfig(filemode='a',
                     format=format,
                     datefmt='%H:%M:%S',
                     level=log_level,
                     # stream=sys.stdout,
-                    filename=logname)
+                    filename=file_name)
 
 
 # coloredlogs.install()
