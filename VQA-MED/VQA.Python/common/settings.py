@@ -1,10 +1,22 @@
+from functools import lru_cache
+
 import spacy
 from vqa_logger import logger
 
 nlp=None
 # NLP & Embedding-----------------------------------------------------------------------------
 vectors = ['en_core_web_lg', 'en_core_web_md', 'en_core_web_sm']  # 'en_vectors_web_lg'
-nlp_vector = vectors[2]
+
+nlp_vector = vectors[0]
+
+def set_nlp_vector(idx):
+    global nlp_vector
+    if nlp is not None:
+        raise Exception('Changing the vector will have no affect once NLP was set')
+    nlp_vector = vectors[idx]
+    logger.debug(f'Setted embedding vector to: {nlp_vector }')
+
+
 
 # glove_path =                    os.path.abspath('data/glove.6B.{0}d.txt'.format(embedding_dim))
 # embedding_matrix_filename =     os.path.abspath('data/ckpts/embeddings_{0}.h5'.format(embedding_dim))
@@ -14,7 +26,7 @@ input_length = 32  # longest question / answer was 28 words. Rounding up to a ni
 embedding_dim = 384  # Those are the sizes spacy uses
 embedded_sentence_length = input_length * embedding_dim
 
-
+@lru_cache(1)
 def get_nlp():
     global nlp
     if nlp is None:
@@ -25,7 +37,7 @@ def get_nlp():
         # nlp.add_pipe(nlp.create_pipe('sentencizer'))
         # logger.debug(f'nlp getting embedding')
         # word_embeddings = nlp.vocab.vectors.data
-        logger.debug(f'Got embedding')
+        logger.debug(f'Got NLP engine ({nlp_vector})')
     return nlp
 
 
