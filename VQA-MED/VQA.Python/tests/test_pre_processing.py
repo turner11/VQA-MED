@@ -1,12 +1,17 @@
+import os
+import tempfile
+
 import pytest
 import itertools
 import pandas as pd
 from io import StringIO
 
-from common.functions import pre_process_raw_data
+from common.functions import pre_process_raw_data, generate_image_augmentations
 from common.functions import enrich_data, clean_data
+from common.os_utils import File
 from pre_processing.known_find_and_replace_items import find_and_replace_collection
 from common.settings import set_nlp_vector
+from tests import image_folder
 
 normalized_csv =\
 '''
@@ -111,12 +116,25 @@ image6,A new image,with no available info
     assert imaging_device_by_image_name['image5'] == 'unknown', err_msg
     assert imaging_device_by_image_name['image6'] == 'unknown', err_msg
 
-
+def test_data_augmentation():
+    AUGMENTATION_COUNT = 5
+    temp_dir = tempfile.gettempdir()
+    output_dir = os.path.join(temp_dir ,'augmentations')
+    output_dir = os.path.normpath(output_dir )
+    print(f'Augmentations are at:\n{output_dir }')
+    File.validate_dir_exists(output_dir)
+    image_name = os.listdir(image_folder)[0]
+    image_path = os.path.join(image_folder,image_name)
+    generate_image_augmentations(image_path , output_dir,augmentation_count=AUGMENTATION_COUNT)
+    out_put_results = os.listdir(output_dir)
+    assert len(out_put_results) == AUGMENTATION_COUNT, f'Expected {AUGMENTATION_COUNT} augmentations, but got {len(out_put_results) }'
+    
 
 
 
 def main():
-    test_data_enrichment()
+    test_data_augmentation()
+    # test_data_enrichment()
     # test_data_cleaning()
     # test_embedding()
     pass

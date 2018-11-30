@@ -2,7 +2,7 @@ import os
 import pytest
 from common.functions import normalize_data_strucrture
 from parsers.VQA18 import Vqa18Base
-
+from tests import image_folder
 
 CSV_ROW_TEMPLATE ='{0}	test_image	question {0}?	answer {0}'
 
@@ -13,9 +13,6 @@ def get_csv_text(row_count):
 @pytest.mark.parametrize("expected_length", [0,1,10,100])
 def test_data_length(expected_length):
     # Arrange
-    curr_folder, _ = os.path.split(__file__)
-    image_folder = os.path.join(curr_folder, 'test_images\\')
-    image_folder = os.path.normpath(image_folder)
     csv = get_csv_text(expected_length)
 
     # Act & Assert
