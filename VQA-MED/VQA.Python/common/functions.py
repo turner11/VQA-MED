@@ -3,15 +3,18 @@ import os
 import re
 import textwrap
 from collections import defaultdict
-
+from functools import partial
 
 import pandas as pd
+import dask.dataframe as dd
 import cv2
 import numpy as np
 
 from common.settings import input_length, image_size, get_nlp
 from common.settings import embedding_dim
+from common.utils import VerboseTimer
 from vqa_logger import logger
+
 
 def get_size(file_name):
     suffixes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
@@ -62,32 +65,26 @@ def get_image(image_file_name):
     return im
 
 
-
-
 def generate_image_augmentations(image_path,
                                  output_dir,
-                               rotation_range=40,  # Units: degrees
-                               width_shift_range=0.2,
-                               height_shift_range=0.2,
-                               shear_range=0.2,  # Units: degrees
-                               zoom_range=0.2,
-                               fill_mode='nearest',
-                               augmentation_count=20):
-    from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
-
+                                 rotation_range=40,  # Units: degrees
+                                 width_shift_range=0.2,
+                                 height_shift_range=0.2,
+                                 shear_range=0.2,  # Units: degrees
+                                 zoom_range=0.2,
+                                 fill_mode='nearest',
+                                 augmentation_count=20):
+    from keras.preprocessing.image import ImageDataGenerator, img_to_array, load_img #,array_to_img
 
     datagen = ImageDataGenerator(
-        rotation_range = rotation_range,
-        width_shift_range = width_shift_range,
-        height_shift_range = height_shift_range,
-        shear_range = shear_range,
-        zoom_range = zoom_range,
-        horizontal_flip = False,
+        rotation_range=rotation_range,
+        width_shift_range=width_shift_range,
+        height_shift_range=height_shift_range,
+        shear_range=shear_range,
+        zoom_range=zoom_range,
+        horizontal_flip=False,
         vertical_flip=False,
-        fill_mode = fill_mode)
-
-
-
+        fill_mode=fill_mode)
 
     img = load_img(image_path)  # this is a PIL image
     x = img_to_array(img)  # this is a Numpy array with shape (3, X, Y)
@@ -97,7 +94,7 @@ def generate_image_augmentations(image_path,
     # and saves the results to the `preview/` directory
     ext = image_path.split('.')[-1]
     i = 0
-    for batch in datagen.flow(x, batch_size=1, save_to_dir=output_dir,  save_format=ext):
+    for batch in datagen.flow(x, batch_size=1, save_to_dir=output_dir, save_format=ext):
         i += 1
         if i >= augmentation_count:
             break  # otherwise the generator would loop indefinitely
@@ -129,29 +126,40 @@ def get_text_features(txt):
     return text_features
 
 
+def _apply_heavy_function(dask_df, apply_func, column, scheduler='processes'):
+    res = dask_df.map_partitions(lambda df: df[column].apply(apply_func)).compute(scheduler=scheduler)
+    return res
+
+
 def pre_process_raw_data(df):
     df['image_name'] = df['image_name'].apply(lambda q: q if q.lower().endswith('.jpg') else q + '.jpg')
     paths = df['path']
 
     dirs = {os.path.split(c)[0] for c in paths}
     files_by_folder = {dir: os.listdir(dir) for dir in dirs}
-    existing_files = [os.path.join(dir, fn) for dir, fn_arr in files_by_folder.items() for fn in fn_arr]
-
+    existing_files = [os.path.normpath(os.path.join(dir, fn))
+                      for dir, fn_arr in files_by_folder.items() for fn in fn_arr]
+    df.path = df.path.apply(lambda p: os.path.normpath(p))
     df = df.loc[df['path'].isin(existing_files)]
 
-    # df = df[df['path'].isin(existing_files)]
-    # df = df.where(df['path'].isin(existing_files))
+    # Getting text features. This is the heavy task...
+    ddata = dd.from_pandas(df, npartitions=8)
+
+    def get_string_fetures(s, *a, **kw):
+        features = get_text_features(s) if isinstance(s, str) else ""
+        return features
+
+    paralelized_get_features = partial(_apply_heavy_function, dask_df=ddata, apply_func=get_string_fetures)
     logger.debug('Getting answers embedding')
-    # Note: Test has noanswer...
-    if 'answer' not in df.columns:
+    if 'answer' not in df.columns: #e.g. in test set...
         df['answer'] = ''
-    df['answer_embedding'] = df['answer'].apply(lambda q: get_text_features(q) if isinstance(q, str) else "")
+
+    with VerboseTimer("Answer Embedding"):
+        df['answer_embedding'] = paralelized_get_features(column='answer')
 
     logger.debug('Getting questions embedding')
-    df['question_embedding'] = df['question'].apply(lambda q: get_text_features(q))
-
-    logger.debug('Getting image features')
-    # df['image'] = df['path'].apply(lambda im_path: get_image(im_path))
+    with VerboseTimer("Question Embedding"):
+        df['question_embedding'] = paralelized_get_features(column='answer')
 
     logger.debug('Done')
     return df
@@ -160,9 +168,12 @@ def pre_process_raw_data(df):
 def normalize_data_strucrture(df, group, image_folder):
     # assert group in ['train', 'validation']
     cols = ['image_name', 'question', 'answer']
-
     df_c = df[cols].copy()
     df_c['group'] = group
+    df_c['path'] = ''
+
+    if len(df_c) == 0:
+        return df_c
 
     def get_image_path(image_name):
         return os.path.join(image_folder, image_name + '.jpg')
@@ -220,14 +231,18 @@ def _consolidate_image_devices(df):
 
     non_consolidated_vals = [s for s in list(imaging_device_by_image.values()) if len(s) != 1]
     imaging_device_by_image = {k: list(s)[0] for k, s in imaging_device_by_image.items()}
-    assert len(
-        non_consolidated_vals) == 0, f'got {len(non_consolidated_vals)} non consolodated image devices. for example:\n{non_consolidated_vals[:5]}'
+    assert len(non_consolidated_vals) == 0,\
+        f'got {len(non_consolidated_vals)} non consolodated image devices. for example:\n{non_consolidated_vals[:5]}'
     df['imaging_device'] = df.apply(lambda r: imaging_device_by_image[r.image_name], axis=1)
     return df
 
 
 def enrich_data(df: pd.DataFrame) -> pd.DataFrame:
     from pre_processing.known_find_and_replace_items import imaging_devices, diagnosis, locations
+
+
+    for col in imaging_devices:
+        df[col] =''
 
     # add_imaging_columns
     _add_columns_by_search(df, indicator_words=imaging_devices, search_columns=['question', 'answer'])
@@ -274,7 +289,7 @@ def get_features(df: pd.DataFrame):
     return features
 
 
-def sentences_to_hot_vector(sentences:pd.Series, words_df:pd.DataFrame)->iter:
+def sentences_to_hot_vector(sentences: pd.Series, words_df: pd.DataFrame) -> iter:
     from sklearn.preprocessing import MultiLabelBinarizer
     classes = words_df.values
     splatted_answers = [ans.lower().split() for ans in sentences]
@@ -287,14 +302,12 @@ def sentences_to_hot_vector(sentences:pd.Series, words_df:pd.DataFrame)->iter:
     arr_one_hot_vector = mlb.transform(clean_splitted_answers)
     return arr_one_hot_vector
 
+
 def hot_vector_to_words(hot_vector, words_df):
     max_val = hot_vector.max()
     max_loc = np.argwhere(hot_vector == max_val)
     max_loc = max_loc.reshape(max_loc.shape[0])
     return words_df.iloc[max_loc]
-
-
-
 
 
 def main():
