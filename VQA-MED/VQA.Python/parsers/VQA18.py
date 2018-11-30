@@ -1,3 +1,4 @@
+from io import StringIO
 import json
 
 import sys
@@ -5,7 +6,7 @@ import os
 
 from common.utils import Timer
 
-dir = os.path.abspath(os.path.join(os.path.dirname(__file__),".."))
+dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 # print(dir)
 sys.path.append(dir)
 import argparse
@@ -18,8 +19,9 @@ from pre_processing.known_find_and_replace_items import all_tags
 ERROR_KEY = "error"
 QUESTIONS_INFO = 'questions info'
 TOKENIZED_COL_PREFIX = 'tokenized_'
-class Vqa18Base(object):
 
+
+class Vqa18Base(object):
     COL_ROW_ID = 'row_id'
     COL_IMAGE_NAME = "image_name"
     COL_QUESTION = "question"
@@ -31,26 +33,22 @@ class Vqa18Base(object):
     def ALL_RAW_COLS(self):
         return [self.COL_ROW_ID, self.COL_IMAGE_NAME, self.COL_QUESTION, self.COL_ANSWER]
 
-
     def __init__(self, data_path, **kwargs):
         super().__init__()
-        if not data_path or not os.path.isfile(data_path):
-            raise Exception("Got a non valid path: {0}".format(data_path))
 
-        self.data_path = data_path
         self.data = self._read_data(data_path)
         assert self.data is not None, "Got a None data set"
         self.data.set_index(self.COL_ROW_ID)
-
 
     @classmethod
     def get_instance(cls, data_path=None):
         ctors = iter([
             lambda excel_path=data_path: Vqa18_from_processed_excel(excel_path),
+            lambda csv_content=data_path: Vqa18_from_csv_string(csv_content),
             lambda excel_path=data_path: Vqa18_from_excel(excel_path),
             lambda: Vqa18_from_excel(Vqa18_from_raw_csv.csv_path_2_excel_path(data_path)),
             lambda csv_path=data_path: Vqa18_from_raw_csv(csv_path),
-                      ])
+        ])
         instance = None
         while not instance:
             try:
@@ -63,8 +61,6 @@ class Vqa18Base(object):
             except Exception as ex:
                 pass
         return instance
-
-
 
     def __repr__(self, **kwargs):
         return "{0}({1})".format(self.__class__.__name__, self.data_path)
@@ -85,12 +81,10 @@ class Vqa18Base(object):
         j = json.loads(ret)
         return j
 
-
-
     def query_data(self, query):
         df = self.get_all_data()
 
-        #self.plot_data_info(df)
+        # self.plot_data_info(df)
         match = None
         for col in self.ALL_RAW_COLS:
             try:
@@ -103,7 +97,7 @@ class Vqa18Base(object):
         filtered = df[match]
 
         match_names = filtered[self.COL_IMAGE_NAME].values
-        ret = {n:n for n in match_names}
+        ret = {n: n for n in match_names}
         return ret
         # ret = filtered.to_json()
         # j = json.loads(ret)
@@ -112,7 +106,7 @@ class Vqa18Base(object):
     def plot_data_info(self, data):
         import matplotlib.pyplot as plt
         # df[self.COL_ANSWER].value_counts().plot(kind='bar')
-        cols = [self.COL_QUESTION,self.COL_ANSWER]
+        cols = [self.COL_QUESTION, self.COL_ANSWER]
         for col in cols:
             df = data[col].value_counts()
             plt.figure(col)
@@ -125,13 +119,44 @@ class Vqa18Base(object):
     def _read_data(self, data_path):
         raise NotImplementedError()
 
+class Vqa18FromFile(object):
+    """"""
 
+    def __init__(self,data_path, **kwargs):
+        """"""
 
-class Vqa18_from_raw_csv(Vqa18Base):
-    def __init__(self, csv_path, **kwargs):
-        super().__init__(csv_path,**kwargs)
+        if not data_path or not os.path.isfile(data_path):
+            raise Exception("Got a non valid path: {0}".format(data_path))
+        super(Vqa18FromFile, self).__init__(data_path, **kwargs)
+        self.data_path = data_path
+
+class Vqa18_from_csv_string(Vqa18Base):
+    def __init__(self, csv_string, **kwargs):
+        super().__init__(csv_string, **kwargs)
 
         # excel_path = self.csv_path_2_excel_path(csv_path)
+        #
+        # self.add_tokenized_column(self.data, self.COL_QUESTION, self.COL_TOK_Q)
+        # self.add_tokenized_column(self.data, self.COL_ANSWER, self.COL_TOK_A)
+        # self.dump_to_excel(self.data, excel_path)
+        # process_excel(excel_path, excel_path)
+        # excel_data = pd.read_excel(excel_path)
+
+    def _read_data(self, csv_string):
+        # self.data = df = pd.read_csv(data_path)
+        sio = StringIO(csv_string)
+        return pd.read_csv(sio, sep='\t', header=None, names=self.ALL_RAW_COLS)
+
+    @classmethod
+    def csv_path_2_excel_path(self, csv_path):
+        path = os.path.splitext(csv_path)[0] + '_DUMPED.xlsx'
+        return path
+
+
+class Vqa18_from_raw_csv(Vqa18FromFile):
+    def __init__(self, csv_path, **kwargs):
+        super().__init__(csv_path, **kwargs)
+# excel_path = self.csv_path_2_excel_path(csv_path)
         #
         # self.add_tokenized_column(self.data, self.COL_QUESTION, self.COL_TOK_Q)
         # self.add_tokenized_column(self.data, self.COL_ANSWER, self.COL_TOK_A)
@@ -149,12 +174,13 @@ class Vqa18_from_raw_csv(Vqa18Base):
         return path
 
 
-class Vqa18_from_excel(Vqa18Base):
+class Vqa18_from_excel(Vqa18FromFile):
     @property
     def ALL_RAW_COLS(self):
         return list(set(super().ALL_RAW_COLS + [self.COL_TOK_Q, self.COL_TOK_A]))
+
     def __init__(self, excel_path, **kwargs):
-        super().__init__(excel_path,**kwargs)
+        super().__init__(excel_path, **kwargs)
 
     def _read_data(self, data_path):
         # df =  pd.read_excel(data_path, names=self.ALL_RAW_COLS)
@@ -163,14 +189,14 @@ class Vqa18_from_excel(Vqa18Base):
         df = df[cols]
         return df
 
+
 class Vqa18_from_processed_excel(Vqa18_from_excel):
     @property
     def ALL_RAW_COLS(self):
         return list(set(super().ALL_RAW_COLS + all_tags))
+
     def __init__(self, excel_path, **kwargs):
-        super().__init__(excel_path,**kwargs)
-
-
+        super().__init__(excel_path, **kwargs)
 
 
 def main(args):
@@ -207,7 +233,6 @@ def main(args):
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(description='Extracts caption for a COCO image.')
     parser.add_argument('-p', dest='path', help='path of annotation file')
     parser.add_argument('-n', dest='image_name', help='name_of_image', default=None)
