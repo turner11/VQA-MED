@@ -54,7 +54,7 @@ class VqaModelTrainer(object):
                                                      'recall_score': recall_score,
                                                       'precision_score': precision_score})
 
-        # ---- Getting meta ----
+        # ---- Getting meta_loc ----
         with VerboseTimer("Loading Meta"):
             vqa_specs = File.load_pickle(vqa_specs_location)
             meta_data_location = vqa_specs.meta_data_location

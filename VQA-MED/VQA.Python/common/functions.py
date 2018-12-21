@@ -195,7 +195,10 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
             for tpl in find_and_replace_data:
                 pattern = re.compile(tpl.orig, re.IGNORECASE)
                 new_val = pattern.sub(tpl.sub, new_val).strip()
-        return new_val
+        return new_val.lower()
+
+    df['original_question'] = df['question']
+    df['original_answer'] = df['answer']
 
     df['question'] = df['question'].apply(replace_func)
     df['answer'] = df['answer'].apply(replace_func)

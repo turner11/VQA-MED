@@ -1,6 +1,5 @@
 import os
 import tempfile
-import pytest
 import itertools
 import pandas as pd
 from io import StringIO
@@ -12,10 +11,10 @@ from pre_processing.known_find_and_replace_items import find_and_replace_collect
 from common.settings import set_nlp_vector
 from tests import image_folder
 
-normalized_csv =\
-'''
+normalized_csv = \
+    '''
 ,image_name,question,answer,group,path
-0,test_image,question 0?,answer magnetic resonance imaging 0,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+0,test_image,question 0 what does abcts showed on sitting?,answer magnetic resonance imaging 0,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
 1,test_image,question 1?,answer magnetic resonance angiography 1,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
 2,test_image,question 2?,answer ct 2,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
 3,test_image,question 3?,answer ct scan 3,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
@@ -48,11 +47,13 @@ normalized_csv =\
 
 '''
 
+
 def _get_normalized_data_frame():
     # Note: it is normalized in the sense it was passed by normalize_data_strucrture function
     stream = StringIO(normalized_csv)
     normalized_data = pd.read_csv(stream)
     return normalized_data
+
 
 # @pytest.mark.parametrize("expected_length", [])
 def test_embedding():
@@ -60,11 +61,12 @@ def test_embedding():
     normalized_data = _get_normalized_data_frame()
 
     df_processed = pre_process_raw_data(normalized_data)
-    assert len(normalized_data ) == len(df_processed), 'processed data was not in same length as normalized data'
+    assert len(normalized_data) == len(df_processed), 'processed data was not in same length as normalized data'
 
     new_columns = ['answer_embedding', 'question_embedding']
     has_new_columns = all(c in df_processed for c in new_columns)
     assert has_new_columns, f'Did not have all columns of pre processing ({new_columns})'
+
 
 def test_data_cleaning():
     banned_words = (tpl.orig for tpl in find_and_replace_collection)
@@ -74,7 +76,7 @@ def test_data_cleaning():
         qs = df.question.values
         ans = df.answer.values
         all_strs = qs + ans
-        words = [s.split() for s in all_strs ]
+        words = [s.split() for s in all_strs]
         distinct = set(itertools.chain.from_iterable(words))
         return distinct
 
@@ -87,9 +89,10 @@ def test_data_cleaning():
     banned_in_clean = [w for w in banned_words if w in clean_strings]
     assert len(banned_in_clean) == 0, 'Got banned word in clean data'
 
+
 def test_data_enrichment():
-    csv_txt=\
-    '''
+    csv_txt = \
+        '''
 image_name,question,answer
 image1,what shows in MRI?,a dolphin
 image2,Pick any word,mri
@@ -105,7 +108,8 @@ image6,A new image,with no available info
 
     assert 'imaging_device' in df_enriched.columns, 'Expected enriched data to contain imaging_device'
 
-    imaging_device_by_image_name = df[['image_name','imaging_device' ]].set_index('image_name').to_dict()['imaging_device']
+    imaging_device_by_image_name = df[['image_name', 'imaging_device']].set_index('image_name').to_dict()[
+        'imaging_device']
 
     err_msg = 'Got unexpected imaging devices'
     assert imaging_device_by_image_name['image1'] == 'mri', err_msg
@@ -115,27 +119,26 @@ image6,A new image,with no available info
     assert imaging_device_by_image_name['image5'] == 'unknown', err_msg
     assert imaging_device_by_image_name['image6'] == 'unknown', err_msg
 
+
 def test_data_augmentation():
-    AUGMENTATION_COUNT = 5
-    # temp_dir = tempfile.gettempdir()
+    augmentation_count = 5
     with tempfile.TemporaryDirectory() as temp_dir:
-        output_dir = os.path.join(temp_dir ,'augmentations')
-        output_dir = os.path.normpath(output_dir )
+        output_dir = os.path.join(temp_dir, 'augmentations')
+        output_dir = os.path.normpath(output_dir)
         print(f'Augmentations are at:\n{output_dir }')
         File.validate_dir_exists(output_dir)
-        image_name = os.listdir(image_folder)[0]
-        image_path = os.path.join(image_folder,image_name)
-        generate_image_augmentations(image_path , output_dir,augmentation_count=AUGMENTATION_COUNT)
+        image_name = next(f for f in os.listdir(image_folder) if 'pytest' not in f)
+        image_path = os.path.join(image_folder, image_name)
+        generate_image_augmentations(image_path, output_dir, augmentation_count=augmentation_count)
         out_put_results = os.listdir(output_dir)
-        assert len(out_put_results) == AUGMENTATION_COUNT, f'Expected {AUGMENTATION_COUNT} augmentations, but got {len(out_put_results) }'
-    
-
+        assert len(out_put_results) == augmentation_count, \
+            f'Expected {augmentation_count} augmentations, but got {len(out_put_results) }'
 
 
 def main():
-    test_data_augmentation()
+    # test_data_augmentation()
     # test_data_enrichment()
-    # test_data_cleaning()
+    test_data_cleaning()
     # test_embedding()
     pass
 

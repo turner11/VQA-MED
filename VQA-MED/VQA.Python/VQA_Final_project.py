@@ -19,7 +19,7 @@
 
 # 0. [Preperations and helpers](#Preperations-and-helpers)
 # 1. [Collecting pre processing item](#Collecting-pre-processing-item)
-# 2. [Preprocessing and creating meta data](#Preprocessing-and-creating-meta-data)
+# 2. [Preprocessing and creating meta_loc data](#Preprocessing-and-creating-meta_loc-data)
 # 3. [Creating the model](#Creating-the-model)
 # 4. [Training the model](#Training-the-model)
 # 5. [Testing the model](#Testing-the-model)
@@ -156,9 +156,9 @@ from keras import backend as keras_backend
 
 keras_backend.clear_session()
 
-# ### Preprocessing and creating meta data
+# ### Preprocessing and creating meta_loc data
 
-# We will use this function for creating meta data:
+# We will use this function for creating meta_loc data:
 
 # In[7]:
 
@@ -170,7 +170,7 @@ from utils.os_utils import File  # This is a simplehelper file of mine...
 
 
 def create_meta(meta_file_location, df):
-    logger.debug("Creating meta data ('{0}')".format(meta_file_location))
+    logger.debug("Creating meta_loc data ('{0}')".format(meta_file_location))
 
     def get_unique_words(col):
         single_string = " ".join(df[col])
@@ -195,7 +195,7 @@ def create_meta(meta_file_location, df):
     return metadata
 
 
-# And lets create meta data for training & validation sets:
+# And lets create meta_loc data for training & validation sets:
 
 # Get the data itself, Note the only things required in dataframe are:
 # 1. image_name
@@ -214,10 +214,10 @@ df_val = Vqa18Base.get_instance(validation_data.processed_xls).data
 # In[9]:
 
 
-print("----- Creating training meta -----")
+print("----- Creating training meta_loc -----")
 meta_train = create_meta(data_prepo_meta, df_train)
 
-print("\n----- Creating validation meta -----")
+print("\n----- Creating validation meta_loc -----")
 meta_validation = create_meta(data_prepo_meta, df_val)
 
 # meta_train
@@ -513,10 +513,10 @@ def get_image(image_file_name):
 
 
 # from keras.utils import to_categorical
-# def get_categorial_labels(df, meta):
+# def get_categorial_labels(df, meta_loc):
 #     classes = df['answer']
 #     class_count = len(classes)
-#     classes_indices = list(meta['ix_to_ans'].keys())
+#     classes_indices = list(meta_loc['ix_to_ans'].keys())
 #     categorial_labels = to_categorical(classes_indices, num_classes=class_count)
 
 #     return categorial_labels

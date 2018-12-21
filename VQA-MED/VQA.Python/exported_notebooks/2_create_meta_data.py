@@ -19,7 +19,7 @@ from common.classes import VqaSpecs
 from common.utils import VerboseTimer
 
 
-# ### Preprocessing and creating meta data
+# ### Preprocessing and creating meta_loc data
 
 # Get the data itself, Note the only things required in dataframe are:
 # 1. image_name
@@ -49,7 +49,7 @@ print(np.unique(df_data.imaging_device))
 print(np.unique(d.imaging_device))
 
 
-# #### We will use this function for creating meta data:
+# #### We will use this function for creating meta_loc data:
 
 # In[19]:
 
@@ -118,7 +118,7 @@ def create_meta(df, hdf_output_location):
 # In[20]:
 
 
-print("----- Creating meta -----")
+print("----- Creating meta_loc -----")
 meta_data = create_meta(df_data, fn_meta)
 
 with HDFStore(fn_meta) as metadata_store:           
