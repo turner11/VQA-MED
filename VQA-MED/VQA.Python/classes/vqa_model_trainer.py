@@ -8,7 +8,7 @@ from classes.DataGenerator import DataGenerator
 from vqa_logger import logger
 from keras.models import load_model
 
-from keras import callbacks as K_callbacks #, backend as keras_backend,
+from keras import callbacks as K_callbacks, Model  # , backend as keras_backend,
 from common.functions import get_features, concat_row, sentences_to_hot_vector, hot_vector_to_words
 from common.constatns import data_location as default_data_location, vqa_models_folder, vqa_specs_location  # train_data, validation_data,
 from common.utils import VerboseTimer
@@ -44,15 +44,23 @@ class VqaModelTrainer(object):
         self.use_augmentation  = use_augmentation
 
         self.batch_size = batch_size
-        self.data_location = data_location
-        self.model_location = model_location
 
-        # ---- Getting model ----
-        with VerboseTimer("Loading Model"):
-            self._model = load_model(model_location,
-                                     custom_objects={'f1_score': f1_score,
-                                                     'recall_score': recall_score,
-                                                      'precision_score': precision_score})
+
+        if isinstance(model_location, str):
+
+            self.model_location = model_location
+
+            # ---- Getting model ----
+            with VerboseTimer("Loading Model"):
+                self._model = load_model(model_location,
+                                         custom_objects={'f1_score': f1_score,
+                                                         'recall_score': recall_score,
+                                                          'precision_score': precision_score})
+        elif isinstance(model_location, Model):
+            self.model_location = 'In memory model'
+            self._model = model_location
+        else:
+            raise Exception(f'model location passed is not supported ({type(model_location).__name__})')
 
         # ---- Getting meta_loc ----
         with VerboseTimer("Loading Meta"):
@@ -66,11 +74,15 @@ class VqaModelTrainer(object):
             self.class_count = len(self.class_df)
 
         # ---- Getting Data ----
-        logger.debug(f"Loading the data from {self.data_location}")
-        with VerboseTimer("Loading Data"):
-            with HDFStore(data_location) as store:
-                df_data = store['data']
-
+        if isinstance(data_location, pd.DataFrame):
+            self.data_location = 'in memory data'
+            df_data = data_location
+        else:
+            self.data_location = data_location
+            logger.debug(f"Loading the data from {self.data_location}")
+            with VerboseTimer("Loading Data"):
+                with HDFStore(data_location) as store:
+                    df_data = store['data']
 
         self.data_train = df_data[df_data.group == 'train'].copy().reset_index()
         self.data_val = df_data[df_data.group == 'validation'].copy().reset_index()
@@ -143,8 +155,8 @@ class VqaModelTrainer(object):
                 #         with get_session() as sess:
                 #             ktf.set_session(sess)
                 #             sess.run(tf.global_variables_initializer())
-                use_augmentation = True
-                if not use_augmentation:
+
+                if not self.use_augmentation:
 
                     with VerboseTimer('Getting train features'):
                         features_t = get_features(self.data_train)

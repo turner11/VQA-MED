@@ -1,0 +1,13 @@
+,image_name,question,answer,group,path,tumor,hematoma,brain,abdomen,neck,liver,imaging_device,answer_embedding,question_embedding
+0,rjv03401.jpg,what does MRI show?,tumor at tail pancreas,train,C:\Users\Public\Documents\Data\2018\VQAMed2018Train\VQAMed2018Train-images\rjv03401.jpg,True,False,False,False,False,False,mri,[[3.83356714 0.98514163 0.60286885 ... 0.         0.         0.        ]],"[[-2.12879515  2.4069643   0.96957994 ...  0.          0.
+   0.        ]]"
+1,AIAN-14-313-g002.jpg,where does axial seCTion MRI abdomen show hypoechoic mass?,distal pancreas,train,C:\Users\Public\Documents\Data\2018\VQAMed2018Train\VQAMed2018Train-images\AIAN-14-313-g002.jpg,False,False,False,True,False,False,mri,"[[ 0.9880439   0.90794384 -1.30470884 ...  0.          0.
+   0.        ]]","[[ 0.32966256  1.41270268 -3.38795567 ...  0.          0.
+   0.        ]]"
+2,wjem-11-76f3.jpg,what do arrows denote  noncontrast CT pelvis?,complex fluid colleCTion with layerg consistent with hematoma,train,C:\Users\Public\Documents\Data\2018\VQAMed2018Train\VQAMed2018Train-images\wjem-11-76f3.jpg,False,True,False,False,False,False,ct,"[[ 0.03861135 -1.737252   -1.70276964 ...  0.          0.
+   0.        ]]","[[-1.46485341  3.17322397  2.09965491 ...  0.          0.
+   0.        ]]"
+3,ccr30002-0045-f3.jpg,what was normal?,blood supply to bra,validation,C:\Users\Public\Documents\Data\2018\VQAMed2018Train\VQAMed2018Train-images\ccr30002-0045-f3.jpg,False,False,False,False,False,False,ct,[[1.42167759 1.13744497 0.46546614 ... 0.         0.         0.        ]],"[[-2.69940376  1.91921079  0.21136421 ...  0.          0.
+   0.        ]]"
+4,rjt01904.jpg,what shows evidence a contaed rupture?,repeat CT  abdomen,validation,C:\Users\Public\Documents\Data\2018\VQAMed2018Train\VQAMed2018Train-images\rjt01904.jpg,False,False,False,True,False,False,ct,[[1.92547512 1.51140428 0.46269387 ... 0.         0.         0.        ]],"[[-2.26469898  2.07226515  0.51814121 ...  0.          0.
+   0.        ]]"

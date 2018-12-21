@@ -37,6 +37,7 @@ class VqaModelPredictor(object):
 
     def get_model(self, model: Union[int, keras_model, None]) -> (keras_model, int):
         df_models = None
+        model_id = -1
         model_idx_in_db = None
         model_dal = None
 
@@ -53,16 +54,19 @@ class VqaModelPredictor(object):
 
         if isinstance(model, ModelDal):
             model_dal = model
+            model_location = model_dal.model_location
+            with VerboseTimer("Loading Model"):
+                model = load_model(model_location, custom_objects={'f1_score': f1_score, 'recall_score': recall_score,
+                                                                   'precision_score': precision_score})
+                model_id = model_dal.id
+        elif isinstance(model, keras_model):
+            pass
+        else:
+            assert False, f'Expected model to be of type "{ModelDal.__name__}" or "{keras_model.__name__}"' \
+                f'but got: "{model.__class__.__name__}" ({model})'
+            # We are going to fail now
 
-        assert model_dal is not None, f'Unexpectedly got a None model dal \n(Model is "{model.__class__.__name__}"\n{model})'
-        assert isinstance(model_dal, ModelDal), f'Expected model to be of type "{ModelDal.__name__}" ' \
-                                            f'but got: "{model.__class__.__name__}" ({model})'
-
-        model_location = model_dal.model_location
-        with VerboseTimer("Loading Model"):
-            model = load_model(model_location, custom_objects={'f1_score': f1_score, 'recall_score': recall_score,
-                                                               'precision_score': precision_score})
-            model_id = model_dal.id
+        assert model is not None, f'Unexpectedly got a None model\n(Model is "{type(model).__name__}"\n{model})'
 
         return model, model_id
 
