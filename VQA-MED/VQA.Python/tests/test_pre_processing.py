@@ -1,6 +1,5 @@
 import os
 import tempfile
-
 import pytest
 import itertools
 import pandas as pd
@@ -86,7 +85,7 @@ def test_data_cleaning():
     clean_df = clean_data(normalized_data)
     clean_strings = get_question_and_answers(clean_df)
     banned_in_clean = [w for w in banned_words if w in clean_strings]
-    assert len(banned_in_clean) > 0, 'Got banned word in clean data'
+    assert len(banned_in_clean) == 0, 'Got banned word in clean data'
 
 def test_data_enrichment():
     csv_txt=\
@@ -118,16 +117,17 @@ image6,A new image,with no available info
 
 def test_data_augmentation():
     AUGMENTATION_COUNT = 5
-    temp_dir = tempfile.gettempdir()
-    output_dir = os.path.join(temp_dir ,'augmentations')
-    output_dir = os.path.normpath(output_dir )
-    print(f'Augmentations are at:\n{output_dir }')
-    File.validate_dir_exists(output_dir)
-    image_name = os.listdir(image_folder)[0]
-    image_path = os.path.join(image_folder,image_name)
-    generate_image_augmentations(image_path , output_dir,augmentation_count=AUGMENTATION_COUNT)
-    out_put_results = os.listdir(output_dir)
-    assert len(out_put_results) == AUGMENTATION_COUNT, f'Expected {AUGMENTATION_COUNT} augmentations, but got {len(out_put_results) }'
+    # temp_dir = tempfile.gettempdir()
+    with tempfile.TemporaryDirectory() as temp_dir:
+        output_dir = os.path.join(temp_dir ,'augmentations')
+        output_dir = os.path.normpath(output_dir )
+        print(f'Augmentations are at:\n{output_dir }')
+        File.validate_dir_exists(output_dir)
+        image_name = os.listdir(image_folder)[0]
+        image_path = os.path.join(image_folder,image_name)
+        generate_image_augmentations(image_path , output_dir,augmentation_count=AUGMENTATION_COUNT)
+        out_put_results = os.listdir(output_dir)
+        assert len(out_put_results) == AUGMENTATION_COUNT, f'Expected {AUGMENTATION_COUNT} augmentations, but got {len(out_put_results) }'
     
 
 
