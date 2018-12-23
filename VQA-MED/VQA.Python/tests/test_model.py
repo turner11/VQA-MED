@@ -48,7 +48,7 @@ def test_model_training():
     test_data = train_data
     predictions = mp.predict(train_data)
     preds = predictions.prediction
-    ground_true = predictions.answer
+    ground_truth = predictions.answer
 
     assert len(preds) == len(test_data), 'Got a different number for predictions input and output'
 
