@@ -2,7 +2,6 @@ import pytest
 from evaluate.BleuEvaluator import BleuEvaluator
 from evaluate.WbssEvaluator import WbssEvaluator
 
-
 @pytest.mark.parametrize("prediction, ground_truth, expected_evaluation, mode",
                          [
                              ('stomach', 'abdomen', 1, 'exact'),
