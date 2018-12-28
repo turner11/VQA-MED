@@ -310,7 +310,7 @@ def train_all():
 
             # Train ------------------------------------------------------------------------
 
-            # epochs=25
+            epochs=1
             # batch_size = 20
             keras_backend.clear_session()
 
