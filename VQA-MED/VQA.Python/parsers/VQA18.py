@@ -1,3 +1,4 @@
+import traceback
 from io import StringIO
 import json
 
@@ -41,24 +42,27 @@ class Vqa18Base(object):
         self.data.set_index(self.COL_ROW_ID)
 
     @classmethod
-    def get_instance(cls, data_path=None):
+    def get_instance(cls, data_path):
         ctors = iter([
-            lambda excel_path=data_path: Vqa18_from_processed_excel(excel_path),
-            lambda csv_content=data_path: Vqa18_from_csv_string(csv_content),
-            lambda excel_path=data_path: Vqa18_from_excel(excel_path),
-            lambda: Vqa18_from_excel(Vqa18_from_raw_csv.csv_path_2_excel_path(data_path)),
-            lambda csv_path=data_path: Vqa18_from_raw_csv(csv_path),
+            ('Excel -> Data',lambda excel_path=data_path: Vqa18_from_processed_excel(excel_path)),
+             ('CSV -> Data',lambda csv_content=data_path: Vqa18_from_csv_string(csv_content)),
+              ('Raw Excel -> Data',lambda excel_path=data_path: Vqa18_from_excel(excel_path)),
+               ('CSV Path -> Excel Path -> Data',lambda: Vqa18_from_excel(Vqa18_from_raw_csv.csv_path_2_excel_path(data_path))),
+                ('Raw CSV -> Data',lambda csv_path=data_path: Vqa18_from_raw_csv(csv_path)),
         ])
         instance = None
         while not instance:
             try:
-                ctor = next(ctors)
+                description ,ctor = next(ctors)
+                logger.debug(f'Attempting to get data from "{description}"')
                 instance = ctor()
             except StopIteration as ex:
                 raise
             except AssertionError as ex:
                 raise
             except Exception as ex:
+                tb = traceback.format_exc()
+                str(tb)
                 pass
         return instance
 
@@ -119,15 +123,14 @@ class Vqa18Base(object):
     def _read_data(self, data_path):
         raise NotImplementedError()
 
-class Vqa18FromFile(object):
+class Vqa18FromFile(Vqa18Base):
     """"""
 
     def __init__(self,data_path, **kwargs):
         """"""
-
         if not data_path or not os.path.isfile(data_path):
             raise Exception("Got a non valid path: {0}".format(data_path))
-        super(Vqa18FromFile, self).__init__(data_path, **kwargs)
+        super().__init__(data_path, **kwargs)
         self.data_path = data_path
 
 class Vqa18_from_csv_string(Vqa18Base):
