@@ -73,7 +73,7 @@ def generate_image_augmentations(image_path,
                                  shear_range=0.,  # Units: degrees
                                  zoom_range=0.1,
                                  fill_mode='nearest',
-                                 augmentation_count=10):
+                                 augmentation_count=5):
     from keras.preprocessing.image import ImageDataGenerator, img_to_array, load_img #,array_to_img
 
     datagen = ImageDataGenerator(
@@ -143,6 +143,7 @@ def pre_process_raw_data(df):
     df = df.loc[df['path'].isin(existing_files)]
 
     # Getting text features. This is the heavy task...
+    df = df.reset_index()
     ddata = dd.from_pandas(df, npartitions=8)
 
     def get_string_fetures(s, *a, **kw):
@@ -190,12 +191,17 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     find_and_replace_data = find_and_replace_collection
 
     def replace_func(val: str) -> str:
-        new_val = val
-        if isinstance(new_val, str):
+        if isinstance(val, str):
+            new_val = val
             for tpl in find_and_replace_data:
                 pattern = re.compile(tpl.orig, re.IGNORECASE)
-                new_val = pattern.sub(tpl.sub, new_val).strip()
-        return new_val.lower()
+                new_val = pattern.sub(repl=tpl.sub, string=new_val).strip().lower()
+        elif np.isnan(val):
+            new_val = ''
+        else:
+            new_val = val
+
+        return new_val
 
     df['original_question'] = df['question']
     df['original_answer'] = df['answer']
