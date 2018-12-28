@@ -27,7 +27,7 @@ keras_backend.clear_session()
 # loss, activation = 'binary_crossentropy', 'sigmoid'
 loss, activation = 'categorical_crossentropy', 'sigmoid'
 
-with VerboseTimer("Instanciating VqaModelBuilder"):
+with VerboseTimer("Instantiating VqaModelBuilder"):
     mb = VqaModelBuilder(loss, activation)
 
 
@@ -127,7 +127,7 @@ model.summary()
 
 # Copy these items to the next notebook of training the model
 
-# In[18]:
+# In[14]:
 
 
 msg = f"Summary: {summary_fn}\n"

@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[18]:
+# In[3]:
 
 
 # %%capture
@@ -19,7 +19,7 @@ from vqa_logger import logger
 from common.os_utils import File
 
 
-# In[19]:
+# In[2]:
 
 
 from common.constatns import train_data, validation_data, data_location, raw_data_location
@@ -32,7 +32,7 @@ from common.utils import VerboseTimer
 
 # #### Getting the nlp engine
 
-# In[20]:
+# In[4]:
 
 
 nlp = get_nlp()
@@ -40,29 +40,29 @@ nlp = get_nlp()
 
 # #### Where get_nlp is defined as:
 
-# In[21]:
+# In[5]:
 
 
 code = get_highlited_function_code(get_nlp,remove_comments=True)
 IPython.display.display(code)
 
 
-# In[22]:
+# In[6]:
 
 
 with HDFStore(raw_data_location) as store:
     image_name_question = store['data']
-# df_train = image_name_question[image_name_question.group == 'train']
-# df_val = image_name_question[image_name_question.group == 'validation']
 
-# from parsers.VQA18 import Vqa18Base
-# df_train = Vqa18Base.get_instance(train_data.processed_xls).data            
-# df_val = Vqa18Base.get_instance(validation_data.processed_xls).data
+
+# In[7]:
+
+
+image_name_question.head()
 
 
 # ##### This is just for performance and quick debug cycles! remove before actual trainining:
 
-# In[23]:
+# In[8]:
 
 
 # image_name_question = image_name_question.head(5)
@@ -73,7 +73,7 @@ with HDFStore(raw_data_location) as store:
 
 # #### get_text_features:
 
-# In[24]:
+# In[9]:
 
 
 code = get_highlited_function_code(get_text_features,remove_comments=True)
@@ -82,7 +82,7 @@ IPython.display.display(code)
 
 # #### get_image:
 
-# In[25]:
+# In[10]:
 
 
 code = get_highlited_function_code(get_image,remove_comments=True)
@@ -91,7 +91,7 @@ IPython.display.display(code)
 
 # #### pre_process_raw_data:
 
-# In[26]:
+# In[11]:
 
 
 code = get_highlited_function_code(pre_process_raw_data,remove_comments=True)
@@ -100,7 +100,7 @@ IPython.display.display(code)
 
 # ### Clean and enrich the data
 
-# In[27]:
+# In[12]:
 
 
 from common.functions import enrich_data, clean_data
@@ -109,14 +109,14 @@ image_name_question = clean_data(image_name_question)
 image_name_question = enrich_data(image_name_question)
 
 
-# In[28]:
+# In[13]:
 
 
 image_name_question[image_name_question.image_name == '0392-100X-33-350-g002.jpg'].head()
 image_name_question.head()
 
 
-# In[29]:
+# In[14]:
 
 
 image_name_question.groupby('group').describe()
@@ -124,10 +124,23 @@ image_name_question[['imaging_device','image_name']].groupby('imaging_device').d
 
 
 # ### Do the actual pre processing
+
+# #### If running in an exported notebook, use the following:
+# (indent everything to be under the main guard) - for avoiding recursive spawning of processes
+
+# In[15]:
+
+
+from multiprocessing import freeze_support
+if __name__ == '__main__':
+    print('in main')
+    freeze_support()
+
+
 # Note:  
 # This might take a while...
 
-# In[30]:
+# In[16]:
 
 
 logger.debug('----===== Preproceccing train data =====----')
@@ -136,18 +149,15 @@ with VerboseTimer("Pre processing training data"):
     image_name_question_processed = pre_process_raw_data(image_name_question)
 
 
-# In[31]:
+# In[21]:
 
 
-# logger.debug('----===== Preproceccing validation data =====----')
-# image_locations = validation_data.images_path
-# with VerboseTimer("Pre processing validation data"):
-#     image_name_question_val = pre_process_raw_data(image_name_question_val, image_locations)
+image_name_question_processed.head()
 
 
 # #### Saving the data, so later on we don't need to compute it again
 
-# In[32]:
+# In[18]:
 
 
 logger.debug("Saving the data")
@@ -176,7 +186,13 @@ size = get_size(data_location)
 logger.debug(f"training data's file size was: {size}")
 
 
-# In[33]:
+# In[19]:
+
+
+data_location
+
+
+# In[ ]:
 
 
 # import numpy as np
@@ -185,7 +201,7 @@ logger.debug(f"training data's file size was: {size}")
 # print(np.unique(d.imaging_device))
 
 
-# In[34]:
+# In[20]:
 
 
 print('Data saved at:')
