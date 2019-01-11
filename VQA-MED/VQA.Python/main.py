@@ -1,11 +1,18 @@
+import logging
 import argparse
 from utils.gpu_utils import test_gpu
-from vqa_flow.main import main as main_flow
-
+from vqa_logger import init_log, test_log
+# logger = init_log(__name__)
+init_log()
+logger = logging.getLogger(__name__)
 
 def main():
+    '''
+    Using this main entry point so loggers will be using the main logger settings & for running frmo shell
+    :return:
+    '''
     func_dicts = {
-        'flow':main_flow,
+        # 'flow':main_flow,
         'gpu':test_gpu,
 
     }
@@ -17,10 +24,19 @@ def main():
     func = func_dicts[args.func]
     func()
 
+
+def ad_hock_main():
+    from tests.test_model import test_model_training
+    test_model_training()
+
+    return
+
+
 if __name__ == '__main__':
     try:
-        main()
+        ad_hock_main()
+        # main()
     except Exception as e:
-        print("Got an error:\n{0}".format(e))
+        logger.error("Got an error:\n{0}".format(e))
         raise
         # sys.exit(1)
