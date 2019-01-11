@@ -31,15 +31,15 @@ class VqaModelPredictor(object):
 
         p = 'C:\\Users\\Public\\Documents\\Data\\2018\\imaging_dvices_classifiers\\question_classifier.pickle'
         self.question_classifier = File.load_pickle(p)
-        pp = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180815_0137_53\\vqa_model_ClassifyStrategies.CATEGORIAL_trained.h5'
-        from keras.models import load_model
-        self.image_device_classifier = load_model(pp)
+        pp = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\imaging_device_classifier\\20190111_1444_32\\vqa_model_imaging_device_classifier.h5'
+
+        self.image_device_classifier, model_id = self.get_model(pp)
 
 
     def __repr__(self):
         return super(VqaModelPredictor, self).__repr__()
 
-    def get_model(self, model: Union[int, keras_model, None]) -> (keras_model, int):
+    def get_model(self, model: Union[int, keras_model,str, None]) -> (keras_model, int):
         df_models = None
         model_id = -1
         model_idx_in_db = None
@@ -55,21 +55,26 @@ class VqaModelPredictor(object):
             notes = df_models.loc[df_models.id == model_idx_in_db].notes.values[0]
             logger.debug(f'Getting model #{model_idx_in_db} ({notes})')
             model_dal = get_model_by_id(model_idx_in_db)
+            model = model_dal
 
-        if isinstance(model, ModelDal):
-            model_dal = model
-            model_location = model_dal.model_location
+        if isinstance(model, (ModelDal, str)):
+            if isinstance(model, ModelDal):
+                model_dal = model
+                model_location = model_dal.model_location
+                model_id = model_dal.id
+            else:
+                model_location = model
+
             with VerboseTimer("Loading Model"):
                 model = load_model(model_location, custom_objects={'f1_score': f1_score, 'recall_score': recall_score,
                                                                    'precision_score': precision_score})
-                model_id = model_dal.id
-        elif isinstance(model, keras_model):
+
+        if isinstance(model, keras_model):
             pass
         else:
             assert False, f'Expected model to be of type "{ModelDal.__name__}" or "{keras_model.__name__}"' \
                 f'but got: "{model.__class__.__name__}" ({model})'
             # We are going to fail now
-
         assert model is not None, f'Unexpectedly got a None model\n(Model is "{type(model).__name__}"\n{model})'
 
         return model, model_id
@@ -98,8 +103,11 @@ class VqaModelPredictor(object):
         return self._predict_keras(df_data, self.model, words_decoder=df_meta_words, percentile=percentile)
 
     @classmethod
-    def _predict_keras(self, df_data: pd.DataFrame, model, words_decoder ,percentile: float) -> pd.DataFrame:
+    def _predict_keras(self, df_data: pd.DataFrame, model, words_decoder ,percentile: float, feature_prep: callable=None) -> pd.DataFrame:
         features = get_features(df_data)
+        if feature_prep is not None:
+            features = feature_prep(features)
+
         with VerboseTimer("Raw model prediction"):
             p = model.predict(features)
 
@@ -143,8 +151,15 @@ class VqaModelPredictor(object):
         meta_data_location = self.vqa_specs.meta_data_location
         words_decoder = pd.read_hdf(meta_data_location, 'imaging_devices')
         words_decoder = words_decoder.rename(columns={'imaging_device': 'word'})
-        p = self._predict_keras(df_data, model=self.image_device_classifier, words_decoder=words_decoder, percentile=1)
-        # TODO: are the CT / MRI swapped in correlation to expected decoding order?
+        def feature_prep(features):
+            new_features = features[1] #image only
+            return new_features
+        p = self._predict_keras(df_data,
+                                model=self.image_device_classifier,
+                                words_decoder=words_decoder,
+                                percentile=1,
+                                feature_prep=feature_prep)
+
         return p
 
     def split_data_to_vqa_and_imaging(self, df_data: pd.DataFrame)->(pd.DataFrame,pd.DataFrame):

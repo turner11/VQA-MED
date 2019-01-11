@@ -27,7 +27,8 @@ def test_model_training():
     mb = VqaModelBuilder(loss, activation)
     model = mb.get_vqa_model()
 
-    data_path = os.path.abspath(os.path.join('./data_for_test/train_data.hdf'))
+    folder,_ = os.path.split(__file__)
+    data_path = os.path.abspath(os.path.join(folder,'data_for_test/train_data.hdf'))
     with pd.HDFStore(data_path) as store:
         train_data = store['data']
 
