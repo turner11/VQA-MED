@@ -51,4 +51,4 @@ def test_log():
     l.critical("this is a critical message")
 
 init_log()
-test_log()
+# test_log()

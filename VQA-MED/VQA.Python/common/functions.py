@@ -283,7 +283,7 @@ def _add_columns_by_search(df, indicator_words, search_columns):
         if any(res):
             df[word] = res
         else:
-            logger.warn("found no matching for '{0}'".format(word))
+            logger.warning("found no matching for '{0}'".format(word))
 
 
 def concat_row(df: pd.DataFrame, col: str):
@@ -312,7 +312,7 @@ def sentences_to_hot_vector(sentences: pd.Series, words_df: pd.DataFrame) -> ite
     mlb = MultiLabelBinarizer(classes=classes.reshape(classes.shape[0]), sparse_output=False)
     mlb.fit(classes)
 
-    print(f'Classes: {mlb.classes_}')
+    logger.debug(f'Classes: {mlb.classes_}')
     arr_one_hot_vector = mlb.transform(clean_splitted_answers)
     return arr_one_hot_vector
 

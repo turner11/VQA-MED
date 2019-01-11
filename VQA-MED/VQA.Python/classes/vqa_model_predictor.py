@@ -33,7 +33,7 @@ class VqaModelPredictor(object):
         self.question_classifier = File.load_pickle(p)
         pp = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180815_0137_53\\vqa_model_ClassifyStrategies.CATEGORIAL_trained.h5'
         from keras.models import load_model
-        self.image_device_classifier =  load_model(pp)
+        self.image_device_classifier = load_model(pp)
 
 
     def __repr__(self):
