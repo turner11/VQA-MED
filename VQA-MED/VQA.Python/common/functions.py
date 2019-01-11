@@ -1,8 +1,9 @@
 import inspect
+import itertools
 import os
 import re
 import textwrap
-from collections import defaultdict
+from tqdm import tqdm
 from functools import partial
 
 import pandas as pd
@@ -10,10 +11,12 @@ import dask.dataframe as dd
 import cv2
 import numpy as np
 
+from pre_processing.known_find_and_replace_items import imaging_devices
 from common.settings import input_length, image_size, get_nlp
 from common.settings import embedding_dim
 from common.utils import VerboseTimer
-from vqa_logger import logger
+import logging
+logger = logging.getLogger(__name__)
 
 
 def get_size(file_name):
@@ -213,45 +216,47 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
 
 def _consolidate_image_devices(df):
     def get_imaging_device(r):
-        if r.ct and r.mri:
-            res = 'both'
-        elif r.ct and not r.mri:
-            res = 'ct'
-        elif not r.ct and r.mri:
-            res = 'mri'
-        else:
+
+        data = [r[device] for device in imaging_devices]
+        res = ' '.join([device for d ,device in zip(data, imaging_devices) if d ]).strip()
+        if len(res) == 0:
             res = 'unknown'
         return res
 
     df['imaging_device'] = df.apply(get_imaging_device, axis=1)
 
-    imaging_device_by_image = defaultdict(lambda: set())
-    for i, r in df.iterrows():
-        imaging_device_by_image[r.image_name].add(r.imaging_device)
+    image_names = df.image_name.drop_duplicates().values
 
-    for name, s in imaging_device_by_image.items():
-        if 'both' in s or ('ct' in s and 'mri' in s):
-            s.clear()
-            s.add('unknown')
-        elif 'unknown' in s and ('ct' in s or 'mri' in s):
-            is_ct = 'ct' in s
-            s.clear()
-            s.add('ct' if is_ct else 'mri')
+    pbar = tqdm(image_names)
+    logger.info('consolidating image devices')
+    for image_name in pbar:
+        df_image = df[df.image_name == image_name]
+        raw_image_imaging_device = df_image.imaging_device.drop_duplicates().values
 
-    non_consolidated_vals = [s for s in list(imaging_device_by_image.values()) if len(s) != 1]
-    imaging_device_by_image = {k: list(s)[0] for k, s in imaging_device_by_image.items()}
-    assert len(non_consolidated_vals) == 0,\
-        f'got {len(non_consolidated_vals)} non consolodated image devices. for example:\n{non_consolidated_vals[:5]}'
-    df['imaging_device'] = df.apply(lambda r: imaging_device_by_image[r.image_name], axis=1)
+        image_imaging_device = set(itertools.chain.from_iterable([d.split() for d in raw_image_imaging_device]))
+
+        consolidated = {d for d in image_imaging_device}
+        if 'unknown' in consolidated and len(consolidated) == 2:
+            consolidated.remove('unknown')
+
+        if len(consolidated) > 1:
+            consolidated.clear()
+            consolidated.add('unknown')
+
+        assert len(consolidated) == 1,\
+             f'got {len(consolidated)} non consolidated image devices. for example:\n{consolidated[:5]}'
+        res = ' '.join([str(d) for d in consolidated])
+        df.loc[df.image_name == image_name, 'imaging_device'] = res
+        # df[df.image_name == image_name].imaging_device = res
+        pbar.set_description(f'image device:\t{res}'.ljust(25))
     return df
 
 
 def enrich_data(df: pd.DataFrame) -> pd.DataFrame:
     from pre_processing.known_find_and_replace_items import imaging_devices, diagnosis, locations
 
-
     for col in imaging_devices:
-        df[col] =''
+        df[col] = ''
 
     # add_imaging_columns
     _add_columns_by_search(df, indicator_words=imaging_devices, search_columns=['question', 'answer'])

@@ -35,7 +35,7 @@ find_and_replace_collection = [FindAndReplaceData('magnetic resonance imaging', 
                                ]
 
 
-imaging_devices = ['ct', 'mri']
+imaging_devices = ['ct', 'mri', 'mra']
 diagnosis = ['tumor','hematoma']
 locations = ['brain', 'abdomen','neck','liver']#,'stomach']#, 'lung']
 

@@ -47,7 +47,7 @@ def get_word_match(word, string):
     try:
         res = k.search(string)
     except TypeError as ex:
-        return None
+        res = None
     return res
 
 def has_word(word, string):

@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[3]:
+# In[1]:
 
 
 # %%capture
@@ -15,7 +15,8 @@ from keras.utils import to_categorical
 import cv2
 from collections import defaultdict
 
-from vqa_logger import logger
+import logging
+logger = logging.getLogger(__name__)
 from common.os_utils import File
 
 
@@ -32,7 +33,7 @@ from common.utils import VerboseTimer
 
 # #### Getting the nlp engine
 
-# In[4]:
+# In[3]:
 
 
 nlp = get_nlp()
@@ -40,21 +41,21 @@ nlp = get_nlp()
 
 # #### Where get_nlp is defined as:
 
-# In[5]:
+# In[4]:
 
 
 code = get_highlited_function_code(get_nlp,remove_comments=True)
 IPython.display.display(code)
 
 
-# In[6]:
+# In[5]:
 
 
 with HDFStore(raw_data_location) as store:
     image_name_question = store['data']
 
 
-# In[7]:
+# In[6]:
 
 
 image_name_question.head()
@@ -62,7 +63,7 @@ image_name_question.head()
 
 # ##### This is just for performance and quick debug cycles! remove before actual trainining:
 
-# In[8]:
+# In[7]:
 
 
 # image_name_question = image_name_question.head(5)
@@ -73,7 +74,7 @@ image_name_question.head()
 
 # #### get_text_features:
 
-# In[9]:
+# In[8]:
 
 
 code = get_highlited_function_code(get_text_features,remove_comments=True)
@@ -82,7 +83,7 @@ IPython.display.display(code)
 
 # #### get_image:
 
-# In[10]:
+# In[9]:
 
 
 code = get_highlited_function_code(get_image,remove_comments=True)
@@ -91,7 +92,7 @@ IPython.display.display(code)
 
 # #### pre_process_raw_data:
 
-# In[11]:
+# In[10]:
 
 
 code = get_highlited_function_code(pre_process_raw_data,remove_comments=True)
@@ -100,7 +101,7 @@ IPython.display.display(code)
 
 # ### Clean and enrich the data
 
-# In[12]:
+# In[11]:
 
 
 from common.functions import enrich_data, clean_data
@@ -109,14 +110,14 @@ image_name_question = clean_data(image_name_question)
 image_name_question = enrich_data(image_name_question)
 
 
-# In[13]:
+# In[12]:
 
 
 image_name_question[image_name_question.image_name == '0392-100X-33-350-g002.jpg'].head()
 image_name_question.head()
 
 
-# In[14]:
+# In[13]:
 
 
 image_name_question.groupby('group').describe()
@@ -128,7 +129,7 @@ image_name_question[['imaging_device','image_name']].groupby('imaging_device').d
 # #### If running in an exported notebook, use the following:
 # (indent everything to be under the main guard) - for avoiding recursive spawning of processes
 
-# In[15]:
+# In[14]:
 
 
 from multiprocessing import freeze_support
@@ -137,73 +138,79 @@ if __name__ == '__main__':
     freeze_support()
 
 
-# Note:  
-# This might take a while...
+    # Note:
+    # This might take a while...
 
-# In[16]:
-
-
-logger.debug('----===== Preproceccing train data =====----')
-image_locations = train_data.images_path
-with VerboseTimer("Pre processing training data"):
-    image_name_question_processed = pre_process_raw_data(image_name_question)
+    # In[15]:
 
 
-# In[21]:
+    logger.debug('----===== Preproceccing train data =====----')
+    image_locations = train_data.images_path
+    with VerboseTimer("Pre processing training data"):
+        image_name_question_processed = pre_process_raw_data(image_name_question)
 
 
-image_name_question_processed.head()
+    # In[16]:
 
 
-# #### Saving the data, so later on we don't need to compute it again
-
-# In[18]:
+    image_name_question_processed.head()
 
 
-logger.debug("Saving the data")
-item_to_save = image_name_question_processed
-# item_to_save = image_name_question.head(10)
+    # #### Saving the data, so later on we don't need to compute it again
 
-# remove if exists
-try:
-    os.remove(data_location)
-except OSError:
-    pass
+    # In[17]:
 
 
-train_df = image_name_question_processed[(image_name_question_processed.group == 'train') | (image_name_question_processed.group == 'validation')]
-test_df = image_name_question_processed[image_name_question_processed.group == 'test']
-light = image_name_question_processed[['image_name', 'question', 'answer', 'group', 'path', 'tumor', 'hematoma', 'brain', 'abdomen', 'neck', 'liver', 'imaging_device']]
+    image_name_question_processed.imaging_device.drop_duplicates()
 
 
-with VerboseTimer("Saving model training data"):
-    light.to_hdf(data_location, 'light', mode='w', data_columns=['image_name', 'imaging_device', 'path'], format='table')
-    with HDFStore(data_location) as store:    
-        store['data']  = train_df
-        store['test']  = test_df
-        
-size = get_size(data_location)
-logger.debug(f"training data's file size was: {size}")
+    # In[17]:
 
 
-# In[19]:
+    logger.debug("Saving the data")
+    item_to_save = image_name_question_processed
+    # item_to_save = image_name_question.head(10)
+
+    # remove if exists
+    try:
+        os.remove(data_location)
+    except OSError:
+        pass
 
 
-data_location
+    train_df = image_name_question_processed[(image_name_question_processed.group == 'train') | (image_name_question_processed.group == 'validation')]
+    test_df = image_name_question_processed[image_name_question_processed.group == 'test']
+    light = image_name_question_processed[['image_name', 'question', 'answer', 'group', 'path', 'tumor', 'hematoma', 'brain', 'abdomen', 'neck', 'liver', 'imaging_device']]
 
 
-# In[ ]:
+    with VerboseTimer("Saving model training data"):
+        light.to_hdf(data_location, 'light', mode='w', data_columns=['image_name', 'imaging_device', 'path'], format='table')
+        with HDFStore(data_location) as store:
+            store['data']  = train_df
+            store['test']  = test_df
+
+    size = get_size(data_location)
+    logger.debug(f"training data's file size was: {size}")
 
 
-# import numpy as np
-# d = train_df[train_df.imaging_device.isin(['ct','mri'])]
-# print(np.unique(train_df.imaging_device))
-# print(np.unique(d.imaging_device))
+    # In[18]:
 
 
-# In[20]:
+    data_location
 
 
-print('Data saved at:')
-f'{data_location}'
+    # In[19]:
+
+
+    # import numpy as np
+    # d = train_df[train_df.imaging_device.isin(['ct','mri'])]
+    # print(np.unique(train_df.imaging_device))
+    # print(np.unique(d.imaging_device))
+
+
+    # In[20]:
+
+
+    print('Data saved at:')
+    f'{data_location}'
 
