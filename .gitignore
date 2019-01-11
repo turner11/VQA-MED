@@ -338,3 +338,6 @@ VQA-MED/VQA.Python/tensor_board_logd/*
 
 *AssemblyInfo.cs
 
+VQA-MED/VQA.Python/tests/data_for_test/test_model/model.png
+VQA-MED/VQA.Python/tests/data_for_test/test_model/model_history.pkl
+VQA-MED/VQA.Python/tests/data_for_test/test_model/model_summary.txt
