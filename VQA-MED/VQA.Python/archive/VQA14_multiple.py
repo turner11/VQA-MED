@@ -7,7 +7,8 @@ import os
 import logging 
 from collections import OrderedDict
 #import pandas as pd
-from vqa_logger import logger
+import logging
+logger = logging.getLogger(__name__)
 
 ERROR_KEY = "error"
 logname = "vqa.log"

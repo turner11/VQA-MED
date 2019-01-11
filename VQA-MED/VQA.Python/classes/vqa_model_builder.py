@@ -9,7 +9,8 @@ from keras.applications.vgg19 import VGG19
 from keras import Model, Input  # ,models, callbacks
 from keras.layers import Dense, LSTM, BatchNormalization, Activation# GlobalAveragePooling2D, Merge, Flatten, Embedding
 
-from vqa_logger import logger
+import logging
+logger = logging.getLogger(__name__)
 from common.os_utils import File
 from common.settings import embedded_sentence_length
 from common.model_utils import save_model, get_trainable_params_distribution

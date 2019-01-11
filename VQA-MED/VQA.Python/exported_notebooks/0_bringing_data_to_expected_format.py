@@ -17,7 +17,8 @@ from common.constatns import train_data, validation_data, test_data, raw_data_lo
 from common.utils import VerboseTimer
 from parsers.VQA18 import Vqa18Base
 from common.functions import get_size, get_highlited_function_code, normalize_data_strucrture
-from vqa_logger import logger
+import logging
+logger = logging.getLogger(__name__)
 
 
 # In[2]:

@@ -5,7 +5,8 @@ import pandas as pd
 from pandas import HDFStore
 
 from classes.DataGenerator import DataGenerator
-from vqa_logger import logger
+import logging
+logger = logging.getLogger(__name__)
 from keras.models import load_model
 
 from keras import callbacks as K_callbacks, Model  # , backend as keras_backend,

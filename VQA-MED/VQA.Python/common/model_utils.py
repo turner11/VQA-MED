@@ -7,7 +7,8 @@ from keras.utils import plot_model
 import numpy as np
 import pandas as pd
 from common.os_utils import File
-from vqa_logger import logger
+import logging
+logger = logging.getLogger(__name__)
 from keras import Model
 
 

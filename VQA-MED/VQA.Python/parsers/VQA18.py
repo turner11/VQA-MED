@@ -14,7 +14,8 @@ import argparse
 
 import pandas as pd
 
-from vqa_logger import logger
+import logging
+logger = logging.getLogger(__name__)
 from pre_processing.known_find_and_replace_items import all_tags
 
 ERROR_KEY = "error"

@@ -52,7 +52,8 @@ def get_time_stamp():
     return ts
 
 
-from vqa_logger import logger
+import logging
+logger = logging.getLogger(__name__)
 
 # ### Collecting pre processing item
 
@@ -163,7 +164,8 @@ keras_backend.clear_session()
 # In[7]:
 
 
-from vqa_logger import logger
+import logging
+logger = logging.getLogger(__name__)
 import itertools
 import string
 from utils.os_utils import File  # This is a simplehelper file of mine...

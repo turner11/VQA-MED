@@ -4,7 +4,8 @@ from glob import glob
 from tensorflow.python.framework.errors_impl import InternalError
 
 from pre_processing.known_find_and_replace_items import test_data
-from vqa_logger import logger
+import logging
+logger = logging.getLogger(__name__)
 
 
 def describe_models(models_folder):

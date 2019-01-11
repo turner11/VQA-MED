@@ -4,7 +4,6 @@
 # In[1]:
 
 
-from vqa_logger import logger 
 import IPython
 
 

@@ -1,12 +1,9 @@
 import json
-import itertools
-import sys
+
 import argparse
 import os
-import logging 
-from collections import OrderedDict
-
-from vqa_logger import logger
+import logging
+logger = logging.getLogger(__name__)
 
 ERROR_KEY = "error"
 

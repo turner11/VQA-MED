@@ -23,7 +23,8 @@ from keras.layers import Dense, Dropout, Flatten, BatchNormalization  # , Embedd
 
 from vqa_flow.image_models import ImageModelGenerator
 from vqa_flow.image_utils import image_to_pre_process_input as pre_process_image
-from vqa_logger import logger
+import logging
+logger = logging.getLogger(__name__)
 
 
 class TagClassifier(object):

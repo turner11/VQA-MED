@@ -1,7 +1,8 @@
 from hyperas.distributions import uniform
 import itertools
 from common.DAL import ModelScore
-from vqa_logger import logger
+import logging
+logger = logging.getLogger(__name__)
 from common.utils import VerboseTimer
 from collections import namedtuple
 

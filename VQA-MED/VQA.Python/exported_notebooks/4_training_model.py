@@ -9,7 +9,8 @@
 import IPython
 from classes.vqa_model_trainer import VqaModelTrainer
 from common.model_utils import get_trainable_params_distribution
-from vqa_logger import logger
+import logging
+logger = logging.getLogger(__name__)
 from common.functions import get_highlited_function_code
 
 

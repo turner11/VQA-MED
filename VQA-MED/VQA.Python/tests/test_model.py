@@ -1,13 +1,13 @@
 import os
 import pandas as pd
-
+import logging
 from classes.vqa_model_builder import VqaModelBuilder
 from classes.vqa_model_predictor import VqaModelPredictor
 from classes.vqa_model_trainer import VqaModelTrainer
 from common.utils import VerboseTimer
+logger = logging.getLogger(__name__)
 
 loss, activation = 'categorical_crossentropy', 'sigmoid'
-
 
 def test_model_creation():
     with VerboseTimer("Instantiating VqaModelBuilder"):

@@ -1,7 +1,8 @@
 from functools import lru_cache
 
 import spacy
-from vqa_logger import logger
+import logging
+logger = logging.getLogger(__name__)
 
 nlp=None
 # NLP & Embedding-----------------------------------------------------------------------------
