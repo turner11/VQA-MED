@@ -1,6 +1,57 @@
 import pytest
+from future.backports.email.errors import NonASCIILocalPartDefect
+
 from evaluate.BleuEvaluator import BleuEvaluator
 from evaluate.WbssEvaluator import WbssEvaluator
+
+
+@pytest.mark.parametrize("word, similar_word, non_similar_word",
+                         [
+                            ('ct', 'mri', 'head'),
+                            ('stomach', 'abdomen', 'tumor'),
+                            ('abdomen', 'stomach', 'chest'),
+                            ('tumor', 'cancer', 'fracture'),
+                            ('Magnetic resonance imaging', 'mri', 'ct'),
+                         ])
+def test_bss_relative(word, similar_word, non_similar_word):
+    evaluator_ctor = WbssEvaluator
+    _test_evaluator_relative(evaluator_ctor ,word, similar_word, non_similar_word)
+
+
+@pytest.mark.parametrize("word, similar_word, non_similar_word",
+                         [
+                            ('The roof is on fire', 'roof fire', 'you are fired'),
+                             ('group of words to subtract ngrams long or short',
+                              'words subtract ngrams long',
+                               'words subtract ngrams'),
+
+                         ])
+def test_bleu_relative(word, similar_word, non_similar_word):
+    evaluator_ctor = BleuEvaluator
+    _test_evaluator_relative(evaluator_ctor ,word, similar_word, non_similar_word)
+
+def _test_evaluator_relative(evaluator_ctor ,word, similar_word, non_similar_word):
+
+
+    evaluations = []
+    for predicted_word in [similar_word, non_similar_word]:
+        predictions = [predicted_word ]
+        ground_truths = [word]
+        evaluator = evaluator_ctor(predictions, ground_truth=ground_truths)
+
+        evaluation = evaluator.evaluate()
+        evaluations.append(evaluation)
+
+
+    similar_evaluation = evaluations[0]
+    non_similar_evaluation = evaluations[1]
+
+    message = f'Expected "{similar_word}" to be graded better than  "{non_similar_word}" when comparing to {word} ' \
+        f'but got an evaluation of  {similar_evaluation } (<={non_similar_evaluation })'
+    assert similar_evaluation > non_similar_evaluation, message
+
+
+
 
 @pytest.mark.parametrize("prediction, ground_truth, expected_evaluation, mode",
                          [
@@ -14,9 +65,9 @@ from evaluate.WbssEvaluator import WbssEvaluator
                              ('ct', 'CT', 1, 'exact'),
                          ]
                          )
-def test_bss(prediction, ground_truth, expected_evaluation, mode):
+def test_bss_absolute(prediction, ground_truth, expected_evaluation, mode):
     evaluator_ctor = WbssEvaluator
-    _test_evaluator(evaluator_ctor, prediction, ground_truth, expected_evaluation, mode)
+    _test_evaluator_absolute(evaluator_ctor, prediction, ground_truth, expected_evaluation, mode)
 
 
 long_sentence: str = 'BLEU (bilingual evaluation understudy) is an algorithm for evaluating the quality of text which '\
@@ -39,12 +90,12 @@ long_sentence: str = 'BLEU (bilingual evaluation understudy) is an algorithm for
                              (long_sentence, long_sentence + ' a short suffix', 0.95, 'min'),
 
                          ])
-def test_bleu(prediction, ground_truth, expected_evaluation, mode):
+def test_bleu_absolute(prediction, ground_truth, expected_evaluation, mode):
     evaluator_ctor = BleuEvaluator
-    _test_evaluator(evaluator_ctor, prediction, ground_truth, expected_evaluation, mode)
+    _test_evaluator_absolute(evaluator_ctor, prediction, ground_truth, expected_evaluation, mode)
 
 
-def _test_evaluator(evaluator_ctor, prediction, ground_truth, expected_evaluation, mode):
+def _test_evaluator_absolute(evaluator_ctor, prediction, ground_truth, expected_evaluation, mode):
     predictions = [prediction]
     ground_truths = [ground_truth]
     evaluator = evaluator_ctor(predictions, ground_truth=ground_truths)
@@ -62,7 +113,9 @@ def _test_evaluator(evaluator_ctor, prediction, ground_truth, expected_evaluatio
 
 
 if __name__ == '__main__':
-    test_bss('dog food', 'cat meal', 1, 'exact')
-    test_bss('foot', 'foot', 1, 'exact')
-    test_bss('stomach', 'cancer', 0.1, 'max')
-    test_bss('stomach', 'abdomen', 1, 'exact')
+    test_bss_absolute('ct', 'mri', 2, 'exact')
+
+    test_bss_absolute('dog food', 'cat meal', 1, 'exact')
+    test_bss_absolute('foot', 'foot', 1, 'exact')
+    test_bss_absolute('stomach', 'cancer', 0.1, 'max')
+    test_bss_absolute('stomach', 'abdomen', 1, 'exact')
