@@ -26,8 +26,11 @@ def main():
 
 
 def ad_hock_main():
-    from tests.test_model import test_model_training
-    test_model_training()
+    # from tests.test_model import test_model_training
+    # test_model_training()
+
+    from vqa_flow.imaging_device_classifier import retrain_model
+    retrain_model()
 
     return
 
