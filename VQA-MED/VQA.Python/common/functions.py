@@ -1,21 +1,13 @@
 import inspect
-import itertools
 import os
-import re
 import textwrap
-from tqdm import tqdm
-from functools import partial
-
 import pandas as pd
-import dask.dataframe as dd
-import cv2
 import numpy as np
+import cv2
+from common.settings import image_size
 
-from pre_processing.known_find_and_replace_items import imaging_devices
-from common.settings import input_length, image_size, get_nlp
-from common.settings import embedding_dim
-from common.utils import VerboseTimer
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -29,8 +21,7 @@ def get_size(file_name):
     f = ('%.2f' % nbytes).rstrip('0').rstrip('.')
     return '%s %s' % (f, suffixes[i])
 
-
-def get_highlited_function_code(foo, remove_comments=False):
+def get_highlighted_function_code(foo, remove_comments=False):
     """
     Prints code of a given function with highlighted syntax in a jupyter notebook
     :rtype: IPython.core.display.HTML
@@ -77,7 +68,7 @@ def generate_image_augmentations(image_path,
                                  zoom_range=0.1,
                                  fill_mode='nearest',
                                  augmentation_count=5):
-    from keras.preprocessing.image import ImageDataGenerator, img_to_array, load_img #,array_to_img
+    from keras.preprocessing.image import ImageDataGenerator, img_to_array, load_img  # ,array_to_img
 
     datagen = ImageDataGenerator(
         rotation_range=rotation_range,
@@ -97,79 +88,13 @@ def generate_image_augmentations(image_path,
     # and saves the results to the `preview/` directory
     ext = image_path.split('.')[-1]
     i = 0
-    for batch in datagen.flow(x, batch_size=1, save_to_dir=output_dir, save_format=ext):
+    for _ in datagen.flow(x, batch_size=1, save_to_dir=output_dir, save_format=ext):
         i += 1
         if i >= augmentation_count:
             break  # otherwise the generator would loop indefinitely
 
 
-def get_text_features(txt):
-    ''' For a given txt, a unicode string, returns the time series vector
-    with each word (token) transformed into a 300 dimension representation
-    calculated using Glove Vector '''
-    # print(txt)
-    try:
-
-        nlp = get_nlp()
-        tokens = nlp(txt)
-        text_features = np.zeros((1, input_length, embedding_dim))
-
-        num_tokens_to_take = min([input_length, len(tokens)])
-        trimmed_tokens = tokens[:num_tokens_to_take]
-
-        for j, token in enumerate(trimmed_tokens):
-            # print(len(token.vector))
-            text_features[0, j, :] = token.vector
-        # Bringing to shape of (1, input_length * embedding_dim)
-        ## ATTN - nlp vector:
-        text_features = np.reshape(text_features, (1, input_length * embedding_dim))
-    except Exception as ex:
-        print(f'Failed to get embedding for {txt}')
-        raise
-    return text_features
-
-
-def _apply_heavy_function(dask_df, apply_func, column, scheduler='processes'):
-    res = dask_df.map_partitions(lambda df: df[column].apply(apply_func)).compute(scheduler=scheduler)
-    return res
-
-
-def pre_process_raw_data(df):
-    df['image_name'] = df['image_name'].apply(lambda q: q if q.lower().endswith('.jpg') else q + '.jpg')
-    paths = df['path']
-
-    dirs = {os.path.split(c)[0] for c in paths}
-    files_by_folder = {dir: os.listdir(dir) for dir in dirs}
-    existing_files = [os.path.normpath(os.path.join(dir, fn))
-                      for dir, fn_arr in files_by_folder.items() for fn in fn_arr]
-    df.path = df.path.apply(lambda p: os.path.normpath(p))
-    df = df.loc[df['path'].isin(existing_files)]
-
-    # Getting text features. This is the heavy task...
-    df = df.reset_index()
-    ddata = dd.from_pandas(df, npartitions=8)
-
-    def get_string_fetures(s, *a, **kw):
-        features = get_text_features(s) if isinstance(s, str) else ""
-        return features
-
-    paralelized_get_features = partial(_apply_heavy_function, dask_df=ddata, apply_func=get_string_fetures)
-    logger.debug('Getting answers embedding')
-    if 'answer' not in df.columns: #e.g. in test set...
-        df['answer'] = ''
-
-    with VerboseTimer("Answer Embedding"):
-        df['answer_embedding'] = paralelized_get_features(column='answer')
-
-    logger.debug('Getting questions embedding')
-    with VerboseTimer("Question Embedding"):
-        df['question_embedding'] = paralelized_get_features(column='answer')
-
-    logger.debug('Done')
-    return df
-
-
-def normalize_data_strucrture(df, group, image_folder):
+def normalize_data_structure(df, group, image_folder):
     # assert group in ['train', 'validation']
     cols = ['image_name', 'question', 'answer']
     df_c = df[cols].copy()
@@ -186,104 +111,6 @@ def normalize_data_strucrture(df, group, image_folder):
                               axis=1)  # x: get_image_path(x['group'],x['image_name'])
 
     return df_c
-
-
-def clean_data(df: pd.DataFrame) -> pd.DataFrame:
-    from pre_processing.known_find_and_replace_items import find_and_replace_collection
-
-    find_and_replace_data = find_and_replace_collection
-
-    def replace_func(val: str) -> str:
-        if isinstance(val, str):
-            new_val = val
-            for tpl in find_and_replace_data:
-                pattern = re.compile(tpl.orig, re.IGNORECASE)
-                new_val = pattern.sub(repl=tpl.sub, string=new_val).strip().lower()
-        elif np.isnan(val):
-            new_val = ''
-        else:
-            new_val = val
-
-        return new_val
-
-    df['original_question'] = df['question']
-    df['original_answer'] = df['answer']
-
-    df['question'] = df['question'].apply(replace_func)
-    df['answer'] = df['answer'].apply(replace_func)
-    return df
-
-
-def _consolidate_image_devices(df):
-    def get_imaging_device(r):
-
-        data = [r[device] for device in imaging_devices]
-        res = ' '.join([device for d ,device in zip(data, imaging_devices) if d ]).strip()
-        if len(res) == 0:
-            res = 'unknown'
-        return res
-
-    df['imaging_device'] = df.apply(get_imaging_device, axis=1)
-
-    image_names = df.image_name.drop_duplicates().values
-
-    pbar = tqdm(image_names)
-    logger.info('consolidating image devices')
-    for image_name in pbar:
-        df_image = df[df.image_name == image_name]
-        raw_image_imaging_device = df_image.imaging_device.drop_duplicates().values
-
-        image_imaging_device = set(itertools.chain.from_iterable([d.split() for d in raw_image_imaging_device]))
-
-        consolidated = {d for d in image_imaging_device}
-        if 'unknown' in consolidated and len(consolidated) == 2:
-            consolidated.remove('unknown')
-
-        if len(consolidated) > 1:
-            consolidated.clear()
-            consolidated.add('unknown')
-
-        assert len(consolidated) == 1,\
-             f'got {len(consolidated)} non consolidated image devices. for example:\n{consolidated[:5]}'
-        res = ' '.join([str(d) for d in consolidated])
-        df.loc[df.image_name == image_name, 'imaging_device'] = res
-        # df[df.image_name == image_name].imaging_device = res
-        pbar.set_description(f'image device:\t{res}'.ljust(25))
-    return df
-
-
-def enrich_data(df: pd.DataFrame) -> pd.DataFrame:
-    from pre_processing.known_find_and_replace_items import imaging_devices, diagnosis, locations
-
-    for col in imaging_devices:
-        df[col] = ''
-
-    # add_imaging_columns
-    _add_columns_by_search(df, indicator_words=imaging_devices, search_columns=['question', 'answer'])
-    # add_diagnostics_columns
-    _add_columns_by_search(df, indicator_words=diagnosis, search_columns=['question', 'answer'])
-    # add_locations_columns
-    _add_columns_by_search(df, indicator_words=locations, search_columns=['question', 'answer'])
-
-    _consolidate_image_devices(df)
-    for col in imaging_devices:
-        del df[col]
-    return df
-
-
-def _add_columns_by_search(df, indicator_words, search_columns):
-    from common.utils import has_word
-    for word in indicator_words:
-        res = None
-        for col in search_columns:
-            curr_res = df[col].apply(lambda s: has_word(word, s))
-            if res is None:
-                res = curr_res
-            res = res | curr_res
-        if any(res):
-            df[word] = res
-        else:
-            logger.warning("found no matching for '{0}'".format(word))
 
 
 def concat_row(df: pd.DataFrame, col: str):

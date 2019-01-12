@@ -1,6 +1,6 @@
 import os
 import pytest
-from common.functions import normalize_data_strucrture
+from common.functions import normalize_data_structure
 from parsers.VQA18 import Vqa18Base
 from tests import image_folder
 
@@ -20,7 +20,7 @@ def test_data_length(expected_length):
     df = Vqa18Base.get_instance(csv).data
     assert len(df) == expected_length
 
-    normalized_data = normalize_data_strucrture(df, 'test', image_folder)
+    normalized_data = normalize_data_structure(df, 'test', image_folder)
     assert len(normalized_data) == expected_length
 
     paths = normalized_data.path.drop_duplicates().values

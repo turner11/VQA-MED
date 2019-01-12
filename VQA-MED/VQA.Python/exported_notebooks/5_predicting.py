@@ -13,7 +13,7 @@ import IPython
 from classes.vqa_model_predictor import VqaModelPredictor, DefaultVqaModelPredictor
 from common.DAL import get_models_data_frame, get_model
 from evaluate.VqaMedEvaluatorBase import VqaMedEvaluatorBase
-from common.functions import get_highlited_function_code
+from common.functions import get_highlighted_function_code
 df_models = get_models_data_frame()
 df_show = df_models.sort_values(by=['wbss', 'bleu'], ascending=False).head()
 df_show
@@ -38,7 +38,7 @@ mp.df_validation.head(2)
 # In[15]:
 
 
-code = get_highlited_function_code(mp.predict,remove_comments=False)
+code = get_highlighted_function_code(mp.predict, remove_comments=False)
 IPython.display.display(code)
 
 

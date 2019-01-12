@@ -18,7 +18,7 @@ from multiprocessing.pool import ThreadPool as Pool
 
 from common.constatns import data_location, vqa_specs_location, fn_meta, augmented_data_location
 from common.utils import VerboseTimer
-from common.functions import get_highlited_function_code, generate_image_augmentations,  get_image
+from common.functions import get_highlighted_function_code, generate_image_augmentations,  get_image
 from common.os_utils import File
 
 
@@ -40,7 +40,7 @@ df_data.head(2)
 # In[4]:
 
 
-code = get_highlited_function_code(generate_image_augmentations,remove_comments=False)
+code = get_highlighted_function_code(generate_image_augmentations, remove_comments=False)
 IPython.display.display(code)  
 
 

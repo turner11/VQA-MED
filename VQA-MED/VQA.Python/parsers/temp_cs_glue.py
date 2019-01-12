@@ -56,7 +56,7 @@ def set_model(model_id, cpu=True):
 @supress_print
 def predict(question, image_path):
     import pandas as pd
-    from common.functions import pre_process_raw_data
+    from pre_processing.prepare_data import pre_process_raw_data
 
     #,get_highlited_function_code, get_image, get_size
 

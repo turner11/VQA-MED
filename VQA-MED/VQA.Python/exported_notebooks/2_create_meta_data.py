@@ -14,7 +14,7 @@ import IPython
 # In[10]:
 
 
-from common.functions import get_highlited_function_code
+from common.functions import get_highlighted_function_code
 from common.constatns import data_location, vqa_specs_location, fn_meta
 from common.settings import embedding_dim, seq_length
 from common.classes import VqaSpecs
@@ -58,7 +58,7 @@ print(np.unique(d.imaging_device))
 # In[6]:
 
 
-code = get_highlited_function_code(create_meta,remove_comments=False)
+code = get_highlighted_function_code(create_meta, remove_comments=False)
 IPython.display.display(code)  
 
 

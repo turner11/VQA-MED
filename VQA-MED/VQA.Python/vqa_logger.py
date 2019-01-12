@@ -26,24 +26,26 @@ def init_log(name=None):
     folder, _ = os.path.split(file_name)
     File.validate_dir_exists(folder)
 
+
     logging.basicConfig(filemode='a',
                         format=format,
                         datefmt='%H:%M:%S',
                         level=log_level,
-                        # stream=sys.stdout,
+                        stream=sys.stdout,
                         # filename=file_name
                         )
-
+    # ch = logging.StreamHandler(sys.stdout)
     formatter = logging.Formatter(format)
     file_handler = logging.FileHandler(file_name)
     file_handler.setFormatter(formatter)
     logger.setLevel(logging.NOTSET)
     logger.addHandler(file_handler)
-    return  logger
+    return logger
 
 
 def test_log():
     l = logging.getLogger(__name__)
+    print('This is just a print')
     l.debug("this is a debugging message")
     l.info("this is an informational message")
     l.warning("this is a warning message")

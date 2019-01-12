@@ -1,6 +1,4 @@
-import pytest
-from common.functions import _apply_heavy_function
-from io import StringIO
+from pre_processing.prepare_data import _apply_heavy_function
 import pandas as pd
 import dask.dataframe as dd
 

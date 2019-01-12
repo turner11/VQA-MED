@@ -7,25 +7,25 @@
 # %%capture
 import IPython
 import os
-import numpy as np
-import pandas as pd
+
 from pandas import HDFStore
-import spacy
-from keras.utils import to_categorical
-import cv2
-from collections import defaultdict
+
 
 import logging
+
+
+
 logger = logging.getLogger(__name__)
-from common.os_utils import File
+
 
 
 # In[2]:
 
 
-from common.constatns import train_data, validation_data, data_location, raw_data_location
-from common.settings import input_length, embedding_dim, image_size, seq_length, get_nlp
-from common.functions import get_highlited_function_code, get_image, get_text_features, pre_process_raw_data, get_size
+from common.constatns import train_data, data_location, raw_data_location
+from common.settings import get_nlp
+from common.functions import get_highlighted_function_code, get_image, get_size
+from pre_processing.prepare_data import get_text_features, pre_process_raw_data
 from common.utils import VerboseTimer
 
 
@@ -44,7 +44,7 @@ nlp = get_nlp()
 # In[4]:
 
 
-code = get_highlited_function_code(get_nlp,remove_comments=True)
+code = get_highlighted_function_code(get_nlp, remove_comments=True)
 IPython.display.display(code)
 
 
@@ -77,7 +77,7 @@ image_name_question.head()
 # In[8]:
 
 
-code = get_highlited_function_code(get_text_features,remove_comments=True)
+code = get_highlighted_function_code(get_text_features, remove_comments=True)
 IPython.display.display(code)
 
 
@@ -86,7 +86,7 @@ IPython.display.display(code)
 # In[9]:
 
 
-code = get_highlited_function_code(get_image,remove_comments=True)
+code = get_highlighted_function_code(get_image, remove_comments=True)
 IPython.display.display(code)
 
 
@@ -95,7 +95,7 @@ IPython.display.display(code)
 # In[10]:
 
 
-code = get_highlited_function_code(pre_process_raw_data,remove_comments=True)
+code = get_highlighted_function_code(pre_process_raw_data, remove_comments=True)
 IPython.display.display(code)
 
 
@@ -103,8 +103,8 @@ IPython.display.display(code)
 
 # In[11]:
 
-
-from common.functions import enrich_data, clean_data
+from pre_processing.data_enrichment import enrich_data
+from pre_processing.data_cleaning import clean_data
 orig_image_name_question = image_name_question.copy()
 image_name_question = clean_data(image_name_question)
 image_name_question = enrich_data(image_name_question)

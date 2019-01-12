@@ -11,7 +11,7 @@ from classes.vqa_model_trainer import VqaModelTrainer
 from common.model_utils import get_trainable_params_distribution
 import logging
 logger = logging.getLogger(__name__)
-from common.functions import get_highlited_function_code
+from common.functions import get_highlighted_function_code
 
 
 # In[2]:
@@ -94,12 +94,12 @@ mt.data_train.head(0)
 
 
 from common.functions import get_features, _concat_row, sentences_to_hot_vector, hot_vector_to_words
-code_get_labels = get_highlited_function_code(mt.get_labels, remove_comments=True)
+code_get_labels = get_highlighted_function_code(mt.get_labels, remove_comments=True)
 
 
-code_get_features = get_highlited_function_code(get_features, remove_comments=True)
-code_concat = get_highlited_function_code(_concat_row, remove_comments=True)
-code_hot_vector = get_highlited_function_code(sentences_to_hot_vector, remove_comments=True)
+code_get_features = get_highlighted_function_code(get_features, remove_comments=True)
+code_concat = get_highlighted_function_code(_concat_row, remove_comments=True)
+code_hot_vector = get_highlighted_function_code(sentences_to_hot_vector, remove_comments=True)
 
 
 print('Getting the label using a hot vector\n')
@@ -138,7 +138,7 @@ classes_indices[idx_sample]
 # In[9]:
 
 
-code = get_highlited_function_code(hot_vector_to_words,remove_comments=False)
+code = get_highlighted_function_code(hot_vector_to_words, remove_comments=False)
 IPython.display.display(code)  
 
 

@@ -4,8 +4,10 @@ import itertools
 import pandas as pd
 from io import StringIO
 
-from common.functions import pre_process_raw_data, generate_image_augmentations
-from common.functions import enrich_data, clean_data
+from pre_processing.prepare_data import pre_process_raw_data
+from common.functions import generate_image_augmentations
+from pre_processing.data_enrichment import enrich_data
+from pre_processing.data_cleaning import clean_data
 from common.os_utils import File
 from pre_processing.known_find_and_replace_items import find_and_replace_collection
 from common.settings import set_nlp_vector
@@ -108,7 +110,7 @@ image6,A new image,with no available info
 
     assert 'imaging_device' in df_enriched.columns, 'Expected enriched data to contain imaging_device'
 
-    imaging_device_by_image_name = df[['image_name', 'imaging_device']].set_index('image_name').to_dict()[
+    imaging_device_by_image_name = df_enriched.loc[:,['image_name', 'imaging_device']].set_index('image_name').to_dict()[
         'imaging_device']
 
     err_msg = 'Got unexpected imaging devices'
@@ -137,8 +139,8 @@ def test_data_augmentation():
 
 def main():
     # test_data_augmentation()
-    # test_data_enrichment()
-    test_data_cleaning()
+    test_data_enrichment()
+    # test_data_cleaning()
     # test_embedding()
     pass
 

@@ -9,7 +9,7 @@ from common.utils import VerboseTimer
 
 import IPython
 from IPython.display import Image, display
-from common.functions import get_highlited_function_code
+from common.functions import get_highlighted_function_code
 
 
 # In[2]:
@@ -50,7 +50,7 @@ mb.df_meta_answers.tail(2)
 # In[5]:
 
 
-code = get_highlited_function_code(VqaModelBuilder.word_2_vec_model,remove_comments=True)
+code = get_highlighted_function_code(VqaModelBuilder.word_2_vec_model, remove_comments=True)
 IPython.display.display(code)  
 
 
@@ -60,7 +60,7 @@ IPython.display.display(code)
 # In[6]:
 
 
-code = get_highlited_function_code(VqaModelBuilder.get_image_model,remove_comments=False)
+code = get_highlighted_function_code(VqaModelBuilder.get_image_model, remove_comments=False)
 IPython.display.display(code)  
 
 
@@ -69,7 +69,7 @@ IPython.display.display(code)
 # In[7]:
 
 
-code = get_highlited_function_code(mb.get_vqa_model,remove_comments=True)
+code = get_highlighted_function_code(mb.get_vqa_model, remove_comments=True)
 IPython.display.display(code)  
 
 
@@ -89,7 +89,7 @@ with VerboseTimer("Gettingt the model"):
 # In[9]:
 
 
-code = get_highlited_function_code(VqaModelBuilder.save_model,remove_comments=False)
+code = get_highlighted_function_code(VqaModelBuilder.save_model, remove_comments=False)
 IPython.display.display(code)  
 
 
@@ -108,7 +108,7 @@ model_fn, summary_fn, fn_image = VqaModelBuilder.save_model(model)
 # In[11]:
 
 
-code = get_highlited_function_code(VqaModelBuilder.get_trainable_params_distribution,remove_comments=False)
+code = get_highlighted_function_code(VqaModelBuilder.get_trainable_params_distribution, remove_comments=False)
 IPython.display.display(code)
 
 

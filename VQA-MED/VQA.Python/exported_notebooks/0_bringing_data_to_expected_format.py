@@ -16,7 +16,7 @@ import IPython
 from common.constatns import train_data, validation_data, test_data, raw_data_location, images_folder_train, images_folder_validation, images_path_test
 from common.utils import VerboseTimer
 from parsers.VQA18 import Vqa18Base
-from common.functions import get_size, get_highlited_function_code, normalize_data_strucrture
+from common.functions import get_size, get_highlighted_function_code, normalize_data_structure
 import logging
 logger = logging.getLogger(__name__)
 
@@ -36,16 +36,16 @@ df_test = Vqa18Base.get_instance(test_data.processed_xls).data
 # In[3]:
 
 
-code = get_highlited_function_code(normalize_data_strucrture,remove_comments=True)
+code = get_highlighted_function_code(normalize_data_structure, remove_comments=True)
 IPython.display.display(code)
 
 
 # In[4]:
 
 
-df_t = normalize_data_strucrture(df_train, 'train',images_folder_train)
-df_v = normalize_data_strucrture(df_valid, 'validation',images_folder_validation)
-df_test = normalize_data_strucrture(df_test, 'test',images_path_test)
+df_t = normalize_data_structure(df_train, 'train', images_folder_train)
+df_v = normalize_data_structure(df_valid, 'validation', images_folder_validation)
+df_test = normalize_data_structure(df_test, 'test', images_path_test)
 
 
 df = pd.concat([df_t, df_v, df_test])  # .reset_index()
