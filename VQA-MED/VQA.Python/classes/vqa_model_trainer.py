@@ -94,13 +94,13 @@ class VqaModelTrainer(object):
 
 
     def print_shape_sanity(self, features_t, labels_t, features_val, labels_val):
-        print(f'Expected shape: {self.model.input_shape}')
-        print('---------------------------------------------------------------------------')
-        print(f'Actual training shape:{features_t[0].shape, features_t[1].shape}')
-        print(f'Train Labels shape:{labels_t.shape}')
-        print('---------------------------------------------------------------------------')
-        print(f'Actual Validation shape:{features_val[0].shape, features_val[1].shape}')
-        print(f'Validation Labels shape:{labels_val.shape}')
+        logger.debug(f'Expected shape: {self.model.input_shape}')
+        logger.debug('---------------------------------------------------------------------------')
+        logger.debug(f'Actual training shape:{features_t[0].shape, features_t[1].shape}')
+        logger.debug(f'Train Labels shape:{labels_t.shape}')
+        logger.debug('---------------------------------------------------------------------------')
+        logger.debug(f'Actual Validation shape:{features_val[0].shape, features_val[1].shape}')
+        logger.debug(f'Validation Labels shape:{labels_val.shape}')
 
     def train(self):
 
@@ -204,11 +204,11 @@ class VqaModelTrainer(object):
         msg += f'History: {fn_history or "NONE"}\n'
         location_message = f"model_location = '{model_fn}'"
 
-        print(msg)
-        print(location_message)
+        logger.info(msg)
+        logger.info(location_message)
 
         win_file_name = location_message.replace('\\', '\\\\')
-        print(win_file_name)
+        logger.info(win_file_name)
 
 
         try:
@@ -274,7 +274,7 @@ def main():
     history = mt.train()
     with VerboseTimer("Saving trained Model"):
         model_fn, summary_fn, fn_image, fn_history = VqaModelTrainer.save(mt.model, history)
-    print(model_fn)
+    logger.debug(model_fn)
 
 
 

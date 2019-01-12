@@ -26,8 +26,9 @@ def main():
 
 
 def ad_hock_main():
-    from tests.test_model import test_model_training
-    test_model_training()
+    from tests.test_model import test_model_predicting, data_frame
+    df = data_frame()
+    test_model_predicting(df)
 
     # from vqa_flow.imaging_device_classifier import retrain_model
     # retrain_model()

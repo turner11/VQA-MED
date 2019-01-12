@@ -62,7 +62,7 @@ class VqaModelBuilder(object):
     def __get_data_frames(meta_data_location):
         with pd.HDFStore(meta_data_location, 'r') as hdf:
             keys = list(hdf.keys())
-            print(f"meta Keys: {keys}")
+            logger.debug(f"meta Keys: {keys}")
         df_meta_answers = pd.read_hdf(meta_data_location, 'answers')
         df_meta_words = pd.read_hdf(meta_data_location, 'words')
         df_meta_imaging_devices = pd.read_hdf(meta_data_location, 'imaging_devices')

@@ -1,10 +1,10 @@
+import os, sys
 import time
+import logging
 from contextlib import contextmanager
 from datetime import timedelta
+logger = logging.getLogger(__name__)
 
-import os
-
-import sys
 
 
 class Timer:
@@ -28,7 +28,7 @@ class VerboseTimer(Timer):
 
     def __exit__(self, *args):
         super().__exit__()
-        print("{0}: {1}".format(self.title, str(self)))
+        logger.debug("{0}: {1}".format(self.title, str(self)))
 
 
 
@@ -36,7 +36,7 @@ def timeit(func):
     def timed(*args, **kw):
         with Timer() as t:
             result = func(*args, **kw)
-        print('Function {0}; Time: {1}'.format(func.__name__, 'time:', str(t)))
+        logger.debug('Function {0}; Time: {1}'.format(func.__name__, 'time:', str(t)))
         return result
     return timed
 
