@@ -14,7 +14,10 @@ from common.utils import VerboseTimer
 from common.os_utils import File
 from evaluate.statistical import f1_score, recall_score, precision_score
 import logging
+
 logger = logging.getLogger(__name__)
+
+
 # import common
 # import importlib
 # importlib.reload(common.functions)
@@ -29,17 +32,13 @@ class VqaModelPredictor(object):
         self.model, model_idx_in_db = self.get_model(model)
         self.model_idx_in_db = model_idx_in_db
 
-        p = 'C:\\Users\\Public\\Documents\\Data\\2018\\imaging_dvices_classifiers\\question_classifier.pickle'
-        self.question_classifier = File.load_pickle(p)
         pp = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\imaging_device_classifier\\20190111_1444_32\\vqa_model_imaging_device_classifier.h5'
-
         self.image_device_classifier, model_id = self.get_model(pp)
-
 
     def __repr__(self):
         return super(VqaModelPredictor, self).__repr__()
 
-    def get_model(self, model: Union[int, keras_model,str, None]) -> (keras_model, int):
+    def get_model(self, model: Union[int, keras_model, str, None]) -> (keras_model, int):
         df_models = None
         model_id = -1
         model_idx_in_db = None
@@ -87,9 +86,9 @@ class VqaModelPredictor(object):
         df_predictions_imaging = self._predict_imaging_device(imaging_data)
         df_predictions_vqa = self._predict_vqa(vqa_data, percentile)
 
-        df_predictions = Exception('merge results')
-        raise df_predictions
-
+        df_predictions = pd.concat([df_predictions_vqa,df_predictions_imaging],
+                                   ignore_index=False)\
+                                   .sort_index()
         # Those are the mandatory columns
         sort_columns = ['image_name', 'question', 'answer', 'prediction', 'probabilities']
         ordered_columns = sorted(df_predictions.columns, key=lambda v: v in sort_columns, reverse=True)
@@ -97,13 +96,14 @@ class VqaModelPredictor(object):
         ret = df_predictions[ordered_columns]
         return ret
 
-    def _predict_vqa(self, df_data: pd.DataFrame, percentile:float)-> pd.DataFrame:
+    def _predict_vqa(self, df_data: pd.DataFrame, percentile: float) -> pd.DataFrame:
         meta_data_location = self.vqa_specs.meta_data_location
         df_meta_words = pd.read_hdf(meta_data_location, 'words')
         return self._predict_keras(df_data, self.model, words_decoder=df_meta_words, percentile=percentile)
 
     @classmethod
-    def _predict_keras(self, df_data: pd.DataFrame, model, words_decoder ,percentile: float, feature_prep: callable=None) -> pd.DataFrame:
+    def _predict_keras(self, df_data: pd.DataFrame, model, words_decoder, percentile: float,
+                       feature_prep: callable = None) -> pd.DataFrame:
         features = get_features(df_data)
         if feature_prep is not None:
             features = feature_prep(features)
@@ -128,7 +128,7 @@ class VqaModelPredictor(object):
         results = []
         for i, (curr_prediction, curr_probabilities) in enumerate(zip(predictions, probabilities)):
             prediction_df = pd.DataFrame({'word_idx': curr_prediction,
-                                          'word': list(words_decoder.loc[curr_prediction].word.values),
+                                          'word': list(words_decoder.iloc[curr_prediction].word.values),
                                           'probabilities': curr_probabilities})
 
             curr_prediction_str = ' '.join([str(w) for w in list(prediction_df.word.values)])
@@ -145,15 +145,20 @@ class VqaModelPredictor(object):
             'probabilities': [curr_df.probabilities.values for curr_df in results]
         })
         ret = df_data_light.merge(df_aggregated, how='outer', left_index=True, right_index=True)
+        ret = ret.set_index('index')
         return ret
 
-    def _predict_imaging_device(self, df_data: pd.DataFrame)-> pd.DataFrame:
+    def _predict_imaging_device(self, df_data: pd.DataFrame) -> pd.DataFrame:
         meta_data_location = self.vqa_specs.meta_data_location
         words_decoder = pd.read_hdf(meta_data_location, 'imaging_devices')
         words_decoder = words_decoder.rename(columns={'imaging_device': 'word'})
+        # HACK:
+        words_decoder = pd.DataFrame({'word':['ct', 'mri']})#words_decoder[words_decoder.word != 'mra']
+
         def feature_prep(features):
-            new_features = features[1] #image only
+            new_features = features[1]  # image only
             return new_features
+
         p = self._predict_keras(df_data,
                                 model=self.image_device_classifier,
                                 words_decoder=words_decoder,
@@ -162,14 +167,9 @@ class VqaModelPredictor(object):
 
         return p
 
-    def split_data_to_vqa_and_imaging(self, df_data: pd.DataFrame)->(pd.DataFrame,pd.DataFrame):
-        embedding_input = np.asarray([v[0] for v in df_data.question_embedding])
-        predictions = self.question_classifier.predict(embedding_input)
-        imaging_devices_rows = [i for i, pred in enumerate(predictions) if pred == 1]
-        vqa_rows = [i for i, pred in enumerate(predictions) if pred == 0]
-
-        imaging_data = df_data.ix[imaging_devices_rows ]
-        vqa_data = df_data.ix[vqa_rows]
+    def split_data_to_vqa_and_imaging(self, df_data: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
+        imaging_data = df_data[df_data.is_imaging_device_question == 1]
+        vqa_data = df_data[df_data.is_imaging_device_question == 0]
 
         return vqa_data, imaging_data
 

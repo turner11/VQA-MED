@@ -33,13 +33,17 @@ def test_model_creation():
 
 
 def test_model_training(data_frame):
+    # Arrange
+    train_data = data_frame
+    train_data .group = 'train'
+    train_data .group[::2] = 'validation'
     batch_size = 75
+
     mb = VqaModelBuilder(loss, activation)
     model = mb.get_vqa_model()
-
-    train_data = data_frame
-
     mt = VqaModelTrainer(model, use_augmentation=False, batch_size=batch_size, data_location=train_data)
+
+    # Act
     mt.train()
 
 def test_model_predicting(data_frame):
@@ -54,4 +58,6 @@ def test_model_predicting(data_frame):
 
 if __name__ == '__main__':
     # test_model_creation()
-    test_model_training()
+    df = data_frame()
+    test_model_training(df)
+
