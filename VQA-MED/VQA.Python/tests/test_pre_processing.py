@@ -12,6 +12,8 @@ from common.os_utils import File
 from pre_processing.known_find_and_replace_items import find_and_replace_collection
 from common.settings import set_nlp_vector
 from tests import image_folder
+import logging
+logger = logging.getLogger(__name__)
 
 normalized_csv = \
     '''
@@ -127,7 +129,7 @@ def test_data_augmentation():
     with tempfile.TemporaryDirectory() as temp_dir:
         output_dir = os.path.join(temp_dir, 'augmentations')
         output_dir = os.path.normpath(output_dir)
-        print(f'Augmentations are at:\n{output_dir }')
+        logger.info(f'Augmentations are at:\n{output_dir }')
         File.validate_dir_exists(output_dir)
         image_name = next(f for f in os.listdir(image_folder) if 'pytest' not in f)
         image_path = os.path.join(image_folder, image_name)

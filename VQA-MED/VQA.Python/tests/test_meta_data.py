@@ -1,10 +1,11 @@
 import itertools
 import os
 import tempfile
-
 import pandas as pd
 import pytest
 from _pytest.tmpdir import tmpdir_factory, TempPathFactory
+import logging
+logger = logging.getLogger(__name__)
 
 from pre_processing.meta_data import create_meta
 
@@ -47,7 +48,7 @@ def test_meta_keys(meta_location):
     with pd.HDFStore(meta_location) as store:
         for ds_key in expected_data_sets:
             curr_data_set = store[ds_key]
-            print(f'For \'{ds_key}\' Got a data set with {len(curr_data_set)} records')
+            logger.debug(f'For \'{ds_key}\' Got a data set with {len(curr_data_set)} records')
 
 
 def test_imaging_devices(meta_location):
@@ -82,7 +83,7 @@ if __name__ == '__main__':
     rand = next(tempfile._get_candidate_names())
     base_temp = os.path.join(tempfile.gettempdir(), rand)
     def trace(*args, **kwargs):
-        print(args)
+        logger.debug(args)
     temp_factory = TempPathFactory(base_temp , trace=trace)
     meta_loc = meta_location(temp_factory)
     test_meta_keys(meta_loc)

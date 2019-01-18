@@ -6,6 +6,9 @@ from classes.vqa_model_builder import VqaModelBuilder
 from classes.vqa_model_predictor import VqaModelPredictor
 from classes.vqa_model_trainer import VqaModelTrainer
 from common.utils import VerboseTimer
+import tensorflow as tf
+tf.logging.set_verbosity(tf.logging.ERROR)
+
 logger = logging.getLogger(__name__)
 
 
@@ -26,7 +29,7 @@ def test_model_creation():
     with VerboseTimer("Instantiating VqaModelBuilder"):
         model = mb.get_vqa_model()
 
-    model.summary()
+    # model.summary()
     expected_fields = ['predict', 'fit']
     for field in expected_fields:
         assert hasattr(model, field), f'A model is expected to have a "{field}" attribute'
@@ -59,5 +62,6 @@ def test_model_predicting(data_frame):
 if __name__ == '__main__':
     # test_model_creation()
     df = data_frame()
-    test_model_training(df)
+    test_model_predicting(df)
+    # test_model_training(df)
 

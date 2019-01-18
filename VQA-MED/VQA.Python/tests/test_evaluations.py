@@ -1,5 +1,4 @@
 import pytest
-from future.backports.email.errors import NonASCIILocalPartDefect
 
 from evaluate.BleuEvaluator import BleuEvaluator
 from evaluate.WbssEvaluator import WbssEvaluator
@@ -85,7 +84,7 @@ long_sentence: str = 'BLEU (bilingual evaluation understudy) is an algorithm for
                              ('bilateral multiple pulmonary nodules', 'bilateral MULTIPLE pulmonary NODULES', 1,
                               'exact'),
                              ('no sub ngrams', 'a sentence with words', 0, 'exact'),
-                             ('say something', 'lets say something', 0.5, 'min'),
+                             ('lets say something', 'say something', 0.5, 'min'),
                              (long_sentence + ' a short suffix', long_sentence, 0.95, 'min'),
                              (long_sentence, long_sentence + ' a short suffix', 0.95, 'min'),
 
@@ -103,7 +102,7 @@ def _test_evaluator_absolute(evaluator_ctor, prediction, ground_truth, expected_
     message = f'for prediction "{prediction}" and ground truth of "{ground_truth}" ' \
         f'expected to get an evaluations of {mode} {expected_evaluation} but got {actual_evaluation}'
     if mode == 'exact':
-        assert actual_evaluation == expected_evaluation, message
+        assert pytest.approx(actual_evaluation, 0.01) == expected_evaluation, message
     elif mode == 'max':
         assert actual_evaluation <= expected_evaluation, message
     elif mode == 'min':
@@ -113,6 +112,8 @@ def _test_evaluator_absolute(evaluator_ctor, prediction, ground_truth, expected_
 
 
 if __name__ == '__main__':
+    test_bleu_absolute('ct', 'CT', 1, 'exact')
+
     test_bss_absolute('ct', 'mri', 2, 'exact')
 
     test_bss_absolute('dog food', 'cat meal', 1, 'exact')
