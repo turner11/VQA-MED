@@ -32,7 +32,13 @@ def get_nlp():
     global nlp
     if nlp is None:
         logger.debug(f'using embedding vector: {nlp_vector }')
-        nlp = spacy.load('en', vectors=nlp_vector)
+        try:
+            nlp = spacy.load('en', vectors=nlp_vector)
+        except OSError as ex:
+            msg = f'Got an error while loading spacy vector: {ex}.\n' \
+                f'Did you initialize it?\n' \
+                f'Try running:\n' \
+                f'"python -m spacy download en"'
         # logger.debug(f'vector "{nlp_vector}" loaded')
         # logger.debug(f'nlp creating pipe')
         # nlp.add_pipe(nlp.create_pipe('sentencizer'))
