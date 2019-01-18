@@ -1,7 +1,7 @@
+import nltk
 from argparse import ArgumentError
 from collections import namedtuple
 from typing import List, Union, Iterable
-import nltk
 
 Prediction = namedtuple('Prediction', ['q_id', 'image_id', 'answer'])
 
