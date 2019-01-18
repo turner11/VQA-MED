@@ -1,9 +1,15 @@
-pytest
-icdiff
-pytest-cov
-pytest-icdiff
-coloredlogs==9.2
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
 
+[dev-packages]
+icdiff = "*"
+pytest = "*"
+pytest-cov = "*"
+
+[packages]
+coloredlogs==9.2
 graphviz==0.8.3
 ipython==7.2.0
 jupyterlab
@@ -26,4 +32,8 @@ tensorflow-gpu==1.9.0 #This depends on version of CuDNN library installed (1.9 c
 tqdm==4.29.1
 typing==3.6.6
 
-#dask = {extras = [dataframe],version}
+
+[requires]
+python_version = "3.6"
+#pipenv install --skip-lock
+	
