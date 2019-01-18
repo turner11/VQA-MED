@@ -1,11 +1,13 @@
 import os
 import pandas as pd
+import logging
 from pandas import HDFStore
 from nltk.corpus import stopwords
 import itertools
 import string
-
 from common.utils import VerboseTimer
+
+logger = logging.getLogger(__name__)
 
 
 def _get_data_frame_from_arg(df_arg):
@@ -15,13 +17,13 @@ def _get_data_frame_from_arg(df_arg):
         df_data = df_arg
     elif isinstance(df_arg, str):
         data_location = df_arg
-        print(f'loading from:\n{data_location}')
+        logger.debug(f'loading from:\n{data_location}')
         with VerboseTimer("Loading Data"):
             with HDFStore(data_location) as store:
                 df_data = store['data']
 
         df_data = df_data[df_data.group.isin(['train', 'validation'])]
-        print(f'Data length: {len(df_data)}')
+        logger.debug(f'Data length: {len(df_data)}')
 
     elif isinstance(df_data, dict):
         df_data = pd.DataFrame(dict)
@@ -40,7 +42,7 @@ def _get_data_frame_from_arg(df_arg):
 def create_meta(df, hdf_output_location):
     df = _get_data_frame_from_arg(df)
 
-    print(f"Dataframe had {len(df)} rows")
+    logger.debug(f"Dataframe had {len(df)} rows")
     english_stopwords = set(stopwords.words('english'))
 
     def get_unique_words(col):
@@ -49,7 +51,7 @@ def create_meta(df, hdf_output_location):
         s_no_panctuation = ''.join(ch.lower() for ch in single_string if ch not in exclude)
         unique_words = set(s_no_panctuation.split(" ")).difference({'', ' '})
         unique_words = unique_words.difference(english_stopwords)
-        print("column {0} had {1} unique words".format(col, len(unique_words)))
+        logger.debug("column {0} had {1} unique words".format(col, len(unique_words)))
         return unique_words
 
     cols = ['question', 'answer']
@@ -81,8 +83,8 @@ def create_meta(df, hdf_output_location):
         df_curr.to_hdf(hdf_output_location, name, format='table')
 
     with HDFStore(hdf_output_location) as metadata_store:
-        print("Meta number of unique answers: {0}".format(len(metadata_store['answers'])))
-        print("Meta number of unique words: {0}".format(len(metadata_store['words'])))
+        logger.debug("Meta number of unique answers: {0}".format(len(metadata_store['answers'])))
+        logger.debug("Meta number of unique words: {0}".format(len(metadata_store['words'])))
 
 #         df_ix_to_word = pd.DataFrame.from_dict(metadata['ix_to_word'])
 #         light.to_hdf(data_location, 'light', mode='w', data_columns=['image_name', 'imaging_device', 'path'], format='table')
