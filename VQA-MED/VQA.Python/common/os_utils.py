@@ -1,9 +1,9 @@
 import json
 import os, errno
 import pickle
-
 import sys
-
+import logging
+logger = logging.getLogger(__name__)
 
 class File(object):
     def __init__(self, ):
