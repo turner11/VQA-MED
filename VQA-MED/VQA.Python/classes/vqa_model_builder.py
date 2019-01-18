@@ -169,8 +169,8 @@ class VqaModelBuilder(object):
         msg += f"Image: {fn_image}\n"
         location_message = f"model_location = '{model_fn}'"
 
-        print(msg)
-        print(location_message)
+        logger.info(msg)
+        logger.info(location_message)
         return model_fn, summary_fn, fn_image
 
     @staticmethod
