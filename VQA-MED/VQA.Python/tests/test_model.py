@@ -1,5 +1,5 @@
-import os
 import pytest
+import os
 import pandas as pd
 import logging
 from classes.vqa_model_builder import VqaModelBuilder
@@ -22,6 +22,7 @@ def data_frame():
 
 loss, activation = 'categorical_crossentropy', 'sigmoid'
 
+@pytest.mark.filterwarnings('ignore:RuntimeWarning')
 def test_model_creation():
     with VerboseTimer("Instantiating VqaModelBuilder"):
         mb = VqaModelBuilder(loss, activation)
@@ -35,6 +36,7 @@ def test_model_creation():
         assert hasattr(model, field), f'A model is expected to have a "{field}" attribute'
 
 
+@pytest.mark.filterwarnings('ignore:RuntimeWarning')
 def test_model_training(data_frame):
     # Arrange
     train_data = data_frame
@@ -49,6 +51,7 @@ def test_model_training(data_frame):
     # Act
     mt.train()
 
+@pytest.mark.filterwarnings('ignore:DeprecationWarning')
 def test_model_predicting(data_frame):
     model_path = 'C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\data_for_test\\test_model\\vqa_model_.h5'
     mp = VqaModelPredictor(model_path)

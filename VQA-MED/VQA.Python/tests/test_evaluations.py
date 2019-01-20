@@ -99,8 +99,10 @@ def _test_evaluator_absolute(evaluator_ctor, prediction, ground_truth, expected_
     ground_truths = [ground_truth]
     evaluator = evaluator_ctor(predictions, ground_truth=ground_truths)
     actual_evaluation = evaluator.evaluate()
+
+    rounded_valuation = round(actual_evaluation, ndigits=6)
     message = f'for prediction "{prediction}" and ground truth of "{ground_truth}" ' \
-        f'expected to get an evaluations of {mode} {expected_evaluation} but got {actual_evaluation}'
+        f'expected to get an evaluations of {mode} {expected_evaluation} but got {rounded_valuation}'
     if mode == 'exact':
         assert pytest.approx(actual_evaluation, 0.01) == expected_evaluation, message
     elif mode == 'max':
@@ -113,6 +115,7 @@ def _test_evaluator_absolute(evaluator_ctor, prediction, ground_truth, expected_
 
 if __name__ == '__main__':
     test_bleu_absolute('ct', 'CT', 1, 'exact')
+    test_bleu_absolute('ct ct ct ct ct ct ct ct ct ct ct ct', 'CT', 1, 'exact')
 
     test_bss_absolute('ct', 'mri', 2, 'exact')
 
