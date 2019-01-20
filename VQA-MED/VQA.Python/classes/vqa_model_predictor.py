@@ -32,7 +32,7 @@ class VqaModelPredictor(object):
         self.model, model_idx_in_db = self.get_model(model)
         self.model_idx_in_db = model_idx_in_db
 
-        pp = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\imaging_device_classifier\\20190111_1444_32\\vqa_model_imaging_device_classifier.h5'
+        pp = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\imaging_device_classifier\\20190111_1444_32_imaging_devince\\vqa_model_imaging_device_classifier.h5'
         self.image_device_classifier, model_id = self.get_model(pp)
 
     def __repr__(self):

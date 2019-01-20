@@ -12,7 +12,7 @@ from common import DAL
 
 
 def main():
-    ev = predict_test(126)
+    ev = predict_test(85)
     print (ev)
     return
     evaluate_model(162)

@@ -32,7 +32,6 @@ def enrich_data(df: pd.DataFrame) -> pd.DataFrame:
     _consolidate_image_devices(df)
     for col in imaging_devices:
         del df[col]
-
     return df
 
 
