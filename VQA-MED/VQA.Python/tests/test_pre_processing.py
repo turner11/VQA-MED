@@ -4,6 +4,8 @@ import itertools
 import pandas as pd
 from io import StringIO
 
+import pytest
+
 from pre_processing.prepare_data import pre_process_raw_data
 from common.functions import generate_image_augmentations
 from pre_processing.data_enrichment import enrich_data
@@ -48,35 +50,53 @@ normalized_csv = \
 27,test_image,question 27?,answer 27,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
 28,test_image,question 28?,answer 28,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
 29,test_image,question 29?,answer 29,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+30,test_image,question 29?,,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
 
 '''
 
+_df_processed = None
 
-def _get_normalized_data_frame():
+@pytest.fixture
+def normalized_data():
+
     # Note: it is normalized in the sense it was passed by normalize_data_strucrture function
     stream = StringIO(normalized_csv)
     normalized_data = pd.read_csv(stream)
+    normalized_data.fillna('', inplace=True)
+
     return normalized_data
 
 
-# @pytest.mark.parametrize("expected_length", [])
-def test_embedding():
-    set_nlp_vector(-1)  # smallest one...
-    normalized_data = _get_normalized_data_frame()
+@pytest.fixture
+def df_processed(normalized_data):
+    global _df_processed
+    if _df_processed is None:
+        set_nlp_vector(-1)  # smallest one...
+        df = pre_process_raw_data(normalized_data)
+        _df_processed = df
+    return _df_processed
 
-    df_processed = pre_process_raw_data(normalized_data)
+
+
+def test_proccessed_length(normalized_data,df_processed):
     assert len(normalized_data) == len(df_processed), 'processed data was not in same length as normalized data'
 
-    new_columns = ['answer_embedding', 'question_embedding']
+def test_new_columns_added(df_processed):
+    new_columns = ['answer_embedding', 'question_embedding', 'is_imaging_device_question']
     has_new_columns = all(c in df_processed for c in new_columns)
     assert has_new_columns, f'Did not have all columns of pre processing ({new_columns})'
 
+# @pytest.mark.parametrize("expected_length", [])
+def test_has_embedding(df_processed):
+    max_embeddings = df_processed.question_embedding.apply(lambda embedding: max(embedding[0]))
+    all_have_values = all(m > 0 for m in max_embeddings)
+    assert all_have_values , 'Not all embedding had values'
 
-def test_data_cleaning():
+
+def test_data_cleaning(normalized_data):
     banned_words = (tpl.orig for tpl in find_and_replace_collection)
-    normalized_data = _get_normalized_data_frame()
 
-    def get_question_and_answers(df):
+    def _extract_question_and_answers(df):
         qs = df.question.values
         ans = df.answer.values
         all_strs = qs + ans
@@ -84,12 +104,12 @@ def test_data_cleaning():
         distinct = set(itertools.chain.from_iterable(words))
         return distinct
 
-    strings = get_question_and_answers(normalized_data)
+    strings = _extract_question_and_answers(normalized_data)
     banned_in_norm = [w for w in banned_words if w in strings]
     assert len(banned_in_norm) > 0, 'No use in this test if banned words are not in original text'
 
     clean_df = clean_data(normalized_data)
-    clean_strings = get_question_and_answers(clean_df)
+    clean_strings = _extract_question_and_answers(clean_df)
     banned_in_clean = [w for w in banned_words if w in clean_strings]
     assert len(banned_in_clean) == 0, 'Got banned word in clean data'
 
@@ -140,8 +160,11 @@ def test_data_augmentation():
 
 
 def main():
+    df_norm = normalized_data()
+    test_data_cleaning(df_norm )
+    # test_embedding()
     # test_data_augmentation()
-    test_data_enrichment()
+    # test_data_enrichment()
     # test_data_cleaning()
     # test_embedding()
     pass
