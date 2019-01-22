@@ -1,7 +1,13 @@
 import itertools
+import pathlib
+
+from tqdm import tqdm
 
 from common.DAL import ModelScore
 import logging
+
+from common.os_utils import File
+
 logger = logging.getLogger(__name__)
 from common.utils import VerboseTimer
 from collections import namedtuple
@@ -12,6 +18,8 @@ from common import DAL
 
 
 def main():
+    copy_specs_to_model_folder()
+    return
     ev = predict_test(85)
     print (ev)
     return
@@ -21,6 +29,28 @@ def main():
     # evaluate_missing_models()
     # train_all()
     # add_scores()
+
+
+def copy_specs_to_model_folder():
+    from common.constatns import vqa_models_folder, vqa_specs_location
+    root = pathlib.Path(vqa_models_folder)
+    import shutil
+    folders = [x for x in root.iterdir() if x.name.startswith('2')]
+    specs_path = pathlib.Path(vqa_specs_location)
+    specs = File.load_pickle(str(specs_path))
+    from common.classes import VqaSpecs
+    pbar = tqdm(folders)
+    for f in pbar:
+        dest = f / specs_path.name
+
+        meta_location = str(dest.parent / pathlib.Path(specs.meta_data_location).name)
+        new_spec = VqaSpecs(embedding_dim=specs.embedding_dim
+                            , seq_length=specs.seq_length
+                            , data_location=specs.data_location
+                            , meta_data_location=meta_location)
+
+        shutil.copy(specs.meta_data_location, meta_location)
+        File.dump_pickle(new_spec, str(dest))
 
 
 def predict_test(model_id):
@@ -39,10 +69,6 @@ def predict_test(model_id):
 
     res = '\n'.join(strs)
     return res
-
-    str()
-
-
 
 
 def evaluate_missing_models():
@@ -79,7 +105,7 @@ def evaluate_missing_models():
 
 
 def add_scores():
-    mrs = \
+    mrs =\
         [
             ModelResults(loss='categorical_crossentropy', activation='softmax', bleu=0.2103365798666068,
                          wbss=0.1618619696290538),

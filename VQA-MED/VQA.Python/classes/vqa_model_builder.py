@@ -1,4 +1,6 @@
 # from common.constatns import _DB_FILE_LOCATION
+import pathlib
+import shutil
 from copy import deepcopy
 
 import keras.layers as keras_layers
@@ -10,6 +12,9 @@ from keras import Model, Input  # ,models, callbacks
 from keras.layers import Dense, LSTM, BatchNormalization, Activation# GlobalAveragePooling2D, Merge, Flatten, Embedding
 
 import logging
+
+from common.classes import VqaSpecs
+
 logger = logging.getLogger(__name__)
 from common.os_utils import File
 from common.settings import embedded_sentence_length
@@ -164,6 +169,21 @@ class VqaModelBuilder(object):
     @staticmethod
     def save_model(model):
         model_fn, summary_fn, fn_image, _ = save_model(model, vqa_models_folder)
+        root = pathlib.Path(vqa_models_folder)
+
+        # Copy also specs and meta data to local folder
+        specs_path = pathlib.Path(vqa_specs_location)
+        specs = File.load_pickle(str(specs_path))
+
+        meta_location = root / pathlib.Path(specs.meta_data_location).name
+        new_spec = VqaSpecs(embedding_dim=specs.embedding_dim
+                            , seq_length=specs.seq_length
+                            , data_location=specs.data_location
+                            , meta_data_location=meta_location)
+
+        spec_dest = root / specs_path.name
+        File.dump_pickle(new_spec, str(spec_dest))
+        shutil.copy(specs.meta_data_location, meta_location)
 
         msg = f"Summary: {summary_fn}\n"
         msg += f"Image: {fn_image}\n"

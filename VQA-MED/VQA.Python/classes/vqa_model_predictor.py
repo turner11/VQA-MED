@@ -1,3 +1,4 @@
+import pathlib
 from typing import Union
 from keras import Model as keras_model
 import pandas as pd
@@ -24,11 +25,16 @@ logger = logging.getLogger(__name__)
 class VqaModelPredictor(object):
     """"""
 
-    def __init__(self, model):
+    def __init__(self, model, specs_location=''):
         """"""
         super(VqaModelPredictor, self).__init__()
 
-        self.vqa_specs = File.load_pickle(vqa_specs_location)
+        if pathlib.Path(str(model)).exists() and not specs_location:
+            specs_location = pathlib.Path(str(model)).parent / 'vqa_specs.pkl'
+        # elif not specs_location:
+        #     specs_location = specs_location or vqa_specs_location
+
+        self.vqa_specs = File.load_pickle(specs_location)
         self.model, model_idx_in_db = self.get_model(model)
         self.model_idx_in_db = model_idx_in_db
 
