@@ -103,8 +103,7 @@ class VqaModelPredictor(object):
         return ret
 
     def _predict_vqa(self, df_data: pd.DataFrame, percentile: float) -> pd.DataFrame:
-        meta_data_location = self.vqa_specs.meta_data_location
-        df_meta_words = pd.read_hdf(meta_data_location, 'words')
+        df_meta_words = self.vqa_specs.prediction_vector
         return self._predict_keras(df_data, self.model, words_decoder=df_meta_words, percentile=percentile)
 
     @classmethod
@@ -134,7 +133,7 @@ class VqaModelPredictor(object):
         results = []
         for i, (curr_prediction, curr_probabilities) in enumerate(zip(predictions, probabilities)):
             prediction_df = pd.DataFrame({'word_idx': curr_prediction,
-                                          'word': list(words_decoder.iloc[curr_prediction].word.values),
+                                          'word': list(words_decoder.iloc[curr_prediction].values),
                                           'probabilities': curr_probabilities})
 
             curr_prediction_str = ' '.join([str(w) for w in list(prediction_df.word.values)])

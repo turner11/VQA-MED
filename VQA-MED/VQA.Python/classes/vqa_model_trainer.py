@@ -13,15 +13,10 @@ from keras import callbacks as K_callbacks, Model  # , backend as keras_backend,
 from common.functions import get_features, concat_row, sentences_to_hot_vector, hot_vector_to_words
 from common.constatns import data_location as default_data_location, vqa_models_folder, vqa_specs_location  # train_data, validation_data,
 from common.utils import VerboseTimer
-from common.classes import EarlyStoppingByAccuracy
-from common.model_utils import save_model
+from common.model_utils import save_model, EarlyStoppingByAccuracy
 from common.os_utils import File
 from evaluate.statistical import f1_score, recall_score, precision_score
 import numpy as np
-
-
-
-
 
 
 class VqaModelTrainer(object):
@@ -260,27 +255,16 @@ class VqaModelTrainer(object):
 
 
 def main():
-    # epochs=25
-    # batch_size = 20
     from keras import backend as keras_backend
-    import numpy as np
-    from common.model_utils import save_model, get_trainable_params_distribution
     keras_backend.clear_session()
-    epochs = 1
-    batch_size = 75
 
+    batch_size = 75
     model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180831_1244_55\\vqa_model_.h5'
     mt = VqaModelTrainer(model_location, use_augmentation=True, batch_size=batch_size)
     history = mt.train()
     with VerboseTimer("Saving trained Model"):
         model_fn, summary_fn, fn_image, fn_history = VqaModelTrainer.save(mt.model, history)
     logger.debug(model_fn)
-
-
-
-
-
-
 
 if __name__ == '__main__':
     main()

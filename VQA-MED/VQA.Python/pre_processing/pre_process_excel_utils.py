@@ -205,5 +205,5 @@ if __name__ == '__main__':
     else:
         all_sets = [dbg_file_csv_train,dbg_file_csv_validation, dbg_file_csv_test ]
         for curr_path in all_sets:
-            logger.debug("Pre preocessing for '{0}'".format(curr_path))
+            logger.debug("Pre processing for '{0}'".format(curr_path))
             single_process(curr_path)

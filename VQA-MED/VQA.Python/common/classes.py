@@ -1,26 +1,30 @@
-import warnings
-from collections import namedtuple
-from enum import Enum
+import pandas as pd
 
-from keras.callbacks import Callback
-VqaSpecs = namedtuple('VqaSpecs', ['embedding_dim', 'seq_length', 'data_location', 'meta_data_location'])
 
-class EarlyStoppingByAccuracy(Callback):
-    def __init__(self, monitor='accuracy', value=0.98, verbose=0):
-        super(Callback, self).__init__()
-        self.monitor = monitor
-        self.value = value
-        self.verbose = verbose
+class VqaSpecs(object):
+    """"""
 
-    def on_epoch_end(self, epoch, logs=None):
-        logs = logs if logs is not None else {}
-        current = logs.get(self.monitor)
-        if current is None:
-            warnings.warn("Early stopping requires %s available!" % self.monitor, RuntimeWarning)
+    @property
+    def prediction_vector(self):
+        df = pd.read_hdf(self.meta_data_location, self.prediction_df_name)
+        assert len(df.columns) == 1, f'Expected prediction data frame to have a single column, but got: {df.columns}'
+        vector = df[df.columns[0]]
+        return vector
 
-        if current is None or self.value is None:
-            pass
-        elif current >= self.value:
-            if self.verbose > 0:
-                print("Epoch %05d: early stopping THR" % epoch)
-            self.model.stop_training = True
+    def __init__(self, embedding_dim: int, seq_length: int, data_location: str, meta_data_location: str,
+                 prediction_df_name: str = 'words') -> None:
+        """"""
+        super().__init__()
+        self.embedding_dim = embedding_dim
+        self.seq_length = seq_length
+        self.data_location = data_location
+        self.meta_data_location = meta_data_location
+        self.prediction_df_name = prediction_df_name
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}(embedding_dim={self.embedding_dim}, ' \
+            f'seq_length={self.seq_length}, data_location={self.data_location}, ' \
+            f'meta_data_location={self.meta_data_location}, prediction_df_name={self.prediction_df_name})'
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)

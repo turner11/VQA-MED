@@ -1,27 +1,24 @@
 import itertools
 import pathlib
-
 from tqdm import tqdm
-
-from common.DAL import ModelScore
 import logging
-
+from common.DAL import ModelScore
+from common.classes import VqaSpecsAAA
 from common.os_utils import File
-
-logger = logging.getLogger(__name__)
 from common.utils import VerboseTimer
 from collections import namedtuple
-ModelResults = namedtuple('ModelResults', ['loss', 'activation', 'bleu', 'wbss'])
 from common import DAL
 
+logger = logging.getLogger(__name__)
 
+ModelResults = namedtuple('ModelResults', ['loss', 'activation', 'bleu', 'wbss'])
 
 
 def main():
     copy_specs_to_model_folder()
     return
     ev = predict_test(85)
-    print (ev)
+    print(ev)
     return
     evaluate_model(162)
     return
@@ -33,12 +30,15 @@ def main():
 
 def copy_specs_to_model_folder():
     from common.constatns import vqa_models_folder, vqa_specs_location
-    root = pathlib.Path(vqa_models_folder)
+    from common.classes import VqaSpecs
+    import pandas as pd
     import shutil
+
+    root = pathlib.Path(vqa_models_folder)
     folders = [x for x in root.iterdir() if x.name.startswith('2')]
     specs_path = pathlib.Path(vqa_specs_location)
     specs = File.load_pickle(str(specs_path))
-    from common.classes import VqaSpecs
+
     pbar = tqdm(folders)
     for f in pbar:
         dest = f / specs_path.name
@@ -49,7 +49,7 @@ def copy_specs_to_model_folder():
                             , data_location=specs.data_location
                             , meta_data_location=meta_location)
 
-        shutil.copy(specs.meta_data_location, meta_location)
+        # shutil.copy(specs.meta_data_location, meta_location)
         File.dump_pickle(new_spec, str(dest))
 
 
@@ -63,8 +63,8 @@ def predict_test(model_id):
 
     strs = []
     for i, row in mp.df_test.iterrows():
-        image = row["path"].rsplit('\\')[-1].rsplit('.',1)[0]
-        s = f'{i+1}\t{image}\t{predictions[i]}'
+        image = row["path"].rsplit('\\')[-1].rsplit('.', 1)[0]
+        s = f'{i + 1}\t{image}\t{predictions[i]}'
         strs.append(s)
 
     res = '\n'.join(strs)
@@ -85,7 +85,7 @@ def evaluate_missing_models():
                 #     continue
                 logger.debug(f'Model {model.id} did not have a score')
                 logger.debug('Loading predictor')
-                mp = DefaultVqaModelPredictor(model=model, df_test=df_test, df_validation=df_validation )
+                mp = DefaultVqaModelPredictor(model=model, df_test=df_test, df_validation=df_validation)
                 df_test, df_validation = mp.df_test, mp.df_validation
 
                 logger.debug('predicting')
@@ -103,9 +103,8 @@ def evaluate_missing_models():
             logger.error(f'Failed to evaluate model:{model.id}:\n{ex}')
 
 
-
 def add_scores():
-    mrs =\
+    mrs = \
         [
             ModelResults(loss='categorical_crossentropy', activation='softmax', bleu=0.2103365798666068,
                          wbss=0.1618619696290538),
@@ -206,6 +205,7 @@ def add_scores():
         score_dals.append(ms)
     DAL.insert_dals(score_dals)
 
+
 def train_model(model_id, optimizer, post_concat_dense_units=16):
     # Doing all of this here in order to not import tensor flow for other functions
 
@@ -216,7 +216,8 @@ def train_model(model_id, optimizer, post_concat_dense_units=16):
 
     # Get------------------------------------------------------------------------
     model_dal = DAL.get_model_by_id(model_id=model_id)
-    mb = VqaModelBuilder(model_dal.loss_function, model_dal.activation, post_concat_dense_units=post_concat_dense_units, optimizer=optimizer)
+    mb = VqaModelBuilder(model_dal.loss_function, model_dal.activation, post_concat_dense_units=post_concat_dense_units,
+                         optimizer=optimizer)
     model = mb.get_vqa_model()
     model_location, summary_fn, fn_image = VqaModelBuilder.save_model(model)
 
@@ -229,15 +230,14 @@ def train_model(model_id, optimizer, post_concat_dense_units=16):
     history = mt.train()
     with VerboseTimer("Saving trained Model"):
         notes = f'post_concat_dense_units: {post_concat_dense_units};\n' \
-                f'Optimizer: {optimizer}\n' \
-                f'loss: {mb.loss_function}\n' \
-                f'activation: {mb.dense_activation}\n' \
-                f'epochs: {mt.epochs}\n' \
-                f'batch_size: {batch_size}'
+            f'Optimizer: {optimizer}\n' \
+            f'loss: {mb.loss_function}\n' \
+            f'activation: {mb.dense_activation}\n' \
+            f'epochs: {mt.epochs}\n' \
+            f'batch_size: {batch_size}'
         logger.debug(f'Saving model')
         model_fn, summary_fn, fn_image, fn_history = VqaModelTrainer.save(mt.model, history, notes)
     logger.debug(f'Model saved to:\n\t{model_fn}')
-
 
     # Evaluate ------------------------------------------------------------------------
     results = evaluate_model()
@@ -245,7 +245,6 @@ def train_model(model_id, optimizer, post_concat_dense_units=16):
     logger.info('----------------------------------------------------------------------------------------')
     logger.info(f'@@@For:\tLoss: {mb.loss_function}\tActivation: {mb.dense_activation}: Got results of {results}@@@')
     logger.info('----------------------------------------------------------------------------------------')
-
 
     print(f"###Completed full flow for {mb.loss_function} and {mb.dense_activation}")
 
@@ -262,7 +261,6 @@ def evaluate_model(model=None):
     ms = ModelScore(model_id=mp.model_idx_in_db, bleu=results['bleu'], wbss=results['wbss'])
     DAL.insert_dal(ms)
     return results
-
 
 
 def train_all():
@@ -283,25 +281,24 @@ def train_all():
     activations = ['softmax', 'sigmoid', 'relu', 'tanh']
     losses_and_activations = list(itertools.product(losses, activations))
 
-
-    optimizers = [ 'RMSprop', 'Adam']#['SGD', 'Adagrad', 'Adadelta', 'RMSprop', 'Adam']
+    optimizers = ['RMSprop', 'Adam']  # ['SGD', 'Adagrad', 'Adadelta', 'RMSprop', 'Adam']
     dense_units = [16, 32]
     top_models = [
-                    ('cosine_proximity', 'sigmoid'),
-                    ('cosine_proximity', 'tanh'),
-                    ('cosine_proximity', 'relu'),
-                    ('poisson', 'softmax'),
-                    ('kullback_leibler_divergence', 'softmax'),
-                    ('mean_absolute_percentage_error', 'relu'),
-                    ('mean_squared_logarithmic_error', 'relu'),
-                    ('logcosh', 'relu'),
-                    ('mean_squared_error', 'relu'),
-                    ('mean_absolute_error', 'relu'),]
+        ('cosine_proximity', 'sigmoid'),
+        ('cosine_proximity', 'tanh'),
+        ('cosine_proximity', 'relu'),
+        ('poisson', 'softmax'),
+        ('kullback_leibler_divergence', 'softmax'),
+        ('mean_absolute_percentage_error', 'relu'),
+        ('mean_squared_logarithmic_error', 'relu'),
+        ('logcosh', 'relu'),
+        ('mean_squared_error', 'relu'),
+        ('mean_absolute_error', 'relu'), ]
 
-    la_units_opts = list(itertools.product(top_models, dense_units,optimizers))
+    la_units_opts = list(itertools.product(top_models, dense_units, optimizers))
 
     existing_scores = DAL.get_scores()
-    models_ids = [s.model_id for s in existing_scores ]
+    models_ids = [s.model_id for s in existing_scores]
     existing_models = DAL.get_models()
     models_with_scores = [m for m in existing_models if m.id in models_ids]
 
@@ -311,52 +308,43 @@ def train_all():
 
             def match(m):
                 notes = (m.notes or '')
-                is_curr_model =  m.loss_function == loss \
-                       and m.activation == activation \
-                       and opt in notes \
-                       and str(post_concat_dense_units) in notes
+                is_curr_model = m.loss_function == loss \
+                                and m.activation == activation \
+                                and opt in notes \
+                                and str(post_concat_dense_units) in notes
                 return is_curr_model
-
-
-
-
 
             match_model = next((m for m in models_with_scores if match(m)), None)
             if match_model is not None:
                 print(f'Continuing for model:\n{match_model.notes}')
                 continue
 
-
-
             # keras_backend.clear_session()
 
-
-            mb = VqaModelBuilder(loss, activation,post_concat_dense_units=post_concat_dense_units, optimizer=opt)
+            mb = VqaModelBuilder(loss, activation, post_concat_dense_units=post_concat_dense_units, optimizer=opt)
             model = mb.get_vqa_model()
             model_fn, summary_fn, fn_image = VqaModelBuilder.save_model(model)
 
             # Train ------------------------------------------------------------------------
 
-            epochs=1
+            epochs = 1
             # batch_size = 20
             keras_backend.clear_session()
 
             batch_size = 75
             use_augmentation = True
 
-
-
             model_location = model_fn
 
-            mt = VqaModelTrainer(model_location, use_augmentation =use_augmentation , batch_size=batch_size)
+            mt = VqaModelTrainer(model_location, use_augmentation=use_augmentation, batch_size=batch_size)
             history = mt.train()
             with VerboseTimer("Saving trained Model"):
                 notes = f'post_concat_dense_units: {post_concat_dense_units};\n' \
-                        f'Optimizer: {opt}\n' \
-                        f'loss: {loss}\n' \
-                        f'activation: {activation}\n' \
-                        f'epochs: {epochs}\n' \
-                        f'batch_size: {batch_size}'
+                    f'Optimizer: {opt}\n' \
+                    f'loss: {loss}\n' \
+                    f'activation: {activation}\n' \
+                    f'epochs: {epochs}\n' \
+                    f'batch_size: {batch_size}'
                 model_fn, summary_fn, fn_image, fn_history = VqaModelTrainer.save(mt.model, history, notes)
             print(model_fn)
 
@@ -403,9 +391,5 @@ if __name__ == '__main__':
     #
     # model_fn =model_location
     # VqaModelTrainer.model_2_db(model, model_fn, fn_history=None, notes='')
-
-
-
-
 
     main()

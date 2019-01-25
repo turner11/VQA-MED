@@ -181,8 +181,8 @@ class VqaModelBuilder(object):
                             , data_location=specs.data_location
                             , meta_data_location=meta_location)
 
-        spec_dest = root / specs_path.name
-        File.dump_pickle(new_spec, str(spec_dest))
+        spec_destination = root / specs_path.name
+        File.dump_pickle(new_spec, str(spec_destination))
         shutil.copy(specs.meta_data_location, meta_location)
 
         msg = f"Summary: {summary_fn}\n"

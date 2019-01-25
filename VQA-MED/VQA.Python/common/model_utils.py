@@ -6,7 +6,9 @@ import numpy as np
 import pandas as pd
 from common.os_utils import File
 import logging
-from keras import Model
+from keras import Model, backend as K
+import warnings
+from keras.callbacks import Callback
 
 logger = logging.getLogger(__name__)
 
@@ -78,8 +80,6 @@ def save_model(model, base_folder, name_suffix="", history=None):
 
 
 def get_trainable_params_distribution(model: Model, params_threshold: int = 1000) -> pd.DataFrame:
-    from keras import backend as K
-
     names_and_trainable_params = {(w.name, np.prod(K.get_value(w).shape)) for w in model.trainable_weights}
     a = {'layer': [tpl[0] for tpl in names_and_trainable_params],
          'trainable_params': [tpl[1] for tpl in names_and_trainable_params]
@@ -92,6 +92,25 @@ def get_trainable_params_distribution(model: Model, params_threshold: int = 1000
     return top
 
 
+class EarlyStoppingByAccuracy(Callback):
+    def __init__(self, monitor='accuracy', value=0.98, verbose=0):
+        super(Callback, self).__init__()
+        self.monitor = monitor
+        self.value = value
+        self.verbose = verbose
+
+    def on_epoch_end(self, epoch, logs=None):
+        logs = logs if logs is not None else {}
+        current = logs.get(self.monitor)
+        if current is None:
+            warnings.warn("Early stopping requires %s available!" % self.monitor, RuntimeWarning)
+
+        if current is None or self.value is None:
+            pass
+        elif current >= self.value:
+            if self.verbose > 0:
+                print("Epoch %05d: early stopping THR" % epoch)
+            self.model.stop_training = True
 def main():
     pass
     # from common import DAL
