@@ -9,7 +9,9 @@ from common.constatns import _DB_FILE_LOCATION
 
 Base = declarative_base()
 
-_engine = create_engine(f'sqlite:///{_DB_FILE_LOCATION }', echo=False)
+_engine = create_engine(f'sqlite:///{_DB_FILE_LOCATION}', echo=False)
+
+
 class ModelScore(Base):
     __tablename__ = 'scores'
     # __table_args__ = (
@@ -20,7 +22,7 @@ class ModelScore(Base):
     model_id = Column('model_id', ForeignKey('models.id'), primary_key=True)
     bleu = Column('bleu', Float)
     wbss = Column('wbss', Float)
-    models = relationship("Model",lazy='subquery',  back_populates="model_scores")
+    models = relationship("Model", lazy='subquery', back_populates="model_scores")
 
     def __init__(self, model_id, bleu, wbss):
         """"""
@@ -57,7 +59,7 @@ class Model(Base):
 
     notes = Column('notes', String(200))
     # model_scores = relationship(ModelScore, backref='models')
-    model_scores = relationship("ModelScore",  lazy='subquery', back_populates="models")
+    model_scores = relationship("ModelScore", lazy='subquery', back_populates="models")
 
     @property
     def score(self):
@@ -106,27 +108,22 @@ class Model(Base):
 
     def __repr__(self):
         return f'{self.__class__.__name__}(id={self.id},\n' \
-               f'\tmodel_location={self.model_location},\n' \
-               f'\thistory_location={self.history_location},\n' \
-               f'\timage_base_net={self.image_base_net},\n' \
-               f'\tloss={self.loss},\n' \
-               f'\tval_loss={self.val_loss},\n' \
-               f'\taccuracy={self.accuracy},\n' \
-               f'\tval_accuracy={self.val_accuracy},\n' \
-               f'\tclass_strategy={self.class_strategy})' \
-               f'\tf1_score = {self.f1_score},\n' \
-               f'\tf1_score_val = {self.f1_score_val},\n' \
-               f'\trecall = {self.recall},\n' \
-               f'\trecall_val = {self.recall_val},\n' \
-               f'\tprecsision = {self.precsision},\n' \
-               f'\tprecsision_val = {self.precsision_val},\n' \
-               f'\tloss_function = {self.loss_function},\n' \
-               f'\tactivation = {self.activation},\n'.rstrip()
-
-
-
-
-
+            f'\tmodel_location={self.model_location},\n' \
+            f'\thistory_location={self.history_location},\n' \
+            f'\timage_base_net={self.image_base_net},\n' \
+            f'\tloss={self.loss},\n' \
+            f'\tval_loss={self.val_loss},\n' \
+            f'\taccuracy={self.accuracy},\n' \
+            f'\tval_accuracy={self.val_accuracy},\n' \
+            f'\tclass_strategy={self.class_strategy})' \
+            f'\tf1_score = {self.f1_score},\n' \
+            f'\tf1_score_val = {self.f1_score_val},\n' \
+            f'\trecall = {self.recall},\n' \
+            f'\trecall_val = {self.recall_val},\n' \
+            f'\tprecsision = {self.precsision},\n' \
+            f'\tprecsision_val = {self.precsision_val},\n' \
+            f'\tloss_function = {self.loss_function},\n' \
+            f'\tactivation = {self.activation},\n'.rstrip()
 
 
 def create_db():
@@ -162,9 +159,9 @@ def get_items(dal_type):
 
     return models
 
-get_models = partial(get_items,Model)
-get_scores = partial(get_items,ModelScore)
 
+get_models = partial(get_items, Model)
+get_scores = partial(get_items, ModelScore)
 
 
 def get_model(predicate: callable) -> Model:
@@ -172,10 +169,8 @@ def get_model(predicate: callable) -> Model:
     return next(model for model in models if predicate(model))
 
 
-
 def get_model_by_id(model_id: int) -> Model:
     return get_model(lambda model: model.id == model_id)
-
 
 
 def get_models_data_frame():
@@ -189,7 +184,7 @@ def get_models_data_frame():
     s_variables = [v for v in scores[0].__dict__.keys() if not v.startswith('_')]
     s_df = pd.DataFrame([[getattr(i, j) for j in s_variables] for i in scores], columns=s_variables)
 
-    merged_df = s_df.merge(df, left_on='model_id', right_on='id',  how='outer')#how='left')
+    merged_df = s_df.merge(df, left_on='model_id', right_on='id', how='outer')  # how='left')
     return merged_df
 
 
@@ -197,6 +192,7 @@ def execute_sql(txt):
     from sqlalchemy.sql import text
     with _engine.connect() as con:
         con.execute(text(txt))
+
 
 def execute_sql_from_file(file_name):
     with open(file_name, 'r') as f:

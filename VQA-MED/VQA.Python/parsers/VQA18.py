@@ -15,6 +15,7 @@ import argparse
 import pandas as pd
 
 import logging
+
 logger = logging.getLogger(__name__)
 from pre_processing.known_find_and_replace_items import all_tags
 
@@ -23,7 +24,7 @@ QUESTIONS_INFO = 'questions info'
 TOKENIZED_COL_PREFIX = 'tokenized_'
 
 
-class Vqa18Base(object):
+class DataLoader(object):
     COL_ROW_ID = 'row_id'
     COL_IMAGE_NAME = "image_name"
     COL_QUESTION = "question"
@@ -38,6 +39,7 @@ class Vqa18Base(object):
     def __init__(self, data_path, **kwargs):
         super().__init__()
 
+        self.data_path = data_path
         self.data = self._read_data(data_path)
         assert self.data is not None, "Got a None data set"
         self.data.set_index(self.COL_ROW_ID)
@@ -45,23 +47,23 @@ class Vqa18Base(object):
     @classmethod
     def get_instance(cls, data_path):
         ctors = iter([
-            ('Excel -> Data',lambda excel_path=data_path: Vqa18_from_processed_excel(excel_path)),
-             ('CSV -> Data',lambda csv_content=data_path: Vqa18_from_csv_string(csv_content)),
-              ('Raw Excel -> Data',lambda excel_path=data_path: Vqa18_from_excel(excel_path)),
-               ('CSV Path -> Excel Path -> Data',lambda: Vqa18_from_excel(Vqa18_from_raw_csv.csv_path_2_excel_path(data_path))),
-                ('Raw CSV -> Data',lambda csv_path=data_path: Vqa18_from_raw_csv(csv_path)),
+            ('Excel -> Data', lambda excel_path=data_path: ProcessedExcelLoader(excel_path)),
+            ('CSV -> Data', lambda csv_content=data_path: CsvStringLoader(csv_content)),
+            ('Raw Excel -> Data', lambda excel_path=data_path: ExcelLoader(excel_path)),
+            ('CSV Path -> Excel Path -> Data', lambda: ExcelLoader(RawCsvLoader.csv_path_2_excel_path(data_path))),
+            ('Raw CSV -> Data', lambda csv_path=data_path: RawCsvLoader(csv_path)),
         ])
         instance = None
         while not instance:
             try:
-                description ,ctor = next(ctors)
+                description, ctor = next(ctors)
                 logger.debug(f'Attempting to get data from "{description}"')
                 instance = ctor()
-            except StopIteration as ex:
+            except StopIteration:
                 raise
-            except AssertionError as ex:
+            except AssertionError:
                 raise
-            except Exception as ex:
+            except Exception:
                 tb = traceback.format_exc()
                 str(tb)
                 pass
@@ -116,7 +118,7 @@ class Vqa18Base(object):
             df = data[col].value_counts()
             plt.figure(col)
             f = df[df > 9]
-            ax = plt.barh(range(len(f.index)), f.values)
+            plt.barh(range(len(f.index)), f.values)
             plt.yticks(range(len(f.index)), f.index.values)
             plt.gca().invert_yaxis()
             plt.show()
@@ -124,17 +126,18 @@ class Vqa18Base(object):
     def _read_data(self, data_path):
         raise NotImplementedError()
 
-class Vqa18FromFile(Vqa18Base):
+
+class FileLoader(DataLoader):
     """"""
 
-    def __init__(self,data_path, **kwargs):
+    def __init__(self, data_path, **kwargs):
         """"""
         if not data_path or not os.path.isfile(data_path):
             raise Exception("Got a non valid path: {0}".format(data_path))
         super().__init__(data_path, **kwargs)
-        self.data_path = data_path
 
-class Vqa18_from_csv_string(Vqa18Base):
+
+class CsvStringLoader(DataLoader):
     def __init__(self, csv_string, **kwargs):
         super().__init__(csv_string, **kwargs)
 
@@ -157,16 +160,17 @@ class Vqa18_from_csv_string(Vqa18Base):
         return path
 
 
-class Vqa18_from_raw_csv(Vqa18FromFile):
+class RawCsvLoader(FileLoader):
     def __init__(self, csv_path, **kwargs):
         super().__init__(csv_path, **kwargs)
-# excel_path = self.csv_path_2_excel_path(csv_path)
-        #
-        # self.add_tokenized_column(self.data, self.COL_QUESTION, self.COL_TOK_Q)
-        # self.add_tokenized_column(self.data, self.COL_ANSWER, self.COL_TOK_A)
-        # self.dump_to_excel(self.data, excel_path)
-        # process_excel(excel_path, excel_path)
-        # excel_data = pd.read_excel(excel_path)
+
+    # excel_path = self.csv_path_2_excel_path(csv_path)
+    #
+    # self.add_tokenized_column(self.data, self.COL_QUESTION, self.COL_TOK_Q)
+    # self.add_tokenized_column(self.data, self.COL_ANSWER, self.COL_TOK_A)
+    # self.dump_to_excel(self.data, excel_path)
+    # process_excel(excel_path, excel_path)
+    # excel_data = pd.read_excel(excel_path)
 
     def _read_data(self, data_path):
         # self.data = df = pd.read_csv(data_path)
@@ -178,7 +182,7 @@ class Vqa18_from_raw_csv(Vqa18FromFile):
         return path
 
 
-class Vqa18_from_excel(Vqa18FromFile):
+class ExcelLoader(FileLoader):
     @property
     def ALL_RAW_COLS(self):
         return list(set(super().ALL_RAW_COLS + [self.COL_TOK_Q, self.COL_TOK_A]))
@@ -194,7 +198,7 @@ class Vqa18_from_excel(Vqa18FromFile):
         return df
 
 
-class Vqa18_from_processed_excel(Vqa18_from_excel):
+class ProcessedExcelLoader(ExcelLoader):
     @property
     def ALL_RAW_COLS(self):
         return list(set(super().ALL_RAW_COLS + all_tags))
@@ -209,7 +213,7 @@ def main(args):
         file_name = args.path
         image_name = args.image_name
 
-        parser = Vqa18Base.get_instance(file_name)
+        parser = DataLoader.get_instance(file_name)
         query = args.query
 
         if args.image_name:

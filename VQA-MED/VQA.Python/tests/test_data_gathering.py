@@ -1,7 +1,7 @@
 import os
 import pytest
 from common.functions import normalize_data_structure
-from parsers.VQA18 import Vqa18Base
+from parsers.VQA18 import DataLoader
 from tests import image_folder
 
 CSV_ROW_TEMPLATE = '{0}	test_image	question {0}?	answer {0}'
@@ -17,7 +17,7 @@ def test_data_length(expected_length):
     csv = get_csv_text(expected_length)
 
     # Act & Assert
-    df = Vqa18Base.get_instance(csv).data
+    df = DataLoader.get_instance(csv).data
     assert len(df) == expected_length
 
     normalized_data = normalize_data_structure(df, 'test', image_folder)

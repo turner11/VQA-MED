@@ -1,5 +1,3 @@
-import graphviz
-import pydot
 import datetime
 import os
 import time
@@ -8,14 +6,16 @@ import numpy as np
 import pandas as pd
 from common.os_utils import File
 import logging
-logger = logging.getLogger(__name__)
 from keras import Model
+
+logger = logging.getLogger(__name__)
 
 
 def _get_time_stamp():
     now = time.time()
     ts = datetime.datetime.fromtimestamp(now).strftime('%Y%m%d_%H%M_%S')
     return ts
+
 
 def _print_model_summary_to_file(fn, model):
     # Open the file
@@ -28,7 +28,7 @@ def save_model(model, base_folder, name_suffix="", history=None):
     ts = _get_time_stamp()
 
     now_folder = os.path.abspath('{0}\\{1}\\'.format(base_folder, ts))
-    model_name = f'vqa_model_{name_suffix }.h5'
+    model_name = f'vqa_model_{name_suffix}.h5'
     model_fn = os.path.join(now_folder, model_name)
     model_image_fn = os.path.join(now_folder, 'model_vqa.png')
     summary_fn = os.path.join(now_folder, 'model_summary.txt')
@@ -47,7 +47,7 @@ def save_model(model, base_folder, name_suffix="", history=None):
     except Exception as ex:
         location_message = "Failed to save model:\n{0}".format(ex)
         logger.error(location_message)
-        model_fn=""
+        model_fn = ""
         raise
 
     try:
@@ -68,12 +68,11 @@ def save_model(model, base_folder, name_suffix="", history=None):
     if history is not None:
         try:
             logger.debug("Saving History")
-            File.dump_pickle(history.history,history_fn)
+            File.dump_pickle(history.history, history_fn)
             logger.debug("History saved to '{0}'".format(history_fn))
             history_res_path = history_fn
         except Exception as ex:
             logger.warning("Failed to write history:\n\t{0}".format(ex))
-
 
     return model_fn, summary_fn, fn_image, history_res_path
 

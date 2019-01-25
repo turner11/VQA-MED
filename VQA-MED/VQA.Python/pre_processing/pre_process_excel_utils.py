@@ -8,7 +8,7 @@ import pandas as pd
 from parsers.utils import suppress_func_stdout, has_word
 from pre_processing.known_find_and_replace_items import find_and_replace_collection, locations, diagnosis, \
     imaging_devices, dbg_file_csv_validation, dbg_file_csv_test, dbg_file_csv_train
-from parsers.VQA18 import Vqa18_from_excel, Vqa18_from_raw_csv, Vqa18Base, TOKENIZED_COL_PREFIX
+from parsers.VQA18 import ExcelLoader, RawCsvLoader, DataLoader, TOKENIZED_COL_PREFIX
 import logging
 logger = logging.getLogger(__name__)
 
@@ -90,19 +90,19 @@ class ExcelPreProcessor(object):
     def add_locations_columns(cls, df):
         cls.add_columns_by_search(df
                                   , indicator_words=locations
-                                  , search_columns=[Vqa18Base.COL_TOK_Q, Vqa18Base.COL_TOK_A, Vqa18Base.COL_QUESTION, Vqa18Base.COL_ANSWER])
+                                  , search_columns=[DataLoader.COL_TOK_Q, DataLoader.COL_TOK_A, DataLoader.COL_QUESTION, DataLoader.COL_ANSWER])
 
     @classmethod
     def add_diagnostics_columns(cls, df):
         cls.add_columns_by_search(df
                                   , indicator_words=diagnosis
-                                  , search_columns=[Vqa18Base.COL_TOK_Q, Vqa18Base.COL_TOK_A, Vqa18Base.COL_QUESTION, Vqa18Base.COL_ANSWER])
+                                  , search_columns=[DataLoader.COL_TOK_Q, DataLoader.COL_TOK_A, DataLoader.COL_QUESTION, DataLoader.COL_ANSWER])
 
     @classmethod
     def add_imaging_columns(cls, df):
         cls.add_columns_by_search(df
                                   , indicator_words=imaging_devices
-                                  , search_columns=[Vqa18Base.COL_TOK_Q, Vqa18Base.COL_TOK_A])
+                                  , search_columns=[DataLoader.COL_TOK_Q, DataLoader.COL_TOK_A])
 
     @classmethod
     def add_columns_by_search(cls, df, indicator_words, search_columns):
@@ -148,11 +148,11 @@ class DataPreProcessor(object):
         :param output_excel_path: path of out put csv
         :return: a data parser contingin processed data
         """
-        inst = Vqa18_from_raw_csv(raw_csv_path)
+        inst = RawCsvLoader(raw_csv_path)
         data = inst.data
         cols_to_tokenize = [
-            (Vqa18Base.COL_QUESTION, Vqa18Base.COL_TOK_Q),
-            (Vqa18Base.COL_ANSWER, Vqa18Base.COL_TOK_A)
+            (DataLoader.COL_QUESTION, DataLoader.COL_TOK_Q),
+            (DataLoader.COL_ANSWER, DataLoader.COL_TOK_A)
         ]
         for col, new_tok_col in cols_to_tokenize:
             cls.add_tokenized_column(data, col, new_tok_col)
@@ -171,7 +171,7 @@ class DataPreProcessor(object):
         shutil.copy(excel_path, output_processed_excel_path)
         ExcelPreProcessor.process_excel(output_processed_excel_path)
         logger.debug("Original data:\n\t{0}\nProcessed Data\n\t{1}".format(excel_path,output_processed_excel_path))
-        return Vqa18_from_excel(output_processed_excel_path)
+        return ExcelLoader(output_processed_excel_path)
 
     @classmethod
     def _dump_to_excel(cls, df, path):

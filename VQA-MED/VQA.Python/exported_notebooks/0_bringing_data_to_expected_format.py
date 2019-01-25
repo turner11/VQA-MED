@@ -15,7 +15,7 @@ import IPython
 
 from common.constatns import train_data, validation_data, test_data, raw_data_location, images_folder_train, images_folder_validation, images_path_test
 from common.utils import VerboseTimer
-from parsers.VQA18 import Vqa18Base
+from parsers.VQA18 import DataLoader
 from common.functions import get_size, get_highlighted_function_code, normalize_data_structure
 import logging
 logger = logging.getLogger(__name__)
@@ -25,9 +25,9 @@ logger = logging.getLogger(__name__)
 
 
 # TODO: Change this to use the original format from image_clef
-df_train = Vqa18Base.get_instance(train_data.processed_xls).data    
-df_valid = Vqa18Base.get_instance(validation_data.processed_xls).data
-df_test = Vqa18Base.get_instance(test_data.processed_xls).data
+df_train = DataLoader.get_instance(train_data.processed_xls).data
+df_valid = DataLoader.get_instance(validation_data.processed_xls).data
+df_test = DataLoader.get_instance(test_data.processed_xls).data
 
 
 # ### For bringing the data to a normalized state we will use the function 'normalize_data_strucrture'
