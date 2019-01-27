@@ -1,13 +1,7 @@
-
+#!/usr/bin/env python
 # coding: utf-8
 
 # In[1]:
-
-
-import IPython
-
-
-# In[8]:
 
 
 from classes.vqa_model_predictor import VqaModelPredictor, DefaultVqaModelPredictor
@@ -19,17 +13,27 @@ df_show = df_models.sort_values(by=['wbss', 'bleu'], ascending=False).head()
 df_show
 
 
-# In[13]:
+# In[2]:
 
 
-known_good_model = 85
+import logging
+from vqa_logger import init_log
+logger = logging.getLogger(__name__)
+init_log(__name__)
+import IPython
+
+
+# In[3]:
+
+
+known_good_model = 163#85
 model_id = known_good_model #df_show.id.iloc[0]
 model_id = int(model_id)
 mp = DefaultVqaModelPredictor(model_id)
 mp
 
 
-# In[14]:
+# In[ ]:
 
 
 mp.df_validation.head(2)
@@ -38,7 +42,7 @@ mp.df_validation.head(2)
 # In[15]:
 
 
-code = get_highlighted_function_code(mp.predict, remove_comments=False)
+code = get_highlighted_function_code(mp.predict,remove_comments=False)
 IPython.display.display(code)
 
 

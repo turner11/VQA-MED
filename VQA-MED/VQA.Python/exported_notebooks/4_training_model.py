@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python
 # coding: utf-8
 
 # ### Training the model
@@ -9,58 +9,37 @@
 import IPython
 from classes.vqa_model_trainer import VqaModelTrainer
 from common.model_utils import get_trainable_params_distribution
-import logging
-logger = logging.getLogger(__name__)
 from common.functions import get_highlighted_function_code
 
 
 # In[2]:
 
 
-## VGG all words are Classes (Trainable params: 1,070,916). 'categorical_crossentropy', 'sigmoid' .With f1_score, recall_score, precision_score + accuracy metrics
-model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180831_1244_55\\vqa_model_.h5'
-## VGG all words are Classes (Trainable params: 1,070,916). 'categorical_crossentropy', 'softmax' .With f1_score, recall_score, precision_score + accuracy metrics
-# model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180829_0830_48\\vqa_model_CATEGORIAL.h5'
-# strategy_str = 'CATEGORIAL'
+import logging
+from vqa_logger import init_log
+init_log()
+logger = logging.getLogger(__name__)
 
-## VGG all words are Classes (Trainable params: 1,070,916) With f1_score, recall_score, precision_score + accuracy metrics
-# model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180828_2149_37\\vqa_model_CATEGORIAL.h5'
-# strategy_str = 'CATEGORIAL'
 
-## VGG all words are Classes (Trainable params: 1,070,916)
-# model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180827_1502_41\\vqa_model_CATEGORIAL.h5'
-# strategy_str = 'CATEGORIAL'
+# In[5]:
 
-## VGG 2 Classes (Trainable params: 165,762)
-# model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180814_2035_20\\vqa_model_CATEGORIAL.h5'
-# strategy_str = 'CATEGORIAL'
 
-## VGG 4 Classes
-# model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180730_0648_46\\vqa_model_CATEGORIAL.h5'
-# strategy_str = 'CATEGORIAL'
-
-# model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180728_2248_02\\vqa_model_CATEGORIAL.h5'
-# strategy_str = 'CATEGORIAL'
-
-# ## Resnet 50: 
-# trained_model_location = 'C:\Users\Public\Documents\Data\2018\vqa_models\20180730_0524_48\vqa_model_ClassifyStrategies.CATEGORIAL_trained.h5'
-# loss: 0.1248 - acc: 0.9570 - val_loss: 2.7968 - val_acc: 0.5420
-# Training Model: 12:22:54.619203                
+model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20190125_1052_13\\vqa_model_.h5'
 
 
 # ### Loading the model to train:
 
-# In[3]:
+# In[6]:
 
 
 epochs = 1
 batch_size = 75
-mt = VqaModelTrainer(model_location, epochs=epochs, batch_size=batch_size)
+mt = VqaModelTrainer(model_location, use_augmentation=True,batch_size=batch_size)
 
 
 # #### Lets take a look at the parameters:
 
-# In[4]:
+# In[7]:
 
 
 get_trainable_params_distribution(mt.model)
@@ -69,7 +48,7 @@ get_trainable_params_distribution(mt.model)
 
 # #### And a look at data:
 
-# In[5]:
+# In[10]:
 
 
 mt.df_meta_answers
@@ -78,7 +57,7 @@ mt.df_meta_imaging_devices
 mt.df_meta_answers.tail(2)
 
 
-# In[6]:
+# In[11]:
 
 
 logger.debug(f"train Shape: {mt.data_train.shape}")
@@ -90,15 +69,15 @@ mt.data_train.head(0)
 
 # ##### The functions for getting the features & labels:
 
-# In[7]:
+# In[12]:
 
 
-from common.functions import get_features, _concat_row, sentences_to_hot_vector, hot_vector_to_words
+from common.functions import get_features, concat_row, sentences_to_hot_vector, hot_vector_to_words
 code_get_labels = get_highlighted_function_code(mt.get_labels, remove_comments=True)
 
 
 code_get_features = get_highlighted_function_code(get_features, remove_comments=True)
-code_concat = get_highlighted_function_code(_concat_row, remove_comments=True)
+code_concat = get_highlighted_function_code(concat_row, remove_comments=True)
 code_hot_vector = get_highlighted_function_code(sentences_to_hot_vector, remove_comments=True)
 
 
@@ -116,7 +95,7 @@ IPython.display.display(code_concat)
 
 # ##### Example of hot vector of anser (AKA answer...)
 
-# In[8]:
+# In[13]:
 
 
 df = mt.data_train
@@ -135,19 +114,25 @@ classes_indices[idx_sample]
 
 # ##### Will transform the sentences into vector and back using the following:
 
-# In[9]:
+# In[14]:
 
 
-code = get_highlighted_function_code(hot_vector_to_words, remove_comments=False)
+code = get_highlighted_function_code(hot_vector_to_words,remove_comments=False)
 IPython.display.display(code)  
 
 
 # ##### Check it looks sane by inversing the binarizing:
 
-# In[10]:
+# In[ ]:
 
 
-words = mt.df_meta_words.word
+
+
+
+# In[15]:
+
+
+# words = mt.df_meta_words.word
 
 arr_one_hot_vector = mt.get_labels(mt.data_train)
 categorial_labels = arr_one_hot_vector
@@ -162,7 +147,7 @@ print('\n\nThe highlighed labels:')
 label_words
 
 
-# In[11]:
+# In[ ]:
 
 
 # from utils.gpu_utils import test_gpu
