@@ -9,7 +9,8 @@ from keras.layers import GlobalAveragePooling2D  # , Dense, Input, Dropout
 from keras.applications.vgg19 import VGG19
 # from keras.applications.resnet50 import ResNet50
 from keras import Model, Input  # ,models, callbacks
-from keras.layers import Dense, LSTM, BatchNormalization, Activation# GlobalAveragePooling2D, Merge, Flatten, Embedding
+from keras.layers import Dense, LSTM, BatchNormalization, \
+    Activation  # GlobalAveragePooling2D, Merge, Flatten, Embedding
 
 import logging
 
@@ -30,26 +31,26 @@ DEFAULT_IMAGE_WIEGHTS = 'imagenet'
 image_size_by_base_models = {'imagenet': (224, 224)}
 
 LSTM_UNITS = 64
-POST_CONCAT_DENSE_UNITS = 64#256
+POST_CONCAT_DENSE_UNITS = 64  # 256
 DENSE_ACTIVATION = 'relu'
 OPTIMIZER = 'rmsprop'
+
 
 class VqaModelBuilder(object):
     """"""
 
-    CATEGORIAL_DATA_FRAME = 'words'
-
-    def __init__(self, loss_function, output_activation_function,
-                 lstm_units=LSTM_UNITS,
-                 post_concat_dense_units=POST_CONCAT_DENSE_UNITS,
-                 optimizer=OPTIMIZER
-    ):
+    def __init__(self, loss_function: str, output_activation_function: str,
+                 lstm_units: int = LSTM_UNITS,
+                 post_concat_dense_units: int = POST_CONCAT_DENSE_UNITS,
+                 optimizer: str = OPTIMIZER, categorical_data_frame: str = 'words'
+                 ) -> None:
         """"""
         super(VqaModelBuilder, self).__init__()
         self.loss_function = loss_function
         self.output_activation_function = output_activation_function
 
         vqa_specs = File.load_pickle(vqa_specs_location)
+
         self.meta_data_location = vqa_specs.meta_data_location
 
         df_meta_answers, df_meta_words, df_meta_imaging_devices = self.__get_data_frames(self.meta_data_location)
@@ -60,6 +61,8 @@ class VqaModelBuilder(object):
         self.lstm_units = lstm_units
         self.post_concat_dense_units = post_concat_dense_units
         self.optimizer = optimizer
+
+        self.categorical_data_frame = categorical_data_frame
 
         self.model_location = ''
 
@@ -75,7 +78,7 @@ class VqaModelBuilder(object):
         return df_meta_answers, df_meta_words, df_meta_imaging_devices
 
     @staticmethod
-    def word_2_vec_model(input_tensor,lstm_units):
+    def word_2_vec_model(input_tensor, lstm_units):
         # print(dir(input_tensor))
         #         print('---------------------------------------------')
         #         print('Tensor shape: {0}'.format(input_tensor.get_shape()))
@@ -85,7 +88,6 @@ class VqaModelBuilder(object):
         #         print('embedded_sentence_length: {0}'.format(embedded_sentence_length))
         #         print('---------------------------------------------')
         #         return
-
 
         logger.debug("Creating Embedding model")
         x = input_tensor  # Since using spacy
@@ -124,7 +126,7 @@ class VqaModelBuilder(object):
     def get_vqa_model(self):
         metrics = [f1_score, recall_score, precision_score, 'accuracy']
 
-        model_output_num_units = len(pd.read_hdf(self.meta_data_location, self.CATEGORIAL_DATA_FRAME))
+        model_output_num_units = len(pd.read_hdf(self.meta_data_location, self.categorical_data_frame))
 
         image_model, lstm_model, fc_model = None, None, None
         try:
@@ -167,7 +169,7 @@ class VqaModelBuilder(object):
         return fc_model
 
     @staticmethod
-    def save_model(model):
+    def save_model(model, prediction_df_name):
         model_fn, summary_fn, fn_image, _ = save_model(model, vqa_models_folder)
         root = pathlib.Path(vqa_models_folder)
 
@@ -175,13 +177,15 @@ class VqaModelBuilder(object):
         specs_path = pathlib.Path(vqa_specs_location)
         specs = File.load_pickle(str(specs_path))
 
-        meta_location = root / pathlib.Path(specs.meta_data_location).name
+        model_folder = pathlib.Path(model_fn).parent
+        meta_location = model_folder / pathlib.Path(specs.meta_data_location).name
         new_spec = VqaSpecs(embedding_dim=specs.embedding_dim
                             , seq_length=specs.seq_length
                             , data_location=specs.data_location
-                            , meta_data_location=meta_location)
+                            , meta_data_location=meta_location
+                            , prediction_df_name=prediction_df_name)
 
-        spec_destination = root / specs_path.name
+        spec_destination = model_folder  / specs_path.name
         File.dump_pickle(new_spec, str(spec_destination))
         shutil.copy(specs.meta_data_location, meta_location)
 
@@ -198,7 +202,7 @@ class VqaModelBuilder(object):
         return get_trainable_params_distribution(model, params_threshold)
 
     def __getstate__(self):
-        state = {k:v for k, v in self.__dict__.items()}
+        state = {k: v for k, v in self.__dict__.items()}
         state['df_meta_answers'] = None
         state['df_meta_imaging_devices'] = None
         state['df_meta_words'] = None
@@ -210,7 +214,6 @@ class VqaModelBuilder(object):
         self.df_meta_answers = df_meta_answers
         self.df_meta_words = df_meta_words
         self.df_meta_imaging_devices = df_meta_imaging_devices
-
 
 
 def main():
