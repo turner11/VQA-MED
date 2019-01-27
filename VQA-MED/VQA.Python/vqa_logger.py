@@ -34,7 +34,9 @@ def init_log(name=None):
                         stream=sys.stdout,
                         # filename=file_name
                         )
-    # ch = logging.StreamHandler(sys.stdout)
+    # This for avoiding streams to stderr, which prints in red in jupyter
+    ch = logging.StreamHandler(sys.stdout)
+
     formatter = logging.Formatter(format)
     file_handler = logging.FileHandler(file_name)
     file_handler.setFormatter(formatter)

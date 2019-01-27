@@ -29,26 +29,34 @@ class VqaModelPredictor(object):
         """"""
         super(VqaModelPredictor, self).__init__()
 
-        if pathlib.Path(str(model)).exists() and not specs_location:
-            specs_location = pathlib.Path(str(model)).parent / 'vqa_specs.pkl'
+
         # elif not specs_location:
         #     specs_location = specs_location or vqa_specs_location
 
-        self.vqa_specs = File.load_pickle(specs_location)
-        self.model, model_idx_in_db = self.get_model(model)
+        self.model, model_idx_in_db, model_path = self.get_model(model)
         self.model_idx_in_db = model_idx_in_db
 
+
+        specs_location = specs_location or pathlib.Path(str(model_path)).parent / 'vqa_specs.pkl'
+        if not pathlib.Path(str(specs_location)).exists():
+            raise Exception(f'Failed to get specs location. Looked at: {specs_location }')
+
+
+        self.vqa_specs = File.load_pickle(specs_location)
+
         pp = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\imaging_device_classifier\\20190111_1444_32_imaging_devince\\vqa_model_imaging_device_classifier.h5'
-        self.image_device_classifier, model_id = self.get_model(pp)
+        self.image_device_classifier, model_id, image_model_path = self.get_model(pp)
 
     def __repr__(self):
         return super(VqaModelPredictor, self).__repr__()
 
     def get_model(self, model: Union[int, keras_model, str, None]) -> (keras_model, int):
+
         df_models = None
         model_id = -1
         model_idx_in_db = None
         model_dal = None
+
 
         if model is None:
             df_models = get_models_data_frame()
@@ -76,13 +84,14 @@ class VqaModelPredictor(object):
 
         if isinstance(model, keras_model):
             pass
+            model_location = model_location or 'UNKNOWN'
         else:
             assert False, f'Expected model to be of type "{ModelDal.__name__}" or "{keras_model.__name__}"' \
                 f'but got: "{model.__class__.__name__}" ({model})'
             # We are going to fail now
         assert model is not None, f'Unexpectedly got a None model\n(Model is "{type(model).__name__}"\n{model})'
 
-        return model, model_id
+        return model, model_id, model_location
 
     def predict(self, df_data: pd.DataFrame, percentile=99.8) -> pd.DataFrame:
         # predict

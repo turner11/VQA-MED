@@ -1,19 +1,17 @@
-import random
 from functools import lru_cache
-
 import numpy as np
 import pandas as pd
 import keras
-
-
 from common.functions import get_features, sentences_to_hot_vector, get_image
 from common.os_utils import File
 from common.utils import VerboseTimer
-
+import logging
+logger = logging.getLogger(__name__)
+from vqa_logger import init_log
+init_log
 
 class DataGenerator(keras.utils.Sequence):
     'Generates data for Keras'
-
 
     def __init__(self,
                  vqa_specs_location,
@@ -23,8 +21,8 @@ class DataGenerator(keras.utils.Sequence):
         'Initialization'
         self.vqa_specs = File.load_pickle(vqa_specs_location)
         self.meta_data_location = self.vqa_specs.meta_data_location
-        self.df_meta_words = pd.read_hdf(self.meta_data_location, 'words')
-        n_classes = len(self.df_meta_words.word.values)
+        self.prediction_vector = self.vqa_specs.prediction_vector#pd.read_hdf(self.meta_data_location, 'words')
+        n_classes = len(self.prediction_vector.values)
 
         with pd.HDFStore(self.vqa_specs.data_location) as store:
             index_data_frame = store['index']
@@ -78,7 +76,7 @@ class DataGenerator(keras.utils.Sequence):
 
             # safe_index = [i for i in temp_index.index if i in df.index]
             # df_filtered = df.loc[safe_index]
-            print(f'Len: {len(df_filtered)}')
+            logger.debug(f'data from generator length: {len(df_filtered)}')
             assert len(df_filtered) <= self.batch_size
             if len(df_filtered) == 0:
                 File.dump_pickle(temp_index.index, "D:\\Users\\avitu\\Downloads\\tempIndex.pkl")
@@ -111,7 +109,7 @@ class DataGenerator(keras.utils.Sequence):
             with VerboseTimer('Getting train features'):
                 features = get_features(df)
             with VerboseTimer('Getting train labels'):
-                labels = sentences_to_hot_vector(df.answer, words_df=self.df_meta_words.word)
+                labels = sentences_to_hot_vector(labels=df.answer, classes=self.prediction_vector)
 
         except Exception as ex:
             print(f'Failed to get features:\n:{ex}')

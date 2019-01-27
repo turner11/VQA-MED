@@ -1,5 +1,6 @@
 import os
 import warnings
+from pathlib import Path
 
 import pandas as pd
 from pandas import HDFStore
@@ -29,7 +30,7 @@ class VqaModelTrainer(object):
 
     @property
     def class_df(self):
-        return self.df_meta_words
+        return self.vqa_specs.prediction_vector
 
     @property
     def epochs(self):
@@ -37,9 +38,10 @@ class VqaModelTrainer(object):
 
     def __init__(self, model_location, use_augmentation , batch_size, data_location=default_data_location):
         super(VqaModelTrainer, self).__init__()
-        self.use_augmentation  = use_augmentation
+        self.use_augmentation = use_augmentation
 
         self.batch_size = batch_size
+
 
 
         if isinstance(model_location, str):
@@ -59,8 +61,13 @@ class VqaModelTrainer(object):
             raise Exception(f'model location passed is not supported ({type(model_location).__name__})')
 
         # ---- Getting meta_loc ----
+        self.spec_location = self.__resolve_spec_location(model_location)
+
+        logger.info(f'Using specs from: "{self.spec_location}"')
+
         with VerboseTimer("Loading Meta"):
-            vqa_specs = File.load_pickle(vqa_specs_location)
+            vqa_specs = File.load_pickle(self.spec_location)
+            self.vqa_specs = vqa_specs
             meta_data_location = vqa_specs.meta_data_location
             self.df_meta_answers = pd.read_hdf(meta_data_location, 'answers')
             self.df_meta_words = pd.read_hdf(meta_data_location, 'words')
@@ -83,9 +90,17 @@ class VqaModelTrainer(object):
         self.data_train = df_data[df_data.group == 'train'].copy().reset_index()
         self.data_val = df_data[df_data.group == 'validation'].copy().reset_index()
 
+    def __resolve_spec_location(self,model_location):
+        model_folder = Path(str(model_location)).parent
+        expected_specs_location = model_folder / Path(vqa_specs_location).name
+        if expected_specs_location.is_file():
+            spec_location = str(expected_specs_location)
+        else:
+            spec_location = vqa_specs_location
+        return spec_location
 
     def get_labels(self, df: pd.DataFrame) -> iter:
-        return sentences_to_hot_vector(df.answer, words_df=self.df_meta_words.word)
+        return sentences_to_hot_vector(labels=df.answer, classes=self.class_df)
 
 
     def print_shape_sanity(self, features_t, labels_t, features_val, labels_val):
@@ -169,7 +184,7 @@ class VqaModelTrainer(object):
                                         callbacks=callbacks)
 
                 else:
-                    dg = DataGenerator(vqa_specs_location, shuffle=True, batch_size=self.batch_size)
+                    dg = DataGenerator(self.spec_location, shuffle=True, batch_size=self.batch_size)
 
                     features_t, labels_t = dg[0]
                     self.print_shape_sanity(features_t, labels_t, features_val, labels_val)
