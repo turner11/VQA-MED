@@ -7,6 +7,8 @@ from classes.vqa_model_predictor import VqaModelPredictor
 from classes.vqa_model_trainer import VqaModelTrainer
 from common.utils import VerboseTimer
 import tensorflow as tf
+from tests import model_path
+
 tf.logging.set_verbosity(tf.logging.ERROR)
 
 logger = logging.getLogger(__name__)
@@ -53,7 +55,7 @@ def test_model_training(data_frame):
 
 @pytest.mark.filterwarnings('ignore:DeprecationWarning')
 def test_model_predicting(data_frame):
-    model_path = 'C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\data_for_test\\test_model\\vqa_model_.h5'
+
     mp = VqaModelPredictor(model_path)
     test_data = data_frame
     predictions = mp.predict(test_data)
@@ -63,8 +65,10 @@ def test_model_predicting(data_frame):
 
 
 if __name__ == '__main__':
+    # from keras import backend as keras_backend
+    # keras_backend.clear_session()
     # test_model_creation()
     df = data_frame()
-    test_model_predicting(df)
-    # test_model_training(df)
+    test_model_training(df)
+    # test_model_predicting(df)
 

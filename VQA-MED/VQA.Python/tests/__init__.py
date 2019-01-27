@@ -1,5 +1,7 @@
 import os
+from pathlib import Path
 
 curr_folder, _ = os.path.split(__file__)
-image_folder = os.path.join(curr_folder, 'test_images\\')
-image_folder = os.path.normpath(image_folder)
+root = Path(curr_folder)
+image_folder = str((root /'test_images\\').absolute())
+model_path = str((root /'data_for_test\\test_model\\vqa_model_.h5').absolute())

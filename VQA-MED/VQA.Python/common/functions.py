@@ -1,4 +1,5 @@
 import inspect
+import itertools
 import os
 import textwrap
 import pandas as pd
@@ -20,6 +21,7 @@ def get_size(file_name):
         i += 1
     f = ('%.2f' % nbytes).rstrip('0').rstrip('.')
     return '%s %s' % (f, suffixes[i])
+
 
 def get_highlighted_function_code(foo, remove_comments=False):
     """
@@ -130,25 +132,36 @@ def get_features(df: pd.DataFrame):
     return features
 
 
-def sentences_to_hot_vector(sentences: pd.Series, words_df: pd.DataFrame) -> iter:
-    from sklearn.preprocessing import MultiLabelBinarizer
-    classes = words_df.values
-    splatted_answers = [ans.lower().split() for ans in sentences]
-    clean_splitted_answers = [[w for w in arr if w in classes] for arr in splatted_answers]
+def sentences_to_hot_vector(labels: iter, classes: iter) -> iter:
+    from sklearn.preprocessing import MultiLabelBinarizer, LabelBinarizer
+    labels_arr = list(labels)
+    classes_arr = np.asarray(classes)
 
-    mlb = MultiLabelBinarizer(classes=classes.reshape(classes.shape[0]), sparse_output=False)
-    mlb.fit(classes)
+    number_of_items_in_class = max([len(c.split()) for c in classes_arr])
+    # If we are using words as labels - allow multi labels, otherwise only 1
+    if number_of_items_in_class == 1:
+        logger.debug('Using multi label')
+        splitted_labels = [ans.lower().split() for ans in labels_arr]
+        # clean_splitted_labels = [[w for w in arr if w in labels] for arr in splitted_labels]
+        clean_splitted_labels = [[w for w in arr if w in classes_arr] for arr in splitted_labels]
 
-    logger.debug(f'Classes: {mlb.classes_}')
-    arr_one_hot_vector = mlb.transform(clean_splitted_answers)
-    return arr_one_hot_vector
+    else:
+        logger.debug('Using single label')
+        clean_splitted_labels = [[lbl] for lbl in labels_arr]
+
+    mlb = MultiLabelBinarizer(classes=classes_arr.reshape(classes_arr.shape[0]), sparse_output=False)
+    mlb.fit(labels_arr)
+    arr_hot_vector = mlb.transform(clean_splitted_labels)
+
+    # logger.debug(f'Classes: {labels_arr}')
+    return arr_hot_vector
 
 
-def hot_vector_to_words(hot_vector, words_df):
+def hot_vector_to_words(hot_vector, classes_df):
     max_val = hot_vector.max()
     max_loc = np.argwhere(hot_vector == max_val)
     max_loc = max_loc.reshape(max_loc.shape[0])
-    return words_df.iloc[max_loc]
+    return classes_df.iloc[max_loc]
 
 
 def main():
