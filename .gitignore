@@ -345,3 +345,4 @@ VQA-MED/VQA.Python/data-2018/ckpts/embeddings_300.h5_BACKUP
 VQA-MED/VQA.Python/data-2018/vqa_specs.pkl
 VQA-MED/VQA.Python/data-2018/VQAMed2018Train-QA.xlsx
 VQA-MED/VQA.Python/data-2018/VQAMed2018Train-QA_processed.xlsx
+*.parquet
