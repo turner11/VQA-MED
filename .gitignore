@@ -341,3 +341,7 @@ VQA-MED/VQA.Python/tensor_board_logd/*
 VQA-MED/VQA.Python/tests/data_for_test/test_model/model.png
 VQA-MED/VQA.Python/tests/data_for_test/test_model/model_history.pkl
 VQA-MED/VQA.Python/tests/data_for_test/test_model/model_summary.txt
+VQA-MED/VQA.Python/data-2018/ckpts/embeddings_300.h5_BACKUP
+VQA-MED/VQA.Python/data-2018/vqa_specs.pkl
+VQA-MED/VQA.Python/data-2018/VQAMed2018Train-QA.xlsx
+VQA-MED/VQA.Python/data-2018/VQAMed2018Train-QA_processed.xlsx
