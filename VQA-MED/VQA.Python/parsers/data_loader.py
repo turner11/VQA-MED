@@ -1,23 +1,19 @@
-import traceback
-from io import StringIO
+import sys, os
 import json
-
-import sys
-import os
-
-from common.utils import Timer
-
-dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-# print(dir)
-sys.path.append(dir)
+import traceback
+from abc import ABC
+from io import StringIO
 import argparse
+from pathlib import Path
 
 import pandas as pd
-
 import logging
+from common.utils import Timer
 
 logger = logging.getLogger(__name__)
-from pre_processing.known_find_and_replace_items import all_tags
+
+curr_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.append(curr_dir)
 
 ERROR_KEY = "error"
 QUESTIONS_INFO = 'questions info'
@@ -25,7 +21,6 @@ TOKENIZED_COL_PREFIX = 'tokenized_'
 
 
 class DataLoader(object):
-    COL_ROW_ID = 'row_id'
     COL_IMAGE_NAME = "image_name"
     COL_QUESTION = "question"
     COL_ANSWER = "answer"
@@ -33,8 +28,8 @@ class DataLoader(object):
     COL_TOK_A = TOKENIZED_COL_PREFIX + COL_ANSWER
 
     @property
-    def ALL_RAW_COLS(self):
-        return [self.COL_ROW_ID, self.COL_IMAGE_NAME, self.COL_QUESTION, self.COL_ANSWER]
+    def all_raw_cols(self):
+        return [self.COL_IMAGE_NAME, self.COL_QUESTION, self.COL_ANSWER]
 
     def __init__(self, data_path, **kwargs):
         super().__init__()
@@ -42,16 +37,13 @@ class DataLoader(object):
         self.data_path = data_path
         self.data = self._read_data(data_path)
         assert self.data is not None, "Got a None data set"
-        self.data.set_index(self.COL_ROW_ID)
+        assert len(self.data) > 0, "Got an empty data set"
 
     @classmethod
     def get_instance(cls, data_path):
         ctors = iter([
-            ('Excel -> Data', lambda excel_path=data_path: ProcessedExcelLoader(excel_path)),
-            ('CSV -> Data', lambda csv_content=data_path: CsvStringLoader(csv_content)),
-            ('Raw Excel -> Data', lambda excel_path=data_path: ExcelLoader(excel_path)),
-            ('CSV Path -> Excel Path -> Data', lambda: ExcelLoader(RawCsvLoader.csv_path_2_excel_path(data_path))),
-            ('Raw CSV -> Data', lambda csv_path=data_path: RawCsvLoader(csv_path)),
+            ('2019 Raw Path -> Data', lambda excel_path=data_path: Raw2019DataLoader(excel_path)),
+            ('2019 Raw Data-> Data', lambda csv_content=data_path: RawStringLoader(csv_content)),
         ])
         instance = None
         while not instance:
@@ -63,11 +55,16 @@ class DataLoader(object):
                 raise
             except AssertionError:
                 raise
-            except Exception:
+            except Exception as ex:
                 tb = traceback.format_exc()
                 str(tb)
                 pass
         return instance
+
+    @classmethod
+    def get_data(cls, data_path):
+        instance = cls.get_instance(data_path)
+        return instance.data
 
     def __repr__(self, **kwargs):
         return "{0}({1})".format(self.__class__.__name__, self.data_path)
@@ -93,7 +90,7 @@ class DataLoader(object):
 
         # self.plot_data_info(df)
         match = None
-        for col in self.ALL_RAW_COLS:
+        for col in self.all_raw_cols:
             try:
                 curr_match = df[col].str.contains(query)
                 if match is None:
@@ -123,23 +120,35 @@ class DataLoader(object):
             plt.gca().invert_yaxis()
             plt.show()
 
-    def _read_data(self, data_path):
+    def _read_data(self, data_arg):
+        csv_string = self._get_text(data_arg)
+        sio = StringIO(csv_string)
+        return pd.read_csv(sio, sep='|', header=None, names=self.all_raw_cols)
+
+    def _get_text(self, data_arg):
         raise NotImplementedError()
 
 
-class FileLoader(DataLoader):
+class FileLoader(DataLoader, ABC):
     """"""
 
     def __init__(self, data_path, **kwargs):
         """"""
-        if not data_path or not os.path.isfile(data_path):
+        if not Path(data_path).exists():
             raise Exception("Got a non valid path: {0}".format(data_path))
         super().__init__(data_path, **kwargs)
 
+    def _get_text(self, data_arg):
+        try:
+            txt = Path(data_arg).read_text()
+        except UnicodeDecodeError:
+            txt = Path(data_arg).read_text(encoding='utf8')
+        return txt
 
-class CsvStringLoader(DataLoader):
-    def __init__(self, csv_string, **kwargs):
-        super().__init__(csv_string, **kwargs)
+
+class RawStringLoader(DataLoader):
+    def __init__(self, raw_string, **kwargs):
+        super().__init__(raw_string, **kwargs)
 
         # excel_path = self.csv_path_2_excel_path(csv_path)
         #
@@ -149,10 +158,8 @@ class CsvStringLoader(DataLoader):
         # process_excel(excel_path, excel_path)
         # excel_data = pd.read_excel(excel_path)
 
-    def _read_data(self, csv_string):
-        # self.data = df = pd.read_csv(data_path)
-        sio = StringIO(csv_string)
-        return pd.read_csv(sio, sep='\t', header=None, names=self.ALL_RAW_COLS)
+    def _get_text(self, csv_string):
+        return csv_string
 
     @classmethod
     def csv_path_2_excel_path(self, csv_path):
@@ -160,51 +167,15 @@ class CsvStringLoader(DataLoader):
         return path
 
 
-class RawCsvLoader(FileLoader):
-    def __init__(self, csv_path, **kwargs):
-        super().__init__(csv_path, **kwargs)
+class Raw2019DataLoader(FileLoader):
+    """"""
 
-    # excel_path = self.csv_path_2_excel_path(csv_path)
-    #
-    # self.add_tokenized_column(self.data, self.COL_QUESTION, self.COL_TOK_Q)
-    # self.add_tokenized_column(self.data, self.COL_ANSWER, self.COL_TOK_A)
-    # self.dump_to_excel(self.data, excel_path)
-    # process_excel(excel_path, excel_path)
-    # excel_data = pd.read_excel(excel_path)
+    def __init__(self, data_path):
+        """"""
+        super().__init__(data_path)
 
-    def _read_data(self, data_path):
-        # self.data = df = pd.read_csv(data_path)
-        return pd.read_csv(data_path, sep='\t', header=None, names=self.ALL_RAW_COLS)
-
-    @classmethod
-    def csv_path_2_excel_path(self, csv_path):
-        path = os.path.splitext(csv_path)[0] + '_DUMPED.xlsx'
-        return path
-
-
-class ExcelLoader(FileLoader):
-    @property
-    def ALL_RAW_COLS(self):
-        return list(set(super().ALL_RAW_COLS + [self.COL_TOK_Q, self.COL_TOK_A]))
-
-    def __init__(self, excel_path, **kwargs):
-        super().__init__(excel_path, **kwargs)
-
-    def _read_data(self, data_path):
-        # df =  pd.read_excel(data_path, names=self.ALL_RAW_COLS)
-        df = pd.read_excel(data_path)
-        cols = [c for c in self.ALL_RAW_COLS if c in df.columns]
-        df = df[cols]
-        return df
-
-
-class ProcessedExcelLoader(ExcelLoader):
-    @property
-    def ALL_RAW_COLS(self):
-        return list(set(super().ALL_RAW_COLS + all_tags))
-
-    def __init__(self, excel_path, **kwargs):
-        super().__init__(excel_path, **kwargs)
+    def __repr__(self):
+        return super().__repr__()
 
 
 def main(args):

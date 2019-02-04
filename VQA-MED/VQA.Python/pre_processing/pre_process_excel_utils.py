@@ -8,7 +8,7 @@ import pandas as pd
 from parsers.utils import suppress_func_stdout, has_word
 from pre_processing.known_find_and_replace_items import find_and_replace_collection, locations, diagnosis, \
     imaging_devices, dbg_file_csv_validation, dbg_file_csv_test, dbg_file_csv_train
-from parsers.VQA18 import ExcelLoader, RawCsvLoader, DataLoader, TOKENIZED_COL_PREFIX
+from parsers.data_loader import ExcelLoader, RawCsvLoader, DataLoader, TOKENIZED_COL_PREFIX
 import logging
 logger = logging.getLogger(__name__)
 

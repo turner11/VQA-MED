@@ -2,11 +2,12 @@ from evaluate.VqaMedEvaluatorBase import VqaMedEvaluatorBase
 from nltk.corpus import wordnet as wn
 from scipy import spatial
 
+
 class WbssEvaluator(VqaMedEvaluatorBase):
     """"""
 
     def __init__(self, predictions, ground_truth):
-        super(WbssEvaluator, self).__init__(predictions, ground_truth)
+        super().__init__(predictions, ground_truth)
         # Used for WUPS
         self.word_pair_dict = {}
 

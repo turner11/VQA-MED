@@ -118,13 +118,14 @@ def test_data_enrichment():
     csv_txt = \
         '''
 image_name,question,answer
-image1,what shows in MRI?,a dolphin
-image2,Pick any word,mri
-image3,cT is the thing ?,or Is it?
+image1,what shows in mr?,a dolphin
+image2,pick any word,mr
+image3,ct is the thing ?,or is it?
 image4,pick any 2 letters ?,ct
-image4,another question?,with no info what so ever
-image5,What should I choose cT or MrI, Just pick one
-image6,A new image,with no available info
+image4,and now 2 more ?,mr
+image4,what is the difference between hematoma and schwannoma?,with no info what so ever
+image5,what should i choose ct or mr, just pick one
+image6,a new image,with no available info
     '''
 
     df = pd.read_csv(StringIO(csv_txt))
@@ -136,12 +137,13 @@ image6,A new image,with no available info
         'imaging_device']
 
     err_msg = 'Got unexpected imaging devices'
-    assert imaging_device_by_image_name['image1'] == 'mri', err_msg
-    assert imaging_device_by_image_name['image2'] == 'mri', err_msg
+    assert imaging_device_by_image_name['image1'] == 'mr', err_msg
+    assert imaging_device_by_image_name['image2'] == 'mr', err_msg
     assert imaging_device_by_image_name['image3'] == 'ct', err_msg
-    assert imaging_device_by_image_name['image4'] == 'ct', err_msg
+    assert imaging_device_by_image_name['image4'] == 'unknown', err_msg
     assert imaging_device_by_image_name['image5'] == 'unknown', err_msg
     assert imaging_device_by_image_name['image6'] == 'unknown', err_msg
+
 
 
 def test_data_augmentation():
@@ -160,11 +162,11 @@ def test_data_augmentation():
 
 
 def main():
-    df_norm = normalized_data()
-    test_data_cleaning(df_norm )
+    # df_norm = normalized_data()
+    # test_data_cleaning(df_norm )
     # test_embedding()
     # test_data_augmentation()
-    # test_data_enrichment()
+    test_data_enrichment()
     # test_data_cleaning()
     # test_embedding()
     pass

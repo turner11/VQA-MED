@@ -1,48 +1,24 @@
-from collections import namedtuple
+from pathlib import Path
 import os
 
 # File Locations -------------------------------------------------------------
-vqa_python_pbase_path = os.path.join(os.path.abspath('.').split('VQA.Python')[0],'VQA.Python')
-fn_meta            = os.path.abspath(os.path.join(vqa_python_pbase_path, 'data/meta_data.h5'))
-raw_data_location  = os.path.abspath(os.path.join(vqa_python_pbase_path, 'data/raw_data.h5'))
-data_location      = os.path.abspath(os.path.join(vqa_python_pbase_path, 'data/model_input.h5'))
-augmented_data_location      = os.path.abspath(os.path.join(vqa_python_pbase_path, 'data/augmented_model_input.gzip'))
-vqa_specs_location = os.path.abspath(os.path.join(vqa_python_pbase_path, 'data/vqa_specs.pkl'))
+vqa_python_base_path = Path(os.path.join(os.path.abspath('.').split('VQA.Python')[0], 'VQA.Python'))
+fn_meta = str(vqa_python_base_path / 'data/meta_data.h5')
+raw_data_location = str(vqa_python_base_path / 'data/raw_data.h5')
+data_location = str(vqa_python_base_path / 'data/model_input.parquet')
+augmentation_index = str(vqa_python_base_path / 'data/augmentation_index.h5')
+vqa_specs_location = str(vqa_python_base_path / 'data/vqa_specs.pkl')
 
 images_folder_train = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-images'
 images_folder_validation = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Valid\\VQAMed2018Valid-images'
 
 # The location to dump models to
-vqa_models_folder  = "C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models"
+vqa_models_folder = "C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models"
 
-_DB_FILE_LOCATION = 'C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\models.db'
+_DB_FILE_LOCATION = 'C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\models_2019.db'
 
 # -----------------------------------------------------------------------------
-
-dbg_file_csv_train = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-QA.csv'
-dbg_file_xls_train = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-QA_post_pre_process_intermediate.xlsx'#"'C:\\\\Users\\\\avitu\\\\Documents\\\\GitHub\\\\VQA-MED\\\\VQA-MED\\\\Cognitive-LUIS-Windows-master\\\\Sample\\\\VQA.Python\\\\dumped_data\\\\vqa_data.xlsx'
-dbg_file_xls_processed_train = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-QA_post_pre_process.xlsx'
-train_embedding_path = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-images\\embbeded_images.hdf'
-images_path_train = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-images'
-
-
-dbg_file_csv_validation = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Valid\\VQAMed2018Valid-QA.csv'
-dbg_file_xls_validation = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Valid\\VQAMed2018Valid-QA_post_pre_process_intermediate.xlsx'
-dbg_file_xls_processed_validation = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Valid\\VQAMed2018Valid-QA_post_pre_process.xlsx'
-validation_embedding_path = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Valid\\VQAMed2018Valid-images\\embbeded_images.hdf'
-images_path_validation = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Valid\\VQAMed2018Valid-images'
-
-
-dbg_file_csv_test = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Test\\VQAMed2018Test-QA.csv'
-dbg_file_xls_test = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Test\\VQAMed2018Test-QA_post_pre_process_intermediate.xlsx'
-dbg_file_xls_processed_test = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Test\\VQAMed2018Test-QA_post_pre_process.xlsx'
-test_embedding_path = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Test\\VQAMed2018Test-images\\embbeded_images.hdf'
-images_path_test = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Test\\VQAMed2018Test-images'
-
-DataLocations = namedtuple('DataLocations', ['data_tag', 'raw_csv', 'raw_xls', 'processed_xls','images_path'])
-train_data = DataLocations('train', dbg_file_csv_train,dbg_file_xls_train,dbg_file_xls_processed_train, images_path_train)
-validation_data = DataLocations('validation', dbg_file_csv_validation, dbg_file_xls_validation, dbg_file_xls_processed_validation, images_path_validation)
-test_data = DataLocations('test', dbg_file_csv_test, dbg_file_xls_test, dbg_file_xls_processed_test, images_path_test)
-
-
-
+data_base_folder = Path('C:\\Users\\Public\\Documents\\Data\\2019')
+data_path_train = str(data_base_folder / 'train')
+data_path_validation = str(data_base_folder / 'validation')
+data_path_test = str(data_base_folder / 'validation')

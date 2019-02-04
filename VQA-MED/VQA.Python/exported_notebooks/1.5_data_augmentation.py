@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python
 # coding: utf-8
 
 # In[1]:
@@ -10,16 +10,22 @@ from pandas import HDFStore
 import IPython
 from IPython.display import Image, display
 import pyarrow
+from tqdm import tqdm
 from multiprocessing.pool import ThreadPool as Pool
+import logging
+import pyarrow as pa
+import pyarrow.parquet as pq
 
 
 # In[2]:
 
 
-from common.constatns import data_location, vqa_specs_location, fn_meta, augmented_data_location
+from common.constatns import data_location, vqa_specs_location, fn_meta, augmentation_index
 from common.utils import VerboseTimer
 from common.functions import get_highlighted_function_code, generate_image_augmentations,  get_image
 from common.os_utils import File
+import vqa_logger 
+logger = logging.getLogger(__name__)
 
 
 # In[3]:
@@ -27,24 +33,34 @@ from common.os_utils import File
 
 print(f'loading from:\n{data_location}')
 with VerboseTimer("Loading Data"):
-    with HDFStore(data_location) as store:
-         df_data = store['data']
+    prqt = pq.read_table(data_location)
+df_data = prqt.to_pandas()
+
+
+# In[4]:
+
 
 df_data = df_data[df_data.group.isin(['train','validation'])]
 print(f'Data length: {len(df_data)}')        
 df_data.head(2)
 
 
+# In[5]:
+
+
+df_data.group.drop_duplicates()
+
+
 # ### For the augmaentation we will use the following code:
 
-# In[4]:
+# In[6]:
 
 
-code = get_highlighted_function_code(generate_image_augmentations, remove_comments=False)
+code = get_highlighted_function_code(generate_image_augmentations,remove_comments=False)
 IPython.display.display(code)  
 
 
-# In[5]:
+# In[7]:
 
 
 df_train = df_data[df_data.group == 'train']
@@ -93,7 +109,7 @@ except Exception as ex:
     print(f'Error:\n{str(ex)}')
 
 
-# In[13]:
+# In[8]:
 
 
 failes = [tpl[1] for tpl in pool_res if tpl[0]==0]
@@ -107,11 +123,10 @@ summary = f'success: {len(successes)}\n{s_summary}\n\nfailes: {len(failes)}\n{f_
 print(summary)
 
 
-# In[14]:
+# In[9]:
 
 
-
-a = images_info[:1]
+# a = images_info[:1]
 a = images_info
 aug_dict = {image_path:output_dir for (image_path, file_name, ext, output_dir) in a}
 
@@ -124,7 +139,8 @@ df_augments['idx'] = 0
 print(len(df_augments))
 new_rows = []
 with VerboseTimer("Collecting augmented rows"):
-    for image_path, output_dir in aug_dict.items():
+    pbar = tqdm(aug_dict.items())
+    for image_path, output_dir in pbar:
         #print(image_path)
         image_rows = df_augments[df_augments.path == image_path]
         for i_row, row in image_rows.iterrows():
@@ -142,7 +158,7 @@ with VerboseTimer("Collecting augmented rows"):
                 new_rows.append(r)        
 
 
-# In[15]:
+# In[10]:
 
 
 with VerboseTimer("Creating rows dataframe"):
@@ -156,13 +172,13 @@ df.head(1)
 
 # ## Giving a meaningful index across dataframes:
 
-# In[16]:
+# In[11]:
 
 
 df = df.sort_values(['augmentation', 'idx'], ascending=[True, True])
 
 
-# In[17]:
+# In[12]:
 
 
 
@@ -173,19 +189,19 @@ assert  len_idx== len_df , f'length of indexes ({len_idx}) did not match length 
 df.idx = idxs
 
 
-# In[18]:
+# In[13]:
 
 
 df.iloc[[0,1,-2,-1]]
 
 
-# In[19]:
+# In[14]:
 
 
 data_location
 
 
-# In[20]:
+# In[15]:
 
 
 # # df.head(1)
@@ -198,7 +214,7 @@ data_location
 df[['augmentation','idx']].iloc[[0,1,-2,-1]]
 
 
-# In[21]:
+# In[16]:
 
 
 import numpy as np
@@ -206,15 +222,24 @@ aug_keys = [int(i) if not np.isnan(i) else 0 for i in df.augmentation.drop_dupli
 set(aug_keys)
 
 
-# In[22]:
+# In[17]:
 
 
-with HDFStore(data_location) as store:
-       k = store.keys()
-k        
+#  with HDFStore(data_location) as store:
+#         k = store.keys()
+# k        
+data_location
+augmentation_index = 'C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\data\\augmentation_index.h5'
+augmentation_index
 
 
-# In[23]:
+# In[21]:
+
+
+df.head()
+
+
+# In[19]:
 
 
 
@@ -222,8 +247,9 @@ from collections import defaultdict
 index_dict = defaultdict(lambda:[])
 
 with VerboseTimer(f"Storing {len(aug_keys)} dataframes"):
-    with HDFStore(data_location) as store:
-        for aug_key in aug_keys:
+    with HDFStore(augmentation_index) as store:
+        pbar = tqdm(aug_keys)
+        for aug_key in pbar:
             with VerboseTimer(f"Storing dataframe '{aug_key}'"):
                 data = df[df.augmentation == aug_key]
 
@@ -236,7 +262,7 @@ with VerboseTimer(f"Storing {len(aug_keys)} dataframes"):
                 
                 index_dict['image_path'].extend(paths)
                 index_dict['augmentation_key'].extend([aug_key]*len(paths))
-                index_dict['store_path'].extend([data_location]*len(paths))
+                index_dict['store_path'].extend([augmentation_index]*len(paths))
                 index_dict['store_key'].extend([store_key]*len(paths))
                 store[store_key] = data
                 
@@ -246,10 +272,10 @@ with VerboseTimer(f"Storing {len(aug_keys)} dataframes"):
 
 # ### The results:
 
-# In[24]:
+# In[ ]:
 
 
-with HDFStore(data_location) as store:
+with HDFStore(augmentation_index) as store:
     loaded_index = store['index']
 
 print(f'image_path: {loaded_index.image_path[0]}')    
@@ -259,26 +285,27 @@ print(f'augmentation_key: {loaded_index.augmentation_key[0]}')
 loaded_index.head(1)
 
 
-# In[25]:
+# In[ ]:
 
 
-with HDFStore(data_location) as store:
+with HDFStore(augmentation_index) as store:
     print(list(store.keys()))
 
 
-# In[26]:
+# In[ ]:
 
 
-with pd.HDFStore(data_location) as store:
+with pd.HDFStore(augmentation_index) as store:
     augmentation_1 = store['augmentation_1']
     augmentation_5 = store['augmentation_5']
 
 
-# In[27]:
+# In[ ]:
 
 
-v5 = min(augmentation_5.idx),max(augmentation_5.idx)
 v1 = min(augmentation_1.idx),max(augmentation_1.idx)
+v5 = min(augmentation_5.idx),max(augmentation_5.idx)
+
 
 print(v5)
 print(v1)
@@ -286,7 +313,7 @@ len(augmentation_1)
 augmentation_1.head(5).idx
 
 
-# In[28]:
+# In[ ]:
 
 
 augmentation_5.tail(5).idx

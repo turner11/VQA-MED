@@ -1,30 +1,32 @@
-
+#!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[2]:
 
 
 # %%capture
 import IPython
 import os
-
 from pandas import HDFStore
-
-
+import pyarrow as pa
+import pyarrow.parquet as pq
 import logging
+from pathlib import Path
 
 
+# In[3]:
 
+
+import vqa_logger 
 logger = logging.getLogger(__name__)
 
 
+# In[4]:
 
-# In[2]:
 
-
-from common.constatns import train_data, data_location, raw_data_location
+from common.constatns import raw_data_location, data_location
 from common.settings import get_nlp
-from common.functions import get_highlighted_function_code, get_image, get_size
+from common.functions import get_highlighted_function_code, get_image,  get_size
 from pre_processing.prepare_data import get_text_features, pre_process_raw_data
 from common.utils import VerboseTimer
 
@@ -33,7 +35,7 @@ from common.utils import VerboseTimer
 
 # #### Getting the nlp engine
 
-# In[3]:
+# In[5]:
 
 
 nlp = get_nlp()
@@ -41,21 +43,27 @@ nlp = get_nlp()
 
 # #### Where get_nlp is defined as:
 
-# In[4]:
+# In[6]:
 
 
-code = get_highlighted_function_code(get_nlp, remove_comments=True)
+code = get_highlighted_function_code(get_nlp,remove_comments=True)
 IPython.display.display(code)
 
 
-# In[5]:
+# In[7]:
+
+
+raw_data_location
+
+
+# In[8]:
 
 
 with HDFStore(raw_data_location) as store:
     image_name_question = store['data']
 
 
-# In[6]:
+# In[9]:
 
 
 image_name_question.head()
@@ -63,7 +71,7 @@ image_name_question.head()
 
 # ##### This is just for performance and quick debug cycles! remove before actual trainining:
 
-# In[7]:
+# In[10]:
 
 
 # image_name_question = image_name_question.head(5)
@@ -74,53 +82,56 @@ image_name_question.head()
 
 # #### get_text_features:
 
-# In[8]:
+# In[11]:
 
 
-code = get_highlighted_function_code(get_text_features, remove_comments=True)
+code = get_highlighted_function_code(get_text_features,remove_comments=True)
 IPython.display.display(code)
 
 
 # #### get_image:
 
-# In[9]:
+# In[12]:
 
 
-code = get_highlighted_function_code(get_image, remove_comments=True)
+code = get_highlighted_function_code(get_image,remove_comments=True)
 IPython.display.display(code)
 
 
 # #### pre_process_raw_data:
 
-# In[10]:
+# In[13]:
 
 
-code = get_highlighted_function_code(pre_process_raw_data, remove_comments=True)
+code = get_highlighted_function_code(pre_process_raw_data,remove_comments=True)
 IPython.display.display(code)
 
 
 # ### Clean and enrich the data
 
-# In[11]:
+# In[14]:
+
 
 from pre_processing.data_enrichment import enrich_data
 from pre_processing.data_cleaning import clean_data
+
 orig_image_name_question = image_name_question.copy()
 image_name_question = clean_data(image_name_question)
 image_name_question = enrich_data(image_name_question)
 
 
-# In[12]:
+# In[15]:
 
 
-image_name_question[image_name_question.image_name == '0392-100X-33-350-g002.jpg'].head()
-image_name_question.head()
+image_name_question[image_name_question.image_name == 'synpic41148.jpg'].head()
+# image_name_question.head()
 
 
-# In[13]:
+# In[16]:
 
 
-image_name_question.groupby('group').describe()
+groups = image_name_question.groupby('group')
+groups.describe()
 image_name_question[['imaging_device','image_name']].groupby('imaging_device').describe()
 
 
@@ -129,7 +140,7 @@ image_name_question[['imaging_device','image_name']].groupby('imaging_device').d
 # #### If running in an exported notebook, use the following:
 # (indent everything to be under the main guard) - for avoiding recursive spawning of processes
 
-# In[14]:
+# In[17]:
 
 
 from multiprocessing import freeze_support
@@ -138,79 +149,76 @@ if __name__ == '__main__':
     freeze_support()
 
 
-    # Note:
-    # This might take a while...
+# Note:  
+# This might take a while...
 
-    # In[15]:
-
-
-    logger.debug('----===== Preproceccing train data =====----')
-    image_locations = train_data.images_path
-    with VerboseTimer("Pre processing training data"):
-        image_name_question_processed = pre_process_raw_data(image_name_question)
+# In[18]:
 
 
-    # In[16]:
+logger.debug('----===== Preproceccing train data =====----')
+with VerboseTimer("Pre processing training data"):
+    image_name_question_processed = pre_process_raw_data(image_name_question)
 
 
-    image_name_question_processed.head()
+# In[19]:
 
 
-    # #### Saving the data, so later on we don't need to compute it again
-
-    # In[17]:
+image_name_question_processed.head()
 
 
-    image_name_question_processed.imaging_device.drop_duplicates()
+# #### Saving the data, so later on we don't need to compute it again
+
+# ### TODO: need to add question classification taking in consideration 2019 data
+
+# In[20]:
 
 
-    # In[17]:
+def add_dataframe_to_data_set(df, location):
+    table = pa.Table.from_pandas(df)
+
+    pq.write_to_dataset(
+        table,
+        root_path=str(location),#'output.parquet',
+        partition_cols=['group'],
+    )
+#train_df.to_parquet(fname='',engine='pyarrow',partition_cols=)
 
 
-    logger.debug("Saving the data")
-    item_to_save = image_name_question_processed
-    # item_to_save = image_name_question.head(10)
-
-    # remove if exists
-    try:
-        os.remove(data_location)
-    except OSError:
-        pass
+# In[21]:
 
 
-    train_df = image_name_question_processed[(image_name_question_processed.group == 'train') | (image_name_question_processed.group == 'validation')]
-    test_df = image_name_question_processed[image_name_question_processed.group == 'test']
-    light = image_name_question_processed[['image_name', 'question', 'answer', 'group', 'path', 'tumor', 'hematoma', 'brain', 'abdomen', 'neck', 'liver', 'imaging_device']]
+logger.debug("Saving the data")
+item_to_save = image_name_question_processed
+# item_to_save = image_name_question.head(10)
+
+# remove if exists
+try:
+    os.remove(data_location)
+except OSError:
+    pass
 
 
-    with VerboseTimer("Saving model training data"):
-        light.to_hdf(data_location, 'light', mode='w', data_columns=['image_name', 'imaging_device', 'path'], format='table')
-        with HDFStore(data_location) as store:
-            store['data']  = train_df
-            store['test']  = test_df
-
-    size = get_size(data_location)
-    logger.debug(f"training data's file size was: {size}")
+train_df = image_name_question_processed[(image_name_question_processed.group == 'train') | (image_name_question_processed.group == 'validation')]
+test_df = image_name_question_processed[image_name_question_processed.group == 'test']
+light = image_name_question_processed[['image_name', 'question', 'answer', 'group', 'path', 'imaging_device']]
 
 
-    # In[18]:
 
 
-    data_location
+root = Path(data_location)
+with VerboseTimer("Saving model training data"):
+    add_dataframe_to_data_set(image_name_question_processed, root)
+#     light.to_hdf(data_location, 'light', mode='w', data_columns=['image_name', 'imaging_device', 'path'], format='table')    
+#     add_dataframe_to_data_set(train_df, root/'train')
+#     add_dataframe_to_data_set(test_df, root/'test')
+        
+size = get_size(data_location)
+logger.debug(f"training data's file size was: {size}")
 
 
-    # In[19]:
+# In[22]:
 
 
-    # import numpy as np
-    # d = train_df[train_df.imaging_device.isin(['ct','mri'])]
-    # print(np.unique(train_df.imaging_device))
-    # print(np.unique(d.imaging_device))
-
-
-    # In[20]:
-
-
-    print('Data saved at:')
-    f'{data_location}'
+print('Data saved at:')
+f'{data_location}'
 

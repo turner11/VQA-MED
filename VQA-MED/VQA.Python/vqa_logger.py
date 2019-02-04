@@ -5,47 +5,50 @@ import time
 import coloredlogs, logging
 from common.os_utils import File
 
-def init_log(name=None):
-    name = name or __name__
-    # Create a logger object.
-    logger = logging.getLogger(name)
-    log_level = logging.DEBUG
-    # format = '%(asctime)s,%(msecs)d %(name)s %(levelname)s ## %(message)s'
-    format = '[%(asctime)s][%(levelname)s] %(message)s'
+def init_log():
+    root_logger = logging.getLogger('root')
+    # This for avoiding streams to log to root's stderr, which prints in red in jupyter
+    for handler in root_logger.handlers:
+        # continue
+        root_logger.removeHandler(handler)
 
-    # By default the install() function installs a file_handler on the root logger,
+    format = '[%(asctime)s][%(levelname)s] %(message)s'
+    formatter = logging.Formatter(format)
+
+    # By default the install() function installs a file_handler on the root root_logger,
     # this means that log messages from your code and log messages from the
     # libraries that you use will all show up on the terminal.
-    coloredlogs.install(level='DEBUG', fmt=format)
-
-
+    coloredlogs.install(level='DEBUG', fmt=format, stream=sys.stdout)
 
     now = time.time()
     ts = datetime.datetime.fromtimestamp(now).strftime('%Y%m%d')
-    file_name = os.path.join(os.getcwd(),'logs',f"{ts}_vqa.log")
+    file_name = os.path.join(os.getcwd(), 'logs', f"{ts}_vqa.log")
     folder, _ = os.path.split(file_name)
     File.validate_dir_exists(folder)
+
+    std_out = logging.StreamHandler(sys.stdout)
+    std_out.setFormatter(formatter)
+    std_out.setLevel(logging.DEBUG)
+
+    file_handler = logging.FileHandler(file_name)
+    file_handler.setFormatter(formatter)
 
 
     logging.basicConfig(filemode='a',
                         format=format,
                         datefmt='%H:%M:%S',
-                        level=log_level,
-                        stream=sys.stdout,
-                        # filename=file_name
+                        level=logging.DEBUG,
+                        stream=std_out,
+                        filename=file_handler
                         )
-    # This for avoiding streams to stderr, which prints in red in jupyter
-    ch = logging.StreamHandler(sys.stdout)
 
-    formatter = logging.Formatter(format)
-    file_handler = logging.FileHandler(file_name)
-    file_handler.setFormatter(formatter)
-    logger.setLevel(logging.NOTSET)
-    logger.addHandler(file_handler)
-    return logger
+    # root_logger.addHandler(file_handler)
+    # root_logger.addHandler(std_out)
+    # print (str(root_logger.handlers))
 
 
 def test_log():
+    # init_log()
     l = logging.getLogger(__name__)
     print('This is just a print')
     l.debug("this is a debugging message")
@@ -53,6 +56,7 @@ def test_log():
     l.warning("this is a warning message")
     l.error("this is an error message")
     l.critical("this is a critical message")
+
 
 init_log()
 # test_log()

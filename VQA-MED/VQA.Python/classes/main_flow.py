@@ -3,18 +3,53 @@ import pathlib
 from tqdm import tqdm
 import logging
 from common.DAL import ModelScore
-from common.classes import VqaSpecsAAA
 from common.os_utils import File
 from common.utils import VerboseTimer
 from collections import namedtuple
 from common import DAL
-
+import vqa_logger
 logger = logging.getLogger(__name__)
-
 ModelResults = namedtuple('ModelResults', ['loss', 'activation', 'bleu', 'wbss'])
 
 
+def debug():
+    from parsers.data_loader import DataLoader
+    from common.settings import validation_data
+    df_valid = DataLoader.get_data(validation_data.qa_path)
+    str()
+
+    from classes.vqa_model_trainer import VqaModelTrainer
+    from common.functions import get_features, concat_row, sentences_to_hot_vector, hot_vector_to_words
+    model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20190125_1052_13\\vqa_model_.h5'
+    mt = VqaModelTrainer(model_location, use_augmentation=True, batch_size=75)
+
+    #
+    # classes = mt.class_df
+    # arr_one_hot_vector = mt.get_labels(mt.data_train)
+    # categorial_labels = arr_one_hot_vector
+    #
+    # idx = 0
+    # class_i = classes.loc[idx]
+    # print(f'The sentence:\n{class_i}')
+    #
+    # one_hot_vector = arr_one_hot_vector[idx]
+    # label_words = \
+    #     hot_vector_to_words(one_hot_vector, mt.class_df).values
+    # print('\n\nThe highlighed labels:')
+    # label_words
+
+    history = mt.train()
+
+    with VerboseTimer("Saving trained Model"):
+        model_fn, summary_fn, fn_image, fn_history = mt.save(mt.model, history)
+
+    str()
+
+    print(model_fn)
+
 def main():
+    debug()
+    return
     copy_specs_to_model_folder()
     return
     ev = predict_test(85)
@@ -219,7 +254,7 @@ def train_model(model_id, optimizer, post_concat_dense_units=16):
     mb = VqaModelBuilder(model_dal.loss_function, model_dal.activation, post_concat_dense_units=post_concat_dense_units,
                          optimizer=optimizer)
     model = mb.get_vqa_model()
-    model_location, summary_fn, fn_image = VqaModelBuilder.save_model(model)
+    model_location, summary_fn, fn_image = VqaModelBuilder.save_model(model, mb.categorical_data_frame)
 
     # Train ------------------------------------------------------------------------
 

@@ -2,6 +2,8 @@ import inspect
 import itertools
 import os
 import textwrap
+from pathlib import Path
+
 import pandas as pd
 import numpy as np
 import cv2
@@ -96,7 +98,7 @@ def generate_image_augmentations(image_path,
             break  # otherwise the generator would loop indefinitely
 
 
-def normalize_data_structure(df, group, image_folder):
+def normalize_data_structure(df: pd.DataFrame, group: str, image_folder: str) -> pd.DataFrame:
     # assert group in ['train', 'validation']
     cols = ['image_name', 'question', 'answer']
     df_c = df[cols].copy()
@@ -107,7 +109,7 @@ def normalize_data_structure(df, group, image_folder):
         return df_c
 
     def get_image_path(image_name):
-        return os.path.join(image_folder, image_name + '.jpg')
+        return str(Path(image_folder)/(image_name + '.jpg'))
 
     df_c['path'] = df_c.apply(lambda x: get_image_path(x['image_name']),
                               axis=1)  # x: get_image_path(x['group'],x['image_name'])

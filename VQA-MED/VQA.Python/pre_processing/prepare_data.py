@@ -44,15 +44,6 @@ def pre_process_raw_data(df):
         with VerboseTimer("Question Embedding"):
             df['question_embedding'] = paralelized_get_features(column='question')
 
-        # TODO: Total hack...
-        logger.info('Tagging image questions')
-        with VerboseTimer("Tagging image questions"):
-            p = 'C:\\Users\\Public\\Documents\\Data\\2018\\imaging_dvices_classifiers\\question_classifier.pickle'
-            question_classifier = File.load_pickle(p)
-            embedding_input = np.asarray([v[0] for v in df.question_embedding])
-            predictions = question_classifier.predict(embedding_input)
-            df['is_imaging_device_question'] = predictions
-
     df.answer.fillna('', inplace=True)
     df.question.fillna('', inplace=True)
     logger.debug('Done')
@@ -94,8 +85,7 @@ def get_text_features(txt):
             print(f'Failed to get embedding for {txt}:\n{ex}')
             raise
 
-    text_features = np.reshape(text_features, (1, input_length * embedding_dim))
-
+    text_features = text_features.reshape(input_length * embedding_dim)
     return text_features
 
 

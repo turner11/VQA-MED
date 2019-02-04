@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python
 # coding: utf-8
 
 # # Bringing data to expected format
@@ -13,42 +13,55 @@ from pandas import HDFStore
 import pandas as pd
 import IPython
 
-from common.constatns import train_data, validation_data, test_data, raw_data_location, images_folder_train, images_folder_validation, images_path_test
+from common.settings import train_data, validation_data, test_data
+from common.constatns import raw_data_location, images_folder_train, images_folder_validation
 from common.utils import VerboseTimer
-from parsers.VQA18 import DataLoader
-from common.functions import get_size, get_highlighted_function_code, normalize_data_structure
+
+from common.functions import get_size, get_highlighted_function_code
+from pre_processing.prepare_data import normalize_data_strucrture
+from parsers.data_loader import DataLoader
+import vqa_logger 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
-# In[2]:
+# In[3]:
 
 
-# TODO: Change this to use the original format from image_clef
-df_train = DataLoader.get_instance(train_data.processed_xls).data
-df_valid = DataLoader.get_instance(validation_data.processed_xls).data
-df_test = DataLoader.get_instance(test_data.processed_xls).data
+df_train = DataLoader.get_data(train_data.qa_path)
+df_valid = DataLoader.get_data(validation_data.qa_path)
+df_test = pd.DataFrame(columns=df_valid.columns)#DataLoader.get_data(test_data.qa_path)
 
 
 # ### For bringing the data to a normalized state we will use the function 'normalize_data_strucrture'
 # Defined as:
 
-# In[3]:
-
-
-code = get_highlighted_function_code(normalize_data_structure, remove_comments=True)
-IPython.display.display(code)
-
-
 # In[4]:
 
 
-df_t = normalize_data_structure(df_train, 'train', images_folder_train)
-df_v = normalize_data_structure(df_valid, 'validation', images_folder_validation)
-df_test = normalize_data_structure(df_test, 'test', images_path_test)
+code = get_highlighted_function_code(normalize_data_strucrture,remove_comments=True)
+IPython.display.display(code)
 
 
-df = pd.concat([df_t, df_v, df_test])  # .reset_index()
+# In[5]:
+
+
+df_train.head()
+
+
+# In[6]:
+
+
+def normalize_data(df, set_info):
+    normed = normalize_data_strucrture(df, set_info.tag, set_info.images_folder)
+    return normed
+
+df_nt = normalize_data(df_train, train_data)
+df_nv = normalize_data(df_valid, validation_data)
+df_ntest = normalize_data(df_test, test_data)
+
+df = pd.concat([df_nt, df_nv, df_ntest])  # .reset_index()
 #         folder = images_folder_train if group == 'train' else images_folder_validation
     
 df.describe()
@@ -56,7 +69,7 @@ df.describe()
 
 # ### Save the data
 
-# In[5]:
+# In[8]:
 
 
 # remove if exists

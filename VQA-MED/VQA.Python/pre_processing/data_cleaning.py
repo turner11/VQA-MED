@@ -10,20 +10,18 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
 
     def replace_func(val: str) -> str:
         if isinstance(val, str):
-            new_val = val
+            new_val = ' '.join(val.split()).strip().lower()
             for tpl in find_and_replace_data:
                 pattern = re.compile(tpl.orig, re.IGNORECASE)
-                new_val = pattern.sub(repl=tpl.sub, string=new_val).strip().lower()
+                new_val = pattern.sub(repl=tpl.sub, string=new_val)
         elif np.isnan(val):
             new_val = ''
         else:
             new_val = val
 
+        new_val.strip().lower()
         return new_val
 
-    df['original_question'] = df['question']
-    df['original_answer'] = df['answer']
-
-    df['question'] = df['question'].apply(replace_func)
-    df['answer'] = df['answer'].apply(replace_func)
+    df['processed_question'] = df['question'].apply(replace_func)
+    df['processed_answer'] = df['answer'].apply(replace_func)
     return df

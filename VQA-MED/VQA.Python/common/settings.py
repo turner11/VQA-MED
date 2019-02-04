@@ -1,11 +1,16 @@
 from functools import lru_cache
-
 import spacy
 import logging
-
-logger = logging.getLogger(__name__)
+from common.constatns import data_path_train, data_path_validation, data_path_test
+from common.data_locations import DataLocations
 
 nlp = None
+# data locations-----------------------------------------------------------------------------
+logger = logging.getLogger(__name__)
+train_data = DataLocations('train', base_folder=data_path_train)
+validation_data = DataLocations('validation', base_folder=data_path_validation)
+test_data = DataLocations('test', base_folder=data_path_test)
+
 # Image processing-----------------------------------------------------------------------------
 DEFAULT_IMAGE_WEIGHTS = 'imagenet'
 #  Since VGG was trained as a image of 224x224, every new image
