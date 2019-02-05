@@ -3,8 +3,8 @@ import time
 import logging
 from contextlib import contextmanager
 from datetime import timedelta
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 
 
 class Timer:
@@ -31,24 +31,25 @@ class VerboseTimer(Timer):
         logger.debug("{0}: {1}".format(self.title, str(self)))
 
 
-
 def timeit(func):
     def timed(*args, **kw):
         with Timer() as t:
             result = func(*args, **kw)
         logger.debug('Function {0}; Time: {1}'.format(func.__name__, 'time:', str(t)))
         return result
+
     return timed
 
 
 def get_word_match(word, string):
     import re
-    k= re.compile(r'\b%s\b' % word, re.I)
+    k = re.compile(r'\b%s\b' % word, re.I)
     try:
         res = k.search(string)
     except TypeError as ex:
         res = None
     return res
+
 
 def has_word(word, string):
     return get_word_match(word, string) is not None
@@ -64,6 +65,7 @@ def suppress_stdout():
         finally:
             sys.stdout = old_stdout
 
+
 def suppress_func_stdout(func):
     def silent_func(*args, **kw):
         with suppress_stdout():
@@ -71,4 +73,3 @@ def suppress_func_stdout(func):
         return result
 
     return silent_func
-

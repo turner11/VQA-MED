@@ -13,6 +13,13 @@ ModelResults = namedtuple('ModelResults', ['loss', 'activation', 'bleu', 'wbss']
 
 
 def debug():
+
+
+
+
+
+
+    return
     from parsers.data_loader import DataLoader
     from common.settings import validation_data
     df_valid = DataLoader.get_data(validation_data.qa_path)

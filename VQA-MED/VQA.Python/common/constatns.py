@@ -1,13 +1,11 @@
-from pathlib import Path
 import os
+from pathlib import Path
+
 
 # File Locations -------------------------------------------------------------
+
 vqa_python_base_path = Path(os.path.join(os.path.abspath('.').split('VQA.Python')[0], 'VQA.Python'))
-fn_meta = str(vqa_python_base_path / 'data/meta_data.h5')
-raw_data_location = str(vqa_python_base_path / 'data/raw_data.h5')
-data_location = str(vqa_python_base_path / 'data/model_input.parquet')
-augmentation_index = str(vqa_python_base_path / 'data/augmentation_index.h5')
-vqa_specs_location = str(vqa_python_base_path / 'data/vqa_specs.pkl')
+data_path = vqa_python_base_path / 'data'
 
 images_folder_train = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Train\\VQAMed2018Train-images'
 images_folder_validation = 'C:\\Users\\Public\\Documents\\Data\\2018\\VQAMed2018Valid\\VQAMed2018Valid-images'
@@ -22,3 +20,4 @@ data_base_folder = Path('C:\\Users\\Public\\Documents\\Data\\2019')
 data_path_train = str(data_base_folder / 'train')
 data_path_validation = str(data_base_folder / 'validation')
 data_path_test = str(data_base_folder / 'validation')
+

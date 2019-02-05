@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[2]:
+# In[1]:
 
 
 # %%capture
@@ -14,14 +14,14 @@ import logging
 from pathlib import Path
 
 
-# In[3]:
+# In[2]:
 
 
 import vqa_logger 
 logger = logging.getLogger(__name__)
 
 
-# In[4]:
+# In[3]:
 
 
 from common.constatns import raw_data_location, data_location
@@ -35,7 +35,7 @@ from common.utils import VerboseTimer
 
 # #### Getting the nlp engine
 
-# In[5]:
+# In[4]:
 
 
 nlp = get_nlp()
@@ -43,27 +43,27 @@ nlp = get_nlp()
 
 # #### Where get_nlp is defined as:
 
-# In[6]:
+# In[5]:
 
 
 code = get_highlighted_function_code(get_nlp,remove_comments=True)
 IPython.display.display(code)
 
 
-# In[7]:
+# In[6]:
 
 
 raw_data_location
 
 
-# In[8]:
+# In[7]:
 
 
 with HDFStore(raw_data_location) as store:
     image_name_question = store['data']
 
 
-# In[9]:
+# In[8]:
 
 
 image_name_question.head()
@@ -71,7 +71,7 @@ image_name_question.head()
 
 # ##### This is just for performance and quick debug cycles! remove before actual trainining:
 
-# In[10]:
+# In[9]:
 
 
 # image_name_question = image_name_question.head(5)
@@ -82,7 +82,7 @@ image_name_question.head()
 
 # #### get_text_features:
 
-# In[11]:
+# In[10]:
 
 
 code = get_highlighted_function_code(get_text_features,remove_comments=True)
@@ -91,7 +91,7 @@ IPython.display.display(code)
 
 # #### get_image:
 
-# In[12]:
+# In[11]:
 
 
 code = get_highlighted_function_code(get_image,remove_comments=True)
@@ -100,7 +100,7 @@ IPython.display.display(code)
 
 # #### pre_process_raw_data:
 
-# In[13]:
+# In[12]:
 
 
 code = get_highlighted_function_code(pre_process_raw_data,remove_comments=True)
@@ -109,7 +109,7 @@ IPython.display.display(code)
 
 # ### Clean and enrich the data
 
-# In[14]:
+# In[13]:
 
 
 from pre_processing.data_enrichment import enrich_data
@@ -120,14 +120,7 @@ image_name_question = clean_data(image_name_question)
 image_name_question = enrich_data(image_name_question)
 
 
-# In[15]:
-
-
-image_name_question[image_name_question.image_name == 'synpic41148.jpg'].head()
-# image_name_question.head()
-
-
-# In[16]:
+# In[14]:
 
 
 groups = image_name_question.groupby('group')
@@ -140,7 +133,7 @@ image_name_question[['imaging_device','image_name']].groupby('imaging_device').d
 # #### If running in an exported notebook, use the following:
 # (indent everything to be under the main guard) - for avoiding recursive spawning of processes
 
-# In[17]:
+# In[15]:
 
 
 from multiprocessing import freeze_support
@@ -152,7 +145,7 @@ if __name__ == '__main__':
 # Note:  
 # This might take a while...
 
-# In[18]:
+# In[16]:
 
 
 logger.debug('----===== Preproceccing train data =====----')
@@ -160,17 +153,23 @@ with VerboseTimer("Pre processing training data"):
     image_name_question_processed = pre_process_raw_data(image_name_question)
 
 
-# In[19]:
+# In[17]:
 
 
 image_name_question_processed.head()
+
+
+# In[18]:
+
+
+image_name_question[image_name_question.image_name == 'synpic52143.jpg'].head()
 
 
 # #### Saving the data, so later on we don't need to compute it again
 
 # ### TODO: need to add question classification taking in consideration 2019 data
 
-# In[20]:
+# In[19]:
 
 
 def add_dataframe_to_data_set(df, location):
@@ -184,7 +183,7 @@ def add_dataframe_to_data_set(df, location):
 #train_df.to_parquet(fname='',engine='pyarrow',partition_cols=)
 
 
-# In[21]:
+# In[20]:
 
 
 logger.debug("Saving the data")
@@ -216,7 +215,7 @@ size = get_size(data_location)
 logger.debug(f"training data's file size was: {size}")
 
 
-# In[22]:
+# In[21]:
 
 
 print('Data saved at:')

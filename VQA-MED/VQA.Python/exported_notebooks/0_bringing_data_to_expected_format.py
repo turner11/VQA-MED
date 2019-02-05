@@ -26,7 +26,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-# In[3]:
+# In[2]:
 
 
 df_train = DataLoader.get_data(train_data.qa_path)
@@ -37,14 +37,14 @@ df_test = pd.DataFrame(columns=df_valid.columns)#DataLoader.get_data(test_data.q
 # ### For bringing the data to a normalized state we will use the function 'normalize_data_strucrture'
 # Defined as:
 
-# In[4]:
+# In[3]:
 
 
 code = get_highlighted_function_code(normalize_data_strucrture,remove_comments=True)
 IPython.display.display(code)
 
 
-# In[5]:
+# In[4]:
 
 
 df_train.head()
@@ -69,7 +69,7 @@ df.describe()
 
 # ### Save the data
 
-# In[8]:
+# In[7]:
 
 
 # remove if exists

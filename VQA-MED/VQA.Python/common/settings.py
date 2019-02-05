@@ -1,12 +1,15 @@
 from functools import lru_cache
 import spacy
 import logging
-from common.constatns import data_path_train, data_path_validation, data_path_test
+from common.constatns import data_path_train, data_path_validation, data_path_test, data_path
 from common.data_locations import DataLocations
+from data_access.api import DataAccess
 
 nlp = None
 # data locations-----------------------------------------------------------------------------
 logger = logging.getLogger(__name__)
+data_access = DataAccess(data_path)
+
 train_data = DataLocations('train', base_folder=data_path_train)
 validation_data = DataLocations('validation', base_folder=data_path_validation)
 test_data = DataLocations('test', base_folder=data_path_test)
