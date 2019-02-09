@@ -6,24 +6,22 @@
 
 import os
 import pandas as pd
-from pandas import HDFStore
 import IPython
 from IPython.display import Image, display
-import pyarrow
 from tqdm import tqdm
 from multiprocessing.pool import ThreadPool as Pool
 import logging
-import pyarrow as pa
-import pyarrow.parquet as pq
+from collections import defaultdict, namedtuple
+from pathlib import Path
 
 
 # In[2]:
 
 
-from common.constatns import data_location, vqa_specs_location, fn_meta, augmentation_index
 from common.utils import VerboseTimer
 from common.functions import get_highlighted_function_code, generate_image_augmentations,  get_image
 from common.os_utils import File
+from common.settings import data_access
 import vqa_logger 
 logger = logging.getLogger(__name__)
 
@@ -31,10 +29,7 @@ logger = logging.getLogger(__name__)
 # In[3]:
 
 
-print(f'loading from:\n{data_location}')
-with VerboseTimer("Loading Data"):
-    prqt = pq.read_table(data_location)
-df_data = prqt.to_pandas()
+df_data = data_access.load_processed_data(columns=['path','question','answer', 'group'])
 
 
 # In[4]:
@@ -68,45 +63,46 @@ df_train = df_data[df_data.group == 'train']
 image_paths = df_train.path.drop_duplicates()
 print(len(image_paths))
 
+ImageInfo = namedtuple('ImageInfo',
+                       ['original_path', 'file_name', 'extension', 'target_location', 'out_put_folder_exists'])
+
+
 def get_file_info(fn):
-        image_folder, full_file_name = os.path.split(fn)
-        file_name, ext = full_file_name.split('.')[-2:]        
-        output_dir = os.path.join(image_folder,'augmentations',full_file_name+'\\')
-        return (fn, file_name, ext, output_dir)
-
-images_info = [get_file_info(p) for p in image_paths]        
-non_existing_paths = [(fn, file_name, ext, output_dir) for (fn, file_name, ext, output_dir) in images_info if not os.path.isdir(output_dir)]
-non_existing_paths = [(i, fn, file_name, ext, output_dir) for i, (fn, file_name, ext, output_dir) in enumerate(non_existing_paths)]
+    image_folder, full_file_name = os.path.split(fn)
+    file_name, ext = full_file_name.split('.')[-2:]
+    output_dir = os.path.join(image_folder, 'augmentations', full_file_name + '\\')
+    output_exists = os.path.isdir(output_dir)
+    return ImageInfo(fn, file_name, ext, output_dir, output_exists)
 
 
-print(f'Generating augmentations for {len(non_existing_paths)} images')
+images_info = [get_file_info(p) for p in image_paths]
+df_all_images_info = pd.DataFrame(images_info)
+df_images_info = df_all_images_info[~df_all_images_info.out_put_folder_exists]
+
+print(f'Generating augmentations for {len(df_images_info)} images')
 
 
-def augments_single_image(tpl_data)  :
-    try:       
-        (i, curr_image_path, file_name, ext, output_dir) = tpl_data
-        msg = (f'Augmenting ({i+1}/{len(non_existing_paths)})\t"{file_name}" -> {output_dir}')  
-        if i %100 == 0:
+def augments_single_image(row_index):
+    try:
+        row = df_images_info.iloc[row_index]
+        msg = (f'Augmenting ({row_index + 1}/{len(df_images_info)})\t"{row.file_name}" -> {row.target_location}')
+        if row_index % 100 == 0:
             print(msg)
-        File.validate_dir_exists(output_dir)
-        generate_image_augmentations(curr_image_path, output_dir)
+        File.validate_dir_exists(row.target_location)
+        generate_image_augmentations(row.original_path, row.target_location)
         res = 1
-    except Exception as e: 
+    except Exception as e:
         msg = str(e)
         res = 0
-    return (res,msg)
+    return (res, msg)
 
 
-try:
-    # for tpl_data in non_existing_paths:
-         #augments_single_image(tpl_data)
-    pool = Pool(processes=8)
-    inputs = non_existing_paths
-    pool_res = pool.map(augments_single_image, inputs)
-    pool.terminate()
-
-except Exception as ex:
-    print(f'Error:\n{str(ex)}')
+# for tpl_data in non_existing_paths:
+# augments_single_image(tpl_data)
+pool = Pool(processes=8)
+inputs = range(len(df_images_info))
+pool_res = pool.map(augments_single_image, inputs)
+pool.terminate()
 
 
 # In[8]:
@@ -126,195 +122,80 @@ print(summary)
 # In[9]:
 
 
-# a = images_info[:1]
-a = images_info
-aug_dict = {image_path:output_dir for (image_path, file_name, ext, output_dir) in a}
-
-curr_idx = df_train.tail(1).index[0] +1
-
-df_augments = df_train.copy()
-df_augments['augmentation'] = 0
-df_augments['idx'] = 0
-
-print(len(df_augments))
-new_rows = []
-with VerboseTimer("Collecting augmented rows"):
-    pbar = tqdm(aug_dict.items())
-    for image_path, output_dir in pbar:
-        #print(image_path)
-        image_rows = df_augments[df_augments.path == image_path]
-        for i_row, row in image_rows.iterrows():
-            #print(i_row)
-            augment_files = [os.path.join(output_dir, fn) for fn in sorted(os.listdir(output_dir))]
-
-            for i_augment, augment_path in enumerate(augment_files):
-                r = row.copy()
-                r.path = augment_path            
-#                 r.image = get_image(augment_path)
-                r.augmentation = i_augment + 1 
-                r.idx = curr_idx
-                curr_idx+=1
-                r.reset_index()
-                new_rows.append(r)        
+df_all_images_info.head()
+len(df_all_images_info.original_path.drop_duplicates())
 
 
 # In[10]:
 
 
-with VerboseTimer("Creating rows dataframe"):
-    df_augmented_rows = pd.DataFrame(new_rows)
-    
-df = pd.concat([df_train, df_augmented_rows])    
+
+# Set the original path
+df_augments = df_train[['path']].drop_duplicates().copy()
+df_augments['augmentation'] = 0
+df_augments['original_path'] = df_augments.path
+
+print(len(df_augments))
+
+# Add the augmentations
+new_rows = []
+AugmentationRow = namedtuple('AugmentationRow',['original_path', 'path', 'augmentation'])
+index = df_all_images_info[['original_path','target_location']].set_index('original_path')
+with VerboseTimer("Collecting augmented rows"):
+    pbar = tqdm(df_augments.iterrows(), total=len(df_augments))
+    for i, row in pbar:
+        augment_location = Path(index.loc[row.original_path].target_location)
+        assert augment_location.exists()
+        augment_files = sorted(augment_location.iterdir())
+
+        curr_augmentations = [AugmentationRow(row.original_path, path=str(augmented_file),augmentation=i)
+                              for i, augmented_file
+                              in enumerate(augment_files, start=1)] # 0 is for the original
+        new_rows.extend(curr_augmentations)
+
+
+# In[11]:
+
+
+df = df_augments.append(new_rows).sort_values(['augmentation'], ascending=[True])
 print(len(df))
 
 df.head(1)
 
 
-# ## Giving a meaningful index across dataframes:
-
-# In[11]:
-
-
-df = df.sort_values(['augmentation', 'idx'], ascending=[True, True])
-
-
 # In[12]:
-
-
-
-len_df = len(df)
-idxs = range(0, len_df)
-len_idx = len(set(idxs))
-assert  len_idx== len_df , f'length of indexes ({len_idx}) did not match length of dataframe ({len_df})'
-df.idx = idxs
-
-
-# In[13]:
 
 
 df.iloc[[0,1,-2,-1]]
 
 
+# #### Saving the data
+
+# In[13]:
+
+
+data_access.save_augmentation_data(df)
+
+
+# ### The results:
+
 # In[14]:
 
 
-data_location
-
-
-# In[15]:
-
-
-# # df.head(1)
-# # len(new_rows)
-# new_rows[1].augmentation
-# df.columns
-# aug_keys = df.augmentation.drop_duplicates().values
-
-# aug_keys
-df[['augmentation','idx']].iloc[[0,1,-2,-1]]
-
-
-# In[16]:
-
-
-import numpy as np
-aug_keys = [int(i) if not np.isnan(i) else 0 for i in df.augmentation.drop_duplicates().values]
-set(aug_keys)
+augmentation_1 = data_access.load_augmentation_data(augmentation=1)
+augmentation_5 = data_access.load_augmentation_data(augmentation=5)
+augmentation_all = data_access.load_augmentation_data()
+augmentation_all.sample(5)
 
 
 # In[17]:
 
 
-#  with HDFStore(data_location) as store:
-#         k = store.keys()
-# k        
-data_location
-augmentation_index = 'C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\data\\augmentation_index.h5'
-augmentation_index
+orig_a1 = set(augmentation_1.original_path)
+orig_a5 = set(augmentation_5.original_path)
 
-
-# In[21]:
-
-
-df.head()
-
-
-# In[19]:
-
-
-
-from collections import defaultdict
-index_dict = defaultdict(lambda:[])
-
-with VerboseTimer(f"Storing {len(aug_keys)} dataframes"):
-    with HDFStore(augmentation_index) as store:
-        pbar = tqdm(aug_keys)
-        for aug_key in pbar:
-            with VerboseTimer(f"Storing dataframe '{aug_key}'"):
-                data = df[df.augmentation == aug_key]
-
-                store_key = f'augmentation_{aug_key}'
-                idxs = data.idx.values                                
-                index_dict['idx'].extend(idxs)        
-                
-                paths = data.path.values                
-                index_dict['paths'].extend(paths)                
-                
-                index_dict['image_path'].extend(paths)
-                index_dict['augmentation_key'].extend([aug_key]*len(paths))
-                index_dict['store_path'].extend([augmentation_index]*len(paths))
-                index_dict['store_key'].extend([store_key]*len(paths))
-                store[store_key] = data
-                
-        index=pd.DataFrame(index_dict) 
-        store['index'] = index
-
-
-# ### The results:
-
-# In[ ]:
-
-
-with HDFStore(augmentation_index) as store:
-    loaded_index = store['index']
-
-print(f'image_path: {loaded_index.image_path[0]}')    
-print(f'store_path: {loaded_index.store_path[0]}')    
-print(f'augmentation_key: {loaded_index.augmentation_key[0]}')    
-  
-loaded_index.head(1)
-
-
-# In[ ]:
-
-
-with HDFStore(augmentation_index) as store:
-    print(list(store.keys()))
-
-
-# In[ ]:
-
-
-with pd.HDFStore(augmentation_index) as store:
-    augmentation_1 = store['augmentation_1']
-    augmentation_5 = store['augmentation_5']
-
-
-# In[ ]:
-
-
-v1 = min(augmentation_1.idx),max(augmentation_1.idx)
-v5 = min(augmentation_5.idx),max(augmentation_5.idx)
-
-
-print(v5)
-print(v1)
-len(augmentation_1)
-augmentation_1.head(5).idx
-
-
-# In[ ]:
-
-
-augmentation_5.tail(5).idx
+diff = orig_a1 ^ orig_a5
+diff
+print(len(orig_a1))
+assert len(diff) == 0, 'Expected all augmentations to have all orignal paths'
 

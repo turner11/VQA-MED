@@ -1,14 +1,24 @@
 import logging
 import re
 from collections import Counter
-
 import pandas as pd
 import itertools
 from tqdm import tqdm
-
+from common.settings import validation_data, train_data
 from pre_processing.known_find_and_replace_items import imaging_devices, diagnosis, locations
 
 logger = logging.getLogger(__name__)
+
+
+def _add_questions_categories(df):
+    data_locations = [train_data, validation_data]
+    dfs = [dl.get_image_names_category_info() for dl in data_locations]
+    all_data = pd.concat(dfs)
+    new_df = pd.merge(left=df, right=all_data
+                       , left_on=['image_name', 'question'], right_on=['image_name', 'question']
+                       , how='left')
+    return new_df
+
 
 
 def enrich_data(df: pd.DataFrame) -> pd.DataFrame:
@@ -25,11 +35,14 @@ def enrich_data(df: pd.DataFrame) -> pd.DataFrame:
 
     # add_diagnostics_columns
     _add_columns_by_search(df, new_columns_name='diagnosis' ,indicator_words=diagnosis, search_columns=['question', 'answer'])
-    # add_locations_columns
-    _add_columns_by_search(df, new_columns_name='locations', indicator_words=locations, search_columns=['question', 'answer'])
 
-    _add_columns_by_search(df, new_columns_name='imaging_device', indicator_words=imaging_devices, search_columns=['processed_question', 'processed_answer'])
-    _consolidate_image_devices(df)
+    # add_locations_columns
+    # _add_columns_by_search(df, new_columns_name='locations', indicator_words=locations, search_columns=['question', 'answer'])
+
+    # _add_columns_by_search(df, new_columns_name='imaging_device', indicator_words=imaging_devices, search_columns=['processed_question', 'processed_answer'])
+    # _consolidate_image_devices(df)
+
+    df = _add_questions_categories(df)
 
 
     return df

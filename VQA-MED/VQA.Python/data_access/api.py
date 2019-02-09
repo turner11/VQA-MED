@@ -5,7 +5,9 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 from pathlib import Path
 from common.utils import VerboseTimer
+
 logger = logging.getLogger(__name__)
+
 
 class DataAccess(object):
     RAW_DATA_FILE_NAME = 'raw_data.h5'
@@ -40,24 +42,24 @@ class DataAccess(object):
         return self.folder / 'meta_data.h5'
 
     @property
-    def augmentation_index(self):
-        return self.folder / 'augmentation_index.h5'
-
+    def augmentation_location(self):
+        return self.folder / 'augmentations.parquet'
 
     def save_raw_input(self, df: pd.DataFrame) -> None:
-            """
-            For saving the normalized raw data
-            :param df: the raw data data frame
-            """
-            full_path = str(self.raw_data_location)
-            try:
-                os.remove(full_path)
-            except OSError:
-                pass
+        """
+        For saving the normalized raw data
+        :param df: the raw data data frame
+        """
+        full_path = str(self.raw_data_location)
+        try:
+            os.remove(full_path)
+        except OSError:
+            pass
 
-            with pd.HDFStore(full_path) as store:
-                store[self.RAW_DATA_KEY] = df
+        with pd.HDFStore(full_path) as store:
+            store[self.RAW_DATA_KEY] = df
 
+        return full_path
 
     def load_raw_input(self) -> pd.DataFrame:
         """
@@ -72,26 +74,58 @@ class DataAccess(object):
                 image_name_question = store[self.RAW_DATA_KEY]
             return image_name_question
 
-    def save_processed_data(self, df: pd.DataFrame) -> None:
+    def save_processed_data(self, df: pd.DataFrame) -> str:
         full_path = str(self.processed_data_location)
-        logger.debug(f"Saving the processed data to: {full_path}")
+        logger.debug(f"Saving the processed data to:\n{full_path}")
         with VerboseTimer("Saving processed data"):
-            return self.__save_parquet(df, full_path, 'group')
+            self._save_parquet(df, full_path, 'group')
+        return full_path
 
-    def load_processed_data(self) -> pd.DataFrame:
+    def load_processed_data(self, columns: list = None) -> pd.DataFrame:
         full_path = str(self.processed_data_location)
-        print(f'loading from:\n{full_path}')
-        with VerboseTimer("Loading Data"):
-            prqt = pq.read_table(full_path)
-
-        with VerboseTimer("Converting to pandas"):
-            df_data = prqt.to_pandas()
+        logger.debug(f'loading processed data from:\n{full_path}')
+        df_data = self._load_parquet(full_path, columns)
         return df_data
 
+    def save_augmentation_data(self, df_augmentations):
+        path = str(self.augmentation_location)
+        logger.debug(f"Saving augmentations:\n{path}")
+        with VerboseTimer("Saving augmentations"):
+            self._save_parquet(df=df_augmentations, location=path, partition_col='augmentation')
+        return path
+
+    def load_augmentation_data(self, columns=None, augmentation=None):
+        path = str(self.augmentation_location)
+        logger.debug(f"Loading augmentations:\n{path}")
+
+        if augmentation is not None:
+            filters = [('augmentation', '=', str(int(augmentation))), ]
+        else:
+            filters = None
+
+        df_augmentations = self._load_parquet(path, columns=columns, filters=filters)
+        return df_augmentations
+
     @staticmethod
-    def __save_parquet(df, location, partition_col):
+    def _save_parquet(df, location, partition_col):
         table = pa.Table.from_pandas(df)
         return pq.write_to_dataset(table,
                                    root_path=str(location),
                                    partition_cols=[partition_col],
                                    )
+
+    @staticmethod
+    def _load_parquet(path, columns=None, filters=None, convert_to_pandas=True):
+        logger.debug(f'loading parquet from:\n{path}')
+
+        dataset = pq.ParquetDataset(path, filters=filters)
+
+        with VerboseTimer("Loading parquet"):
+            prqt = dataset.read(columns=columns)
+            df_data = prqt
+
+        if convert_to_pandas:
+            with VerboseTimer("Converting to pandas"):
+                df_data = prqt.to_pandas()
+
+        return df_data

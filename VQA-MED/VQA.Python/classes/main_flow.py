@@ -2,23 +2,25 @@ import itertools
 import pathlib
 from tqdm import tqdm
 import logging
+
+import exported_notebooks
 from common.DAL import ModelScore
 from common.os_utils import File
 from common.utils import VerboseTimer
 from collections import namedtuple
 from common import DAL
 import vqa_logger
+
 logger = logging.getLogger(__name__)
 ModelResults = namedtuple('ModelResults', ['loss', 'activation', 'bleu', 'wbss'])
 
 
 def debug():
+    from exported_notebooks import aaa
 
-
-
-
-
-
+    return
+    from tests import test_pre_processing
+    test_pre_processing.main()
     return
     from parsers.data_loader import DataLoader
     from common.settings import validation_data

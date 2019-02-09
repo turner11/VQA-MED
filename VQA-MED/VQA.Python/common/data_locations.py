@@ -1,4 +1,7 @@
 from pathlib import Path
+import pandas as pd
+
+from parsers.data_loader import DataLoader
 
 
 class DataLocations(object):
@@ -33,3 +36,31 @@ class DataLocations(object):
     @property
     def category_folder(self):
         return str(self.folder / self.QA_BY_CATEGORY_FOLDER_NAME)
+
+    def get_image_names_category_info(self):
+        category_friendly_names = {'C1': 'Modality',
+                                   'C2': 'Plane',
+                                   'C3': 'Organ',
+                                   'C4': 'Abnormality',}
+
+        dfs = {}
+        for fn in self.categories_files:
+            category_sybol = Path(fn).name.split('_')[0]
+            category = category_friendly_names[category_sybol]
+            df = DataLoader.raw_input_to_dataframe(fn)
+
+            df = df[['image_name', 'question']]
+            df['question_category'] = category
+            dfs[category] = df
+
+        consolidated_category = pd.concat(list(dfs.values()))
+        main_df = DataLoader.raw_input_to_dataframe(self._all_qa_file_name)
+        main_df = pd.merge(left=main_df, right=consolidated_category
+                           , left_on=['image_name', 'question'], right_on=['image_name', 'question']
+                           , how='left')
+
+
+        ret = main_df[['image_name', 'question','question_category']]
+        return ret
+
+        str()

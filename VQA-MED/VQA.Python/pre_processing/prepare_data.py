@@ -4,7 +4,6 @@ import logging
 import numpy as np
 from functools import partial
 import dask.dataframe as dd
-from common.os_utils import File
 from common.utils import VerboseTimer
 from common.settings import input_length, get_nlp
 from common.settings import embedding_dim
@@ -61,7 +60,7 @@ def get_text_features(txt):
     calculated using Glove Vector """
     # print(txt)
 
-    text_features = np.zeros((1, input_length, embedding_dim),dtype=float)
+    text_features = np.zeros((1, input_length, embedding_dim), dtype=float)
 
     no_data = txt == '' or txt is None or (isinstance(txt,float) and math.isnan(txt))
     if no_data :

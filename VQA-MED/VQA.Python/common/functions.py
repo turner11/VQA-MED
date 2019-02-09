@@ -65,13 +65,13 @@ def get_image(image_file_name):
 
 def generate_image_augmentations(image_path,
                                  output_dir,
-                                 rotation_range=15,  # Units: degrees
-                                 width_shift_range=0.1,
-                                 height_shift_range=0.1,
+                                 rotation_range=25,  # Units: degrees
+                                 width_shift_range=0.15,
+                                 height_shift_range=0.15,
                                  shear_range=0.,  # Units: degrees
-                                 zoom_range=0.1,
+                                 zoom_range=0.15,
                                  fill_mode='nearest',
-                                 augmentation_count=5):
+                                 augmentation_count=20):
     from keras.preprocessing.image import ImageDataGenerator, img_to_array, load_img  # ,array_to_img
 
     datagen = ImageDataGenerator(

@@ -117,21 +117,26 @@ def test_data_cleaning(normalized_data):
 def test_data_enrichment():
     csv_txt = \
         '''
-image_name,question,answer
-image1,what shows in mr?,a dolphin
-image2,pick any word,mr
-image3,ct is the thing ?,or is it?
-image4,pick any 2 letters ?,ct
-image4,and now 2 more ?,mr
-image4,what is the difference between hematoma and schwannoma?,with no info what so ever
-image5,what should i choose ct or mr, just pick one
-image6,a new image,with no available info
+image_name,question,answer,processed_question,processed_answer
+image1,what shows in mr?,a dolphin, what shows in mr?,a dolphin
+image2,pick any word,mr, pick any word,mr
+image3,ct is the thing ?,or is it?, ct is the thing ?,or is it?
+image4,pick any 2 letters ?,ct, pick any 2 letters ?,ct
+image4,and now 2 more ?,mr, and now 2 more ?,mr
+image4,what is the difference between hematoma and schwannoma?,with no info what so ever, what is the difference between hematoma and schwannoma?,with no info what so ever
+image5,what should i choose ct or mr, just pick one, what should i choose ct or mr, just pick one
+image6,a new image,with no available info, a new image,with no available info
+synpic20385,what is abnormal in the ct scan?,lung adenocarcinoma and cns metastasis
+synpic45585,what organ system is shown in this mri?,skull and contents
+synpic38560,what is the plane of this mri?,axial
+synpic27731,what imaging method was used?,us - ultrasound
     '''
 
     df = pd.read_csv(StringIO(csv_txt))
     df_enriched = enrich_data(df)
 
-    assert 'imaging_device' in df_enriched.columns, 'Expected enriched data to contain imaging_device'
+    assert 'diagnosis' in df_enriched.columns, 'Expected enriched data to contain diagnosis'
+    assert 'question_category' in df_enriched.columns, 'Expected enriched data to contain question_category'
 
     imaging_device_by_image_name = df_enriched.loc[:,['image_name', 'imaging_device']].set_index('image_name').to_dict()[
         'imaging_device']
@@ -143,6 +148,17 @@ image6,a new image,with no available info
     assert imaging_device_by_image_name['image4'] == 'unknown', err_msg
     assert imaging_device_by_image_name['image5'] == 'unknown', err_msg
     assert imaging_device_by_image_name['image6'] == 'unknown', err_msg
+
+    question_category_by_image_name = df_enriched.loc[:, ['image_name', 'question_category']]\
+                                                  .set_index('image_name')\
+                                                  .to_dict()['question_category']
+
+    category_err_msg = 'Got unexpected question category'
+    assert question_category_by_image_name ['synpic20385'] == 'Abnormality', category_err_msg
+    assert question_category_by_image_name ['synpic45585'] == 'Organ', category_err_msg
+    assert question_category_by_image_name ['synpic38560'] == 'Plane', category_err_msg
+    assert question_category_by_image_name ['synpic27731'] == 'Modality', category_err_msg
+    str()
 
 
 
@@ -162,6 +178,8 @@ def test_data_augmentation():
 
 
 def main():
+    nd = normalized_data()
+    p = df_processed(nd)
     # df_norm = normalized_data()
     # test_data_cleaning(df_norm )
     # test_embedding()

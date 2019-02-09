@@ -27,9 +27,9 @@ class DataLoader(object):
     COL_TOK_Q = TOKENIZED_COL_PREFIX + COL_QUESTION
     COL_TOK_A = TOKENIZED_COL_PREFIX + COL_ANSWER
 
-    @property
-    def all_raw_cols(self):
-        return [self.COL_IMAGE_NAME, self.COL_QUESTION, self.COL_ANSWER]
+    all_raw_cols = [COL_IMAGE_NAME, COL_QUESTION, COL_ANSWER]
+
+
 
     def __init__(self, data_path, **kwargs):
         super().__init__()
@@ -38,6 +38,10 @@ class DataLoader(object):
         self.data = self._read_data(data_path)
         assert self.data is not None, "Got a None data set"
         assert len(self.data) > 0, "Got an empty data set"
+
+    @staticmethod
+    def raw_input_to_dataframe(stream):
+        return pd.read_csv(stream, sep='|', header=None, names=DataLoader.all_raw_cols)
 
     @classmethod
     def get_instance(cls, data_path):
@@ -123,7 +127,8 @@ class DataLoader(object):
     def _read_data(self, data_arg):
         csv_string = self._get_text(data_arg)
         sio = StringIO(csv_string)
-        return pd.read_csv(sio, sep='|', header=None, names=self.all_raw_cols)
+        return self.raw_input_to_dataframe(sio)
+
 
     def _get_text(self, data_arg):
         raise NotImplementedError()

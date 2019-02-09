@@ -56,14 +56,14 @@ class File(object):
             text_file.writelines(txt)
 
     @classmethod
-    def read_text(cls, fn, txt):
+    def read_text(cls, fn):
         with open(fn, "r") as text_file:
-            return text_file.read(txt)
+            return text_file.read()
 
     @classmethod
-    def read_lines(cls, fn, txt):
+    def read_lines(cls, fn):
         with open(fn, "r") as text_file:
-            return text_file.readlines(txt)
+            return text_file.readlines()
 
     @classmethod
     def file_len(cls, fname, encoding=None):
