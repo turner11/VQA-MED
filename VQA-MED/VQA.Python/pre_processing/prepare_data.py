@@ -3,6 +3,7 @@ import os
 import logging
 import numpy as np
 from functools import partial
+from nltk.corpus import stopwords
 import dask.dataframe as dd
 from common.utils import VerboseTimer
 from common.settings import input_length, get_nlp
@@ -24,24 +25,40 @@ def pre_process_raw_data(df):
         df = df.loc[df['path'].isin(existing_files)]
 
         # Getting text features. This is the heavy task...
-        df = df.reset_index()
+        df = df.reset_index(drop=True)
+
+        stops = set(stopwords.words("english"))
+        remove_stops = lambda x: ' '.join([word for word in x.split() if word not in stops])
+        logger.info('Answer: removing stop words and tokenizing')
+        with VerboseTimer("Answer Tokenizing"):
+            df['processed_answer'] = df['processed_answer'].apply(remove_stops)
+
+        logger.info('Question: removing stop words and tokenizing')
+        with VerboseTimer("Question Tokenizing"):
+            df['processed_question'] = df['processed_question'].apply(remove_stops)
+
+
+
+
         ddata = dd.from_pandas(df, npartitions=8)
 
-        def get_string_fetures(s, *a, **kw):
+        for col in ['processed_answer', 'answer']:
+            if col not in df.columns:  # e.g. in test set...
+                df[col] = ''
+
+        def get_string_features(s, *a, **kw):
             features = get_text_features(s)
             return features
 
-        paralelized_get_features = partial(_apply_heavy_function, dask_df=ddata, apply_func=get_string_fetures)
-        logger.info('Getting answers embedding')
-        if 'answer' not in df.columns:  # e.g. in test set...
-            df['answer'] = ''
+        paralelized_get_features = partial(_apply_heavy_function, dask_df=ddata, apply_func=get_string_features)
 
+        logger.info('Getting answers embedding')
         with VerboseTimer("Answer Embedding"):
-            df['answer_embedding'] = paralelized_get_features(column='answer')
+            df['answer_embedding'] = paralelized_get_features(column='processed_answer')
 
         logger.info('Getting questions embedding')
         with VerboseTimer("Question Embedding"):
-            df['question_embedding'] = paralelized_get_features(column='question')
+            df['question_embedding'] = paralelized_get_features(column='processed_question')
 
     df.answer.fillna('', inplace=True)
     df.question.fillna('', inplace=True)

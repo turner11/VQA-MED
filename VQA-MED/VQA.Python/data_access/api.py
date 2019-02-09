@@ -129,3 +129,27 @@ class DataAccess(object):
                 df_data = prqt.to_pandas()
 
         return df_data
+
+
+    def save_meta(self, meta_df_dict):
+        meta_location = str(self.fn_meta)
+        try:
+            os.remove(meta_location)
+        except OSError:
+            pass
+
+
+        for name, df_curr in meta_df_dict.items():
+            df_curr.to_hdf(meta_location, name, format='table')
+
+        with pd.HDFStore(meta_location) as metadata_store:
+            logger.debug("Meta number of unique answers: {0}".format(len(metadata_store['answers'])))
+            logger.debug("Meta number of unique words: {0}".format(len(metadata_store['words'])))
+
+    def load_meta(self):
+        meta_location = str(self.fn_meta)
+
+        with pd.HDFStore(meta_location) as metadata_store:
+            ret = {key: metadata_store[key] for key in ['answers', 'words']}
+
+        return ret

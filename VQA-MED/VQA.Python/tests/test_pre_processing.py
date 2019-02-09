@@ -72,6 +72,8 @@ def df_processed(normalized_data):
     global _df_processed
     if _df_processed is None:
         set_nlp_vector(-1)  # smallest one...
+        normalized_data['processed_answer'] = normalized_data.answer
+        normalized_data['processed_question'] = normalized_data.question
         df = pre_process_raw_data(normalized_data)
         _df_processed = df
     return _df_processed

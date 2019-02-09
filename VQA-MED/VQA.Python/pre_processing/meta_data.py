@@ -31,7 +31,7 @@ def _get_data_frame_from_arg(df_arg):
     if not isinstance(df_data, pd.DataFrame):
         raise TypeError(f'Could not load data for argument "{df_arg}"')
 
-    requiered_columns = {'question', 'answer', 'imaging_device'}
+    requiered_columns = {'processed_question', 'processed_answer'}
     existing_columns = set(df_data.columns)
     missing_columns = requiered_columns - existing_columns
     assert len(missing_columns) == 0, f'Some columns that are mandatory for metadata where missing:\n{missing_columns}'
@@ -39,7 +39,7 @@ def _get_data_frame_from_arg(df_arg):
     return df_data
 
 
-def create_meta(df, hdf_output_location):
+def create_meta(df):
     df = _get_data_frame_from_arg(df)
 
     logger.debug(f"Dataframe had {len(df)} rows")
@@ -54,13 +54,9 @@ def create_meta(df, hdf_output_location):
         logger.debug("column {0} had {1} unique words".format(col, len(unique_words)))
         return unique_words
 
-    cols = ['question', 'answer']
+    cols = ['processed_question', 'processed_answer']
     df_unique_words = set(itertools.chain.from_iterable([get_unique_words(col) for col in cols]))
-    unique_answers = set([ans.lower() for ans in df['answer']])
-
-    unknown_devices = {'both', 'unknown'}
-    unique_imaging_devices = list(set(df['imaging_device']) - unknown_devices)
-
+    unique_answers = set([ans.lower() for ans in df['processed_answer']])
 
     words = sorted(list(df_unique_words), key=lambda w: (len(w), w))
     words = [w for w in words if
@@ -71,20 +67,12 @@ def create_meta(df, hdf_output_location):
     metadata_dict = {}
     metadata_dict['words'] = {'word': words}
     metadata_dict['answers'] = {'answer': list(unique_answers)}
-    metadata_dict['imaging_devices'] = {'imaging_device': unique_imaging_devices}
 
-    try:
-        os.remove(hdf_output_location)
-    except OSError:
-        pass
+    df_dict = {k: pd.DataFrame(dictionary, dtype=str) for k, dictionary in metadata_dict.items() }
+    return df_dict
 
-    for name, dictionary in metadata_dict.items():
-        df_curr = pd.DataFrame(dictionary, dtype=str)
-        df_curr.to_hdf(hdf_output_location, name, format='table')
 
-    with HDFStore(hdf_output_location) as metadata_store:
-        logger.debug("Meta number of unique answers: {0}".format(len(metadata_store['answers'])))
-        logger.debug("Meta number of unique words: {0}".format(len(metadata_store['words'])))
+
 
 #         df_ix_to_word = pd.DataFrame.from_dict(metadata['ix_to_word'])
 #         light.to_hdf(data_location, 'light', mode='w', data_columns=['image_name', 'imaging_device', 'path'], format='table')

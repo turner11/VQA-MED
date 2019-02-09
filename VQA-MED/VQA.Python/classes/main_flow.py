@@ -17,7 +17,6 @@ ModelResults = namedtuple('ModelResults', ['loss', 'activation', 'bleu', 'wbss']
 
 def debug():
     from exported_notebooks import aaa
-
     return
     from tests import test_pre_processing
     test_pre_processing.main()
