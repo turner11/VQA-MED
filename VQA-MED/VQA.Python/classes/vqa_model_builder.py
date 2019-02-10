@@ -1,10 +1,6 @@
-# from common.constatns import _DB_FILE_LOCATION
 import pathlib
 import shutil
-from copy import deepcopy
-
 import keras.layers as keras_layers
-from keras import backend as keras_backend
 from keras.layers import GlobalAveragePooling2D  # , Dense, Input, Dropout
 from keras.applications.vgg19 import VGG19
 # from keras.applications.resnet50 import ResNet50
@@ -14,13 +10,11 @@ from keras.layers import Dense, LSTM, BatchNormalization, \
 
 import logging
 
-from common.classes import VqaSpecs
-
 logger = logging.getLogger(__name__)
 from common.os_utils import File
-from common.settings import embedded_sentence_length
+from common.settings import embedded_sentence_length, data_access
 from common.model_utils import save_model, get_trainable_params_distribution
-from common.constatns import vqa_models_folder, vqa_specs_location
+from common.constatns import vqa_models_folder
 from evaluate.statistical import f1_score, recall_score, precision_score
 import pandas as pd
 import numpy as np
@@ -42,40 +36,23 @@ class VqaModelBuilder(object):
     def __init__(self, loss_function: str, output_activation_function: str,
                  lstm_units: int = LSTM_UNITS,
                  post_concat_dense_units: int = POST_CONCAT_DENSE_UNITS,
-                 optimizer: str = OPTIMIZER, categorical_data_frame: str = 'words'
+                 optimizer: str = OPTIMIZER, categorical_data_frame_name: str = 'words'
                  ) -> None:
         """"""
         super(VqaModelBuilder, self).__init__()
         self.loss_function = loss_function
         self.output_activation_function = output_activation_function
 
-        vqa_specs = File.load_pickle(vqa_specs_location)
-
-        self.meta_data_location = vqa_specs.meta_data_location
-
-        df_meta_answers, df_meta_words, df_meta_imaging_devices = self.__get_data_frames(self.meta_data_location)
-        self.df_meta_answers = df_meta_answers
-        self.df_meta_words = df_meta_words
-        self.df_meta_imaging_devices = df_meta_imaging_devices
+        self.meta_dicts = data_access.load_meta()
+        self.categorical_data_frame_name = categorical_data_frame_name
+        self.categorical_data_frame = self.meta_dicts[self.categorical_data_frame_name]
 
         self.lstm_units = lstm_units
         self.post_concat_dense_units = post_concat_dense_units
         self.optimizer = optimizer
 
-        self.categorical_data_frame = categorical_data_frame
 
-        self.model_location = ''
 
-    @staticmethod
-    def __get_data_frames(meta_data_location):
-        with pd.HDFStore(meta_data_location, 'r') as hdf:
-            keys = list(hdf.keys())
-            logger.debug(f"meta Keys: {keys}")
-        df_meta_answers = pd.read_hdf(meta_data_location, 'answers')
-        df_meta_words = pd.read_hdf(meta_data_location, 'words')
-        df_meta_imaging_devices = pd.read_hdf(meta_data_location, 'imaging_devices')
-
-        return df_meta_answers, df_meta_words, df_meta_imaging_devices
 
     @staticmethod
     def word_2_vec_model(input_tensor, lstm_units):
@@ -126,7 +103,8 @@ class VqaModelBuilder(object):
     def get_vqa_model(self):
         metrics = [f1_score, recall_score, precision_score, 'accuracy']
 
-        model_output_num_units = len(pd.read_hdf(self.meta_data_location, self.categorical_data_frame))
+        out_put_vals = self.categorical_data_frame
+        model_output_num_units = len(out_put_vals)
 
         image_model, lstm_model, fc_model = None, None, None
         try:
@@ -171,23 +149,16 @@ class VqaModelBuilder(object):
     @staticmethod
     def save_model(model, prediction_df_name):
         model_fn, summary_fn, fn_image, _ = save_model(model, vqa_models_folder)
-        root = pathlib.Path(vqa_models_folder)
+
 
         # Copy also specs and meta data to local folder
-        specs_path = pathlib.Path(vqa_specs_location)
-        specs = File.load_pickle(str(specs_path))
-
         model_folder = pathlib.Path(model_fn).parent
-        meta_location = model_folder / pathlib.Path(specs.meta_data_location).name
-        new_spec = VqaSpecs(embedding_dim=specs.embedding_dim
-                            , seq_length=specs.seq_length
-                            , data_location=specs.data_location
-                            , meta_data_location=meta_location
-                            , prediction_df_name=prediction_df_name)
+        meta_copy_location = str(model_folder /data_access.fn_meta.name)
+        additional_info_location = str(model_folder / 'additional_info')
+        additional_info ={'prediction_data' : prediction_df_name}
 
-        spec_destination = model_folder  / specs_path.name
-        File.dump_pickle(new_spec, str(spec_destination))
-        shutil.copy(specs.meta_data_location, meta_location)
+        shutil.copy(str(data_access.fn_meta), meta_copy_location )
+        File.dump_json(additional_info, additional_info_location)
 
         msg = f"Summary: {summary_fn}\n"
         msg += f"Image: {fn_image}\n"

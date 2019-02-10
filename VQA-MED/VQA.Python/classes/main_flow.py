@@ -262,7 +262,7 @@ def train_model(model_id, optimizer, post_concat_dense_units=16):
     mb = VqaModelBuilder(model_dal.loss_function, model_dal.activation, post_concat_dense_units=post_concat_dense_units,
                          optimizer=optimizer)
     model = mb.get_vqa_model()
-    model_location, summary_fn, fn_image = VqaModelBuilder.save_model(model, mb.categorical_data_frame)
+    model_location, summary_fn, fn_image = VqaModelBuilder.save_model(model, mb.categorical_data_frame_name)
 
     # Train ------------------------------------------------------------------------
 

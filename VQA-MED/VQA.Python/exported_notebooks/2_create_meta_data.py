@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[5]:
+# In[40]:
 
 
 import os
@@ -11,7 +11,7 @@ from nltk.corpus import stopwords
 import IPython
 
 
-# In[6]:
+# In[41]:
 
 
 from common.functions import get_highlighted_function_code
@@ -20,13 +20,7 @@ from common.classes import VqaSpecs
 from common.utils import VerboseTimer
 from common.os_utils import File
 from pre_processing.meta_data import create_meta
-
-
-# In[7]:
-
-
-vqa_specs_location = data_access.vqa_specs_location
-fn_meta =  data_access.fn_meta
+pd.set_option('display.max_colwidth', -1)
 
 
 # ### Preprocessing and creating meta data
@@ -37,7 +31,7 @@ fn_meta =  data_access.fn_meta
 # 3. processed answer
 # 
 
-# In[8]:
+# In[42]:
 
 
 # index	image_name	question	answer	group	path	original_question	original_answer	tumor	hematoma	brain	abdomen	neck	liver	imaging_device	answer_embedding	question_embedding	is_imaging_device_question
@@ -49,58 +43,38 @@ df_data.sample(2)
 
 # #### We will use this function for creating meta data:
 
-# In[9]:
+# In[43]:
 
 
 code = get_highlighted_function_code(create_meta,remove_comments=False)
 IPython.display.display(code)  
 
 
-# In[11]:
+# In[44]:
 
 
 print("----- Creating meta -----")
 meta_data_dict = create_meta(df_data)
-meta_data_dict
 
 
 # #### Saving the data, so later on we don't need to compute it again
 
-# In[ ]:
+# In[45]:
 
 
-def get_vqa_specs(meta_location):    
-    dim = embedding_dim
-    s_length = seq_length    
-    return VqaSpecs(embedding_dim=dim, 
-                    seq_length=s_length, 
-                    data_location=os.path.abspath(data_location),
-                    meta_data_location=os.path.abspath(meta_location))
-
-vqa_specs = get_vqa_specs(fn_meta)
-
-# Show waht we got...
-vqa_specs
-
-
-# In[ ]:
-
-
-File.dump_pickle(vqa_specs, vqa_specs_location)
-print(f"VQA Specs saved to:\n{vqa_specs_location}")
+print("----- Saving meta -----")
+data_access.save_meta(meta_data_dict)
 
 
 # ##### Test Loading:
 
-# In[ ]:
+# In[51]:
 
 
-loaded_vqa_specs = File.load_pickle(vqa_specs_location)
-loaded_vqa_specs
+loaded_meta = data_access.load_meta()
+answers_meta = loaded_meta['answers']
+words_meta = loaded_meta['words']
 
-
-# In[ ]:
-
-
-print (f"vqa_specs_location = '{vqa_specs_location}'".replace('\\','\\\\'))
+answers_meta.sample(5)
+# words_meta.sample(5)
 

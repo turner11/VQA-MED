@@ -37,9 +37,6 @@ def pre_process_raw_data(df):
         with VerboseTimer("Question Tokenizing"):
             df['processed_question'] = df['processed_question'].apply(remove_stops)
 
-
-
-
         ddata = dd.from_pandas(df, npartitions=8)
 
         for col in ['processed_answer', 'answer']:
