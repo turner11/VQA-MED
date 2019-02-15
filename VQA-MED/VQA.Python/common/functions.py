@@ -117,22 +117,17 @@ def normalize_data_structure(df: pd.DataFrame, group: str, image_folder: str) ->
     return df_c
 
 
-def concat_row(df: pd.DataFrame, col: str):
-    # return np.concatenate(df[col], axis=0)
-    return np.concatenate([row for row in df[col]])
-
-
 def get_features(df: pd.DataFrame):
-    image_features = np.asarray([np.array(get_image(im_path)) for im_path in df['path']])
-    # np.concatenate(df['question_embedding'], axis=0).shape
-    question_features = concat_row(df, 'question_embedding')
-    # question_features = np.concatenate([row for row in df.question_embedding])
-    reshaped_q = np.array([a.reshape(a.shape + (1,)) for a in question_features])
+    series_reshaped = df.question_embedding.apply(lambda embedding: embedding.reshape((embedding.shape[0], 1)))
+    shape_sample = series_reshaped.values[0].shape
+    set_shape = (len(series_reshaped.values), shape_sample[0],1)
 
-    features = ([f for f in [reshaped_q, image_features]])
+    question_features = np.reshape(list(series_reshaped.values), set_shape)
+
+    image_features = np.asarray([np.array(get_image(im_path)) for im_path in df['path']])
+    features = [question_features, image_features]
 
     return features
-
 
 def sentences_to_hot_vector(labels: iter, classes: iter) -> iter:
     from sklearn.preprocessing import MultiLabelBinarizer, LabelBinarizer
@@ -141,14 +136,15 @@ def sentences_to_hot_vector(labels: iter, classes: iter) -> iter:
 
     number_of_items_in_class = max([len(c.split()) for c in classes_arr])
     # If we are using words as labels - allow multi labels, otherwise only 1
+    # e.g. we can have a label of both 'ct' and 'skull' but not 'double aortic arch' and 'radial head fracture'
     if number_of_items_in_class == 1:
-        logger.debug('Using multi label')
+        # logger.debug('Using multi label')
         splitted_labels = [ans.lower().split() for ans in labels_arr]
         # clean_splitted_labels = [[w for w in arr if w in labels] for arr in splitted_labels]
         clean_splitted_labels = [[w for w in arr if w in classes_arr] for arr in splitted_labels]
 
     else:
-        logger.debug('Using single label')
+        # logger.debug('Using single label')
         clean_splitted_labels = [[lbl] for lbl in labels_arr]
 
     mlb = MultiLabelBinarizer(classes=classes_arr.reshape(classes_arr.shape[0]), sparse_output=False)

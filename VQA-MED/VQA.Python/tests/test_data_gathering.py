@@ -4,7 +4,7 @@ import pandas as pd
 from common.functions import normalize_data_structure
 from common.settings import train_data, validation_data
 from parsers.data_loader import DataLoader
-from tests import image_folder
+from tests.conftest import image_folder
 
 CSV_ROW_TEMPLATE = 'test_image|asking some question{0}?|this is answer #{0}'
 
@@ -19,7 +19,7 @@ def __validate_loaded_data(normalized_data: pd.DataFrame) -> None:
     assert len(non_existing_path) == 0, f'Got missing paths:\n{non_existing_path}'
 
 
-@pytest.mark.parametrize("expected_length", [0, 1, 10, 100])
+@pytest.mark.parametrize("expected_length", [1, 10, 50, 100])
 def test_data_length(expected_length):
     # Arrange
     raw_text = get_csv_text(expected_length)
@@ -44,7 +44,7 @@ def test_data_load(data_arg):
 
 def main():
     test_data_load(train_data)
-    d = 30
+    d = 1
     test_data_length(d)
 
 

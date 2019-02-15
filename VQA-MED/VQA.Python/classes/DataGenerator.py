@@ -1,9 +1,13 @@
+from collections import Iterable
 from functools import lru_cache
 import numpy as np
 import pandas as pd
 import keras
+
+from common.exceptions import InvalidArgumentException
 from common.functions import get_features, sentences_to_hot_vector, get_image
 from common.os_utils import File
+from common.settings import data_access
 from common.utils import VerboseTimer
 import logging
 logger = logging.getLogger(__name__)
@@ -13,77 +17,66 @@ init_log
 class DataGenerator(keras.utils.Sequence):
     'Generates data for Keras'
 
-    def __init__(self,
-                 vqa_specs_location,
+    def __init__(self,prediction_vector,
                  batch_size: int = 32,
                  n_channels: object = 1,
-                 shuffle: object = True) -> None:
+                 shuffle: object = True,
+                 augmentations=10) -> None:
         'Initialization'
-        self.vqa_specs = File.load_pickle(vqa_specs_location)
-        self.meta_data_location = self.vqa_specs.meta_data_location
-        self.prediction_vector = self.vqa_specs.prediction_vector#pd.read_hdf(self.meta_data_location, 'words')
-        n_classes = len(self.prediction_vector.values)
 
-        with pd.HDFStore(self.vqa_specs.data_location) as store:
-            index_data_frame = store['index']
+        self.shuffle = shuffle
+        self.prediction_vector = self.__get_prediction_vector(prediction_vector)
 
-        if shuffle:
-            groups = [df for _, df in index_data_frame.groupby('augmentation_key')]
-            groups = [group.sample(frac=1) for group in groups]
-            # groups = [group.sample(frac=1).reset_index(drop=True) for group in groups]
-            index_data_frame = pd.concat(groups)
+        self.orig_data = data_access.load_processed_data(group='train')
 
+        df_augmentations = data_access.load_augmentation_data(augmentations=augmentations).sort_values('augmentation').reset_index(drop=True)
 
-        self.index_data_frame = index_data_frame
+        data = self.orig_data.set_index('path')
+        augs = df_augmentations.set_index('original_path')
+        joined = data.join(augs, how='left').reset_index(drop=True)
+        self.data = joined.sort_values(by='augmentation')
+
         self.batch_size = batch_size
         self.n_channels = n_channels
 
 
-
-        self.n_classes = n_classes
-
         self.on_epoch_end()
+
+    def __get_prediction_vector(self, prediction_vector):
+        ret = prediction_vector
+        if isinstance(prediction_vector, pd.DataFrame):
+            if len(prediction_vector.columns) > 1:
+                raise InvalidArgumentException(argument_name='prediction_vector',
+                                               argument=prediction_vector,
+                                               message='Cannot infer prediction vector')
+            ret = prediction_vector[prediction_vector.columns[0]].values
+        elif isinstance(prediction_vector, Iterable):
+            ret = np.asarray(prediction_vector)
+        else:
+            raise InvalidArgumentException(argument_name='prediction_vector',
+                                           argument=prediction_vector,
+                                           message='Cannot infer prediction vector')
+
+        return ret
 
     def __len__(self):
         'Denotes the number of batches per epoch'
-        return int(np.floor(len(self.index_data_frame) / self.batch_size))
+        return int(np.floor(len(self.data) / self.batch_size))
 
     def __getitem__(self, index):
         'Generate one batch of data'
         # Generate indexes of the batch
         try:
-            indexes = self.indexes[index * self.batch_size :(index+1) *self.batch_size]
-
+            indexes = self.indexes[index * self.batch_size :(index+1) * self.batch_size]
             # Find list of IDs
+            data = self.data.iloc[indexes]
+            # Make sure not to get same question/image from different augmentations at the same pass
+            data = data.drop_duplicates(subset=['path', 'question'], keep='first')
 
+            if self.shuffle:
+                data = data.sample(frac=1)#.reset_index(drop=True)
 
-            temp_index = pd.DataFrame([self.index_data_frame.iloc[k] for k in indexes])
-
-            stores = temp_index.store_path.drop_duplicates().values
-            assert len(stores) == 1, "Did not implement multi stores..."
-            store_location = stores[0]
-
-            augmentation_keys = temp_index.store_key.drop_duplicates().values
-            dfs = []
-            for k in augmentation_keys:
-                df_aug = self._get_df_by_key(k, store_location)
-                dfs.append(df_aug)
-
-            df = dfs[0] if len(dfs) == 1 else pd.concat(dfs)
-            df_filtered = df[df.idx.isin(indexes)].copy()
-            df_filtered['image'] = df_filtered.path.apply(lambda path: get_image(path))
-
-
-            # safe_index = [i for i in temp_index.index if i in df.index]
-            # df_filtered = df.loc[safe_index]
-            logger.debug(f'data from generator length: {len(df_filtered)}')
-            assert len(df_filtered) <= self.batch_size
-            if len(df_filtered) == 0:
-                File.dump_pickle(temp_index.index, "D:\\Users\\avitu\\Downloads\\tempIndex.pkl")
-                File.dump_pickle(df.index, "D:\\Users\\avitu\\Downloads\\df.pkl")
-                str(1)
-            # Generate data
-            X, y = self.__data_generation(df_filtered)
+            X, y = self.__data_generation(data)
         except Exception as ex:
             str(ex)
             raise
@@ -97,37 +90,38 @@ class DataGenerator(keras.utils.Sequence):
 
     def on_epoch_end(self):
         'Updates indexes after each epoch'
-        self.indexes = np.arange(len(self.index_data_frame))
+        self.indexes = np.arange(len(self.data))
 
     def __data_generation(self, df: pd.DataFrame) -> (iter, iter):
         'Generates data containing batch_size samples' # X : (n_samples, *dim, n_channels)
         # Initialization
         # X = np.empty((self.batch_size, *self.dim, self.n_channels))
         # y = np.empty((self.batch_size), dtype=int)
-
+        item_count = len(df)
         try:
-            with VerboseTimer('Getting train features'):
-                features = get_features(df)
-            with VerboseTimer('Getting train labels'):
-                labels = sentences_to_hot_vector(labels=df.answer, classes=self.prediction_vector)
+            # with VerboseTimer(f'Getting {item_count} train features'):
+            features = get_features(df)
+            # with VerboseTimer(f'Getting {item_count} train labels'):
+            labels  = sentences_to_hot_vector(labels=df.answer, classes=self.prediction_vector)
 
         except Exception as ex:
-            print(f'Failed to get features:\n:{ex}')
+            logger.warning(f'Failed to get features:\n:{ex}')
             raise
-
 
         X = features
         y = labels
         return X,y
-        # return X, keras.utils.to_categorical(y, num_classes=self.n_classes)
+
 def main():
-    from common.constatns import vqa_specs_location
-    a = DataGenerator(vqa_specs_location=vqa_specs_location)
+    meta_dict = data_access.load_meta()
+    pred_vec = meta_dict['words']
+    d_gen = DataGenerator(pred_vec)
     str()
     res = []
     for i in range(10):
-        d = a[i]
-        res.append(d)
+        X, y = d_gen[i]
+        res.append((X, y))
+    str(res)
 
 
 if __name__ == '__main__':

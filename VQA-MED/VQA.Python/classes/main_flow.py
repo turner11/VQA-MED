@@ -1,9 +1,12 @@
+import os, sys
+sys.path.append('C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\')
+
 import itertools
 import pathlib
 from tqdm import tqdm
 import logging
 
-import exported_notebooks
+# import exported_notebooks
 from common.DAL import ModelScore
 from common.os_utils import File
 from common.utils import VerboseTimer

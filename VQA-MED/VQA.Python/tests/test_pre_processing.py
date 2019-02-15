@@ -13,7 +13,7 @@ from pre_processing.data_cleaning import clean_data
 from common.os_utils import File
 from pre_processing.known_find_and_replace_items import find_and_replace_collection
 from common.settings import set_nlp_vector
-from tests import image_folder
+from tests.conftest import image_folder
 import logging
 logger = logging.getLogger(__name__)
 
@@ -84,14 +84,14 @@ def test_proccessed_length(normalized_data,df_processed):
     assert len(normalized_data) == len(df_processed), 'processed data was not in same length as normalized data'
 
 def test_new_columns_added(df_processed):
-    new_columns = ['answer_embedding', 'question_embedding', 'is_imaging_device_question']
+    new_columns = ['answer_embedding', 'question_embedding']
     has_new_columns = all(c in df_processed for c in new_columns)
     assert has_new_columns, f'Did not have all columns of pre processing ({new_columns})'
 
 # @pytest.mark.parametrize("expected_length", [])
 def test_has_embedding(df_processed):
-    max_embeddings = df_processed.question_embedding.apply(lambda embedding: max(embedding[0]))
-    all_have_values = all(m > 0 for m in max_embeddings)
+    max_embedding_val_per_row = df_processed.question_embedding.apply(lambda embedding: max(embedding))
+    all_have_values = all(v > 0 for v in max_embedding_val_per_row)
     assert all_have_values , 'Not all embedding had values'
 
 
@@ -140,16 +140,6 @@ synpic27731,what imaging method was used?,us - ultrasound
     assert 'diagnosis' in df_enriched.columns, 'Expected enriched data to contain diagnosis'
     assert 'question_category' in df_enriched.columns, 'Expected enriched data to contain question_category'
 
-    imaging_device_by_image_name = df_enriched.loc[:,['image_name', 'imaging_device']].set_index('image_name').to_dict()[
-        'imaging_device']
-
-    err_msg = 'Got unexpected imaging devices'
-    assert imaging_device_by_image_name['image1'] == 'mr', err_msg
-    assert imaging_device_by_image_name['image2'] == 'mr', err_msg
-    assert imaging_device_by_image_name['image3'] == 'ct', err_msg
-    assert imaging_device_by_image_name['image4'] == 'unknown', err_msg
-    assert imaging_device_by_image_name['image5'] == 'unknown', err_msg
-    assert imaging_device_by_image_name['image6'] == 'unknown', err_msg
 
     question_category_by_image_name = df_enriched.loc[:, ['image_name', 'question_category']]\
                                                   .set_index('image_name')\

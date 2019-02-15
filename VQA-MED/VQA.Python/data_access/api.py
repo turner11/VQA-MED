@@ -1,5 +1,7 @@
 import logging
 import os
+import shutil
+
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -32,10 +34,6 @@ class DataAccess(object):
     @property
     def processed_data_location(self):
         return self.folder / self.PROCESSED_DATA_FILE_NAME
-
-    @property
-    def vqa_specs_location(self):
-        return self.folder / 'vqa_specs.pkl'
 
     @property
     def fn_meta(self):
@@ -81,10 +79,15 @@ class DataAccess(object):
             self._save_parquet(df, full_path, 'group')
         return full_path
 
-    def load_processed_data(self, columns: list = None) -> pd.DataFrame:
+    def load_processed_data(self, group: str = None, columns: list = None) -> pd.DataFrame:
         full_path = str(self.processed_data_location)
         logger.debug(f'loading processed data from:\n{full_path}')
-        df_data = self._load_parquet(full_path, columns)
+        if group is not None:
+            filters = [('group', '==', str(group)), ]
+        else:
+            filters = None
+
+        df_data = self._load_parquet(full_path, columns, filters=filters)
         return df_data
 
     def save_augmentation_data(self, df_augmentations):
@@ -94,12 +97,12 @@ class DataAccess(object):
             self._save_parquet(df=df_augmentations, location=path, partition_col='augmentation')
         return path
 
-    def load_augmentation_data(self, columns=None, augmentation=None):
+    def load_augmentation_data(self, columns=None, augmentations=None):
         path = str(self.augmentation_location)
         logger.debug(f"Loading augmentations:\n{path}")
 
-        if augmentation is not None:
-            filters = [('augmentation', '=', str(int(augmentation))), ]
+        if augmentations is not None:
+            filters = [('augmentation', '<', int(augmentations)), ]
         else:
             filters = None
 
@@ -108,9 +111,18 @@ class DataAccess(object):
 
     @staticmethod
     def _save_parquet(df, location, partition_col):
+        path = str(location)
+        p_location = Path(path)
+
+        if p_location.exists():
+            try:
+                shutil.rmtree(path)
+            except Exception as ex:
+                logger.warning(f'Failed to delete parquet: {ex}')
+
         table = pa.Table.from_pandas(df)
         return pq.write_to_dataset(table,
-                                   root_path=str(location),
+                                   root_path=path,
                                    partition_cols=[partition_col],
                                    )
 
@@ -119,16 +131,16 @@ class DataAccess(object):
         logger.debug(f'loading parquet from:\n{path}')
 
         dataset = pq.ParquetDataset(path, filters=filters)
-
         with VerboseTimer("Loading parquet"):
             prqt = dataset.read(columns=columns)
             df_data = prqt
+
 
         if convert_to_pandas:
             with VerboseTimer("Converting to pandas"):
                 df_data = prqt.to_pandas()
 
-        return df_data
+        return df_data#[:150]
 
 
     def save_meta(self, meta_df_dict):
@@ -147,8 +159,11 @@ class DataAccess(object):
             logger.debug("Meta number of unique words: {0}".format(len(metadata_store['words'])))
 
     def load_meta(self):
-        meta_location = str(self.fn_meta)
+        return self.load_meta_from_location(self.fn_meta)
 
+    @classmethod
+    def load_meta_from_location(cls, meta_location):
+        meta_location = str(meta_location)
         with pd.HDFStore(meta_location) as metadata_store:
             ret = {key: metadata_store[key] for key in ['answers', 'words']}
 

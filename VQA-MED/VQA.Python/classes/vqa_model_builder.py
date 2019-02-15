@@ -151,10 +151,10 @@ class VqaModelBuilder(object):
         model_fn, summary_fn, fn_image, _ = save_model(model, vqa_models_folder)
 
 
-        # Copy also specs and meta data to local folder
+        # Copy meta data to local folder
         model_folder = pathlib.Path(model_fn).parent
         meta_copy_location = str(model_folder /data_access.fn_meta.name)
-        additional_info_location = str(model_folder / 'additional_info')
+        additional_info_location = str(model_folder / 'additional_info.json')
         additional_info ={'prediction_data' : prediction_df_name}
 
         shutil.copy(str(data_access.fn_meta), meta_copy_location )

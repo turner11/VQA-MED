@@ -119,14 +119,14 @@ summary = f'success: {len(successes)}\n{s_summary}\n\nfailes: {len(failes)}\n{f_
 print(summary)
 
 
-# In[9]:
+# In[10]:
 
 
 df_all_images_info.head()
-len(df_all_images_info.original_path.drop_duplicates())
+len(df_all_images_info.original_path.drop_duplicates()), len(df_all_images_info), len(df_all_images_info.drop_duplicates())
 
 
-# In[10]:
+# In[13]:
 
 
 
@@ -154,16 +154,26 @@ with VerboseTimer("Collecting augmented rows"):
         new_rows.extend(curr_augmentations)
 
 
-# In[11]:
+# In[16]:
 
 
-df = df_augments.append(new_rows).sort_values(['augmentation'], ascending=[True])
-print(len(df))
+l_aug = len(df_augments)
+l_r = len(new_rows)
+l_aug, l_r, l_r / l_aug 
+
+
+# In[27]:
+
+
+df = df_augments.append(new_rows)
+df['augmentation'] = df.augmentation.astype(int)
+df = df.sort_values(['augmentation'], ascending=[True])
+print(len(df), len(df.drop_duplicates()))
 
 df.head(1)
 
 
-# In[12]:
+# In[28]:
 
 
 df.iloc[[0,1,-2,-1]]
@@ -171,7 +181,7 @@ df.iloc[[0,1,-2,-1]]
 
 # #### Saving the data
 
-# In[13]:
+# In[29]:
 
 
 data_access.save_augmentation_data(df)
@@ -179,16 +189,17 @@ data_access.save_augmentation_data(df)
 
 # ### The results:
 
-# In[14]:
+# In[32]:
 
 
 augmentation_1 = data_access.load_augmentation_data(augmentation=1)
 augmentation_5 = data_access.load_augmentation_data(augmentation=5)
 augmentation_all = data_access.load_augmentation_data()
+print(len(augmentation_all))
 augmentation_all.sample(5)
 
 
-# In[17]:
+# In[33]:
 
 
 orig_a1 = set(augmentation_1.original_path)

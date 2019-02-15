@@ -9,7 +9,6 @@ from common.DAL import get_models_data_frame, get_model_by_id, Model as ModelDal
 from pandas import HDFStore
 from common.functions import get_features
 from keras.models import load_model
-from common.constatns import vqa_specs_location
 from common.utils import VerboseTimer
 
 from common.os_utils import File

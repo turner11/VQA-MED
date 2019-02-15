@@ -53,7 +53,7 @@ def save_model(model, base_folder, name_suffix="", history=None):
         raise
 
     try:
-        logger.debug("Writing Symmary")
+        logger.debug("Writing Summary")
         _print_model_summary_to_file(summary_fn, model)
         logger.debug("Done Writing Summary")
 
