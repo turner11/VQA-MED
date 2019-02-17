@@ -1,34 +1,53 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[4]:
+
+
+import pandas as pd
+import numpy as np
+
+
+# In[5]:
 
 
 from classes.vqa_model_predictor import VqaModelPredictor, DefaultVqaModelPredictor
 from common.DAL import get_models_data_frame, get_model
 from evaluate.VqaMedEvaluatorBase import VqaMedEvaluatorBase
 from common.functions import get_highlighted_function_code
+import vqa_logger 
+
+
+# In[8]:
+
+
 df_models = get_models_data_frame()
-df_show = df_models.sort_values(by=['wbss', 'bleu'], ascending=False).head()
-df_show
+try:
+    df_show = df_models.sort_values(by=['wbss', 'bleu'], ascending=False).head()
+except KeyError: #if no scode yet
+    df_show = df_models
+    df_show['wbss'] = np.nan
+    df_show['bleu'] = np.nan
+
+    
+df_show.tail()
 
 
-# In[2]:
+# In[9]:
 
 
 import logging
-from vqa_logger import init_log
+import  vqa_logger 
 logger = logging.getLogger(__name__)
-init_log(__name__)
 import IPython
 
 
-# In[3]:
+# In[10]:
 
 
 known_good_model = 163#85
 model_id = known_good_model #df_show.id.iloc[0]
-model_id = int(model_id)
+model_id = 1#int(model_id)
 mp = DefaultVqaModelPredictor(model_id)
 mp
 
@@ -39,14 +58,14 @@ mp
 mp.df_validation.head(2)
 
 
-# In[15]:
+# In[ ]:
 
 
 code = get_highlighted_function_code(mp.predict,remove_comments=False)
 IPython.display.display(code)
 
 
-# In[16]:
+# In[ ]:
 
 
 df_data = mp.df_validation
@@ -54,13 +73,13 @@ df_predictions = mp.predict(mp.df_validation)
 df_predictions.head()
 
 
-# In[8]:
+# In[ ]:
 
 
 df_predictions.describe()
 
 
-# In[17]:
+# In[ ]:
 
 
 idx = 42
@@ -74,14 +93,14 @@ image_path = df_image.path.values[0]
 df_image
 
 
-# In[19]:
+# In[ ]:
 
 
 from IPython.display import Image
 Image(filename = image_path, width=400, height=400)
 
 
-# In[20]:
+# In[ ]:
 
 
 df_image = df_data[df_data.image_name == image_name].copy().reset_index()
@@ -91,7 +110,7 @@ image_prediction
 
 # ## Evaluating the Model
 
-# In[21]:
+# In[ ]:
 
 
 validation_prediction = df_predictions
@@ -101,7 +120,7 @@ results = VqaMedEvaluatorBase.get_all_evaluation(predictions=predictions, ground
 print(f'Got results of\n{results}')
 
 
-# In[22]:
+# In[ ]:
 
 
 validation_prediction.head(2)

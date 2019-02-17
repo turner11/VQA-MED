@@ -13,9 +13,7 @@ from pandas import HDFStore
 import pandas as pd
 import IPython
 
-from common.settings import train_data, validation_data, test_data
-from common.constatns import raw_data_location, images_folder_train, images_folder_validation
-from common.utils import VerboseTimer
+from common.settings import train_data, validation_data, test_data, data_access
 
 from common.functions import get_size, get_highlighted_function_code
 from pre_processing.prepare_data import normalize_data_strucrture
@@ -50,6 +48,12 @@ IPython.display.display(code)
 df_train.head()
 
 
+# In[5]:
+
+
+train_data
+
+
 # In[6]:
 
 
@@ -72,18 +76,11 @@ df.describe()
 # In[7]:
 
 
-# remove if exists
-try:
-    os.remove(raw_data_location)
-except OSError:
-    pass
+save_location = data_access.save_raw_input(df)
 
-with VerboseTimer("Saving raw data"):
-    with HDFStore(raw_data_location) as store:
-        store['data']  = df
-      
-        
 
-size = get_size(raw_data_location)
-logger.debug(f"raw data's file size was: {size}")
+# In[9]:
+
+
+print(f'data saved to:\n{save_location}')
 

@@ -348,7 +348,6 @@ VQA-MED/VQA.Python/data-2018/VQAMed2018Train-QA_processed.xlsx
 *.parquet
 VQA-MED/VQA.Python/exported_notebooks/__init__.py
 VQA-MED/VQA.Python/exported_notebooks/aaa.py
-VQA-MED/VQA.Python/exported_notebooks/aaa.py
 VQA-MED/VQA.Python/.vscode/settings.json
 VQA-MED/VQA.Python/bezalel.ipynb
-VQA-MED/VQA.Python/data/raw_data.h5
+

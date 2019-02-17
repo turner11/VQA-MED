@@ -1,6 +1,7 @@
 import os
 import warnings
 import pandas as pd
+from keras.callbacks import History
 from pandas import HDFStore
 from classes.DataGenerator import DataGenerator
 import logging
@@ -134,18 +135,19 @@ class VqaModelTrainer(object):
         except Exception as ex:
             logger.error("Got an error training model: {0}".format(ex))
             raise
-
         return history
 
     @staticmethod
-    def save(model, history=None, notes=None):
+    def save(model: Model, base_model_folder: ModelFolder, history: History = None, notes: str = None) -> ModelFolder:
         with VerboseTimer("Saving trained Model"):
-            model_fn, summary_fn, fn_image, fn_history = save_model(model, vqa_models_folder, history=history)
+            model_folder: ModelFolder = save_model(model, vqa_models_folder,
+                                                   base_model_folder.additional_info,
+                                                   base_model_folder.meta_data_path, history=history)
 
-        msg = f"Summary: {summary_fn}\n"
-        msg += f"Image: {fn_image}\n"
-        msg += f'History: {fn_history or "NONE"}\n'
-        location_message = f"model_location = '{model_fn}'"
+        msg = f"Summary: {model_folder.summary_path}\n"
+        msg += f"Image: {model_folder.image_file_path}\n"
+        msg += f'History: {model_folder.history_path or "NONE"}\n'
+        location_message = f"model_location = '{model_folder.model_path}'"
 
         logger.info(msg)
         logger.info(location_message)
@@ -155,16 +157,18 @@ class VqaModelTrainer(object):
 
         try:
             notes = f'{notes or ""}\n\n{location_message}'
-            VqaModelTrainer.model_2_db(model, model_fn, fn_history, notes=notes)
+            VqaModelTrainer.model_2_db(model_folder, notes=notes)
         except Exception as ex:
             warnings.warn(f'Failed to insert model to DB:\n{ex}')
-        return model_fn, summary_fn, fn_image, fn_history
+        return model_folder
 
     @staticmethod
-    def model_2_db(model, model_fn, fn_history='', notes=''):
+    def model_2_db(model_folder: ModelFolder, notes=''):
         from keras import backend as K
         from common import DAL
         from common.DAL import Model as DalModel
+
+        model = model_folder.load_model()
 
         h = model.history.history
         loss = model.loss
@@ -177,8 +181,8 @@ class VqaModelTrainer(object):
         get_val = lambda key: next(iter(h.get(key, [])), None)
 
         dal_model = DalModel(
-            model_location=model_fn,
-            history_location=fn_history,
+            model_location=str(model_folder.model_path),
+            history_location=str(model_folder.history_path),
             image_base_net='vgg19',  # TODO: this is now used as constant
             loss=get_val('loss'),
             val_loss=get_val('val_loss'),
@@ -200,6 +204,16 @@ class VqaModelTrainer(object):
 
 
 def main():
+    model_folder_path = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20190216_0518_28'
+    model_folder = ModelFolder(model_folder_path)
+    model = model_folder.load_model()
+
+    VqaModelTrainer.save(model, model_folder.history,'First attempt for 2019')
+
+
+
+
+    return
     from keras import backend as keras_backend
     keras_backend.clear_session()
 
@@ -208,8 +222,8 @@ def main():
     mt = VqaModelTrainer(model_location, use_augmentation=True, batch_size=batch_size)
     history = mt.train()
     with VerboseTimer("Saving trained Model"):
-        model_fn, summary_fn, fn_image, fn_history = VqaModelTrainer.save(mt.model, history)
-    logger.debug(model_fn)
+        model_folder = VqaModelTrainer.save(mt.model, history)
+    logger.debug(model_folder.model_path)
 
 
 if __name__ == '__main__':

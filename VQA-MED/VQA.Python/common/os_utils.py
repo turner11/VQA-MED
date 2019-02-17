@@ -3,6 +3,8 @@ import os, errno
 import pickle
 import sys
 import logging
+from pathlib import Path
+
 logger = logging.getLogger(__name__)
 
 class File(object):
@@ -12,14 +14,17 @@ class File(object):
     @staticmethod
     def validate_dir_exists(directory):
         try:
-            os.makedirs(directory)
+            os.makedirs(str(directory))
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise
 
     @staticmethod
     def _load_object(fn, load_module, read_mode='rb'):
-        with open(fn, read_mode) as f:
+        affective_fn = fn
+        if isinstance(fn, Path):
+            affective_fn = str(fn)
+        with open(affective_fn, read_mode) as f:
             return load_module.load(f)
 
     @staticmethod

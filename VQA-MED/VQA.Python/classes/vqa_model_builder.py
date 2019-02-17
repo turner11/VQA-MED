@@ -10,6 +10,8 @@ from keras.layers import Dense, LSTM, BatchNormalization, \
 
 import logging
 
+from data_access.model_folder import ModelFolder
+
 logger = logging.getLogger(__name__)
 from common.os_utils import File
 from common.settings import embedded_sentence_length, data_access
@@ -147,26 +149,18 @@ class VqaModelBuilder(object):
         return fc_model
 
     @staticmethod
-    def save_model(model, prediction_df_name):
-        model_fn, summary_fn, fn_image, _ = save_model(model, vqa_models_folder)
-
-
-        # Copy meta data to local folder
-        model_folder = pathlib.Path(model_fn).parent
-        meta_copy_location = str(model_folder /data_access.fn_meta.name)
-        additional_info_location = str(model_folder / 'additional_info.json')
+    def save_model(model: Model, prediction_df_name: str) -> ModelFolder:
         additional_info ={'prediction_data' : prediction_df_name}
+        model_folder: ModelFolder = save_model(model, vqa_models_folder, additional_info, data_access.fn_meta)
+        # Copy meta data to local folder
 
-        shutil.copy(str(data_access.fn_meta), meta_copy_location )
-        File.dump_json(additional_info, additional_info_location)
-
-        msg = f"Summary: {summary_fn}\n"
-        msg += f"Image: {fn_image}\n"
-        location_message = f"model_location = '{model_fn}'"
+        msg = f"Summary: {model_folder.summary_path}\n"
+        msg += f"Image: {model_folder.image_file_path}\n"
+        location_message = f"model_location = '{model_folder.model_path}'"
 
         logger.info(msg)
         logger.info(location_message)
-        return model_fn, summary_fn, fn_image
+        return model_folder
 
     @staticmethod
     def get_trainable_params_distribution(model, params_threshold=1000):

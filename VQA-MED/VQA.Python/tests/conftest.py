@@ -8,7 +8,7 @@ image_folder = str((root /'test_images\\').absolute())
 data_folder = root /'data_for_test'
 model_folder = data_folder / 'test_model'
 
-model_path = str((data_folder / '\\test_model\\vqa_model_.h5').absolute())
+model_path = str((data_folder / 'test_model\\vqa_model.h5').absolute())
 
 data_access: DataAccess = None
 

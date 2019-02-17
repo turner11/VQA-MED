@@ -54,7 +54,7 @@ def test_model_training(data_access):
     # Act
     mt.train()
 
-@pytest.mark.skip(reason='Still need to fix prediction for 2019 data')
+# @pytest.mark.skip(reason='Still need to fix prediction for 2019 data')
 @pytest.mark.filterwarnings('ignore:DeprecationWarning')
 def test_model_predicting(data_frame):
 
@@ -67,10 +67,11 @@ def test_model_predicting(data_frame):
 
 
 if __name__ == '__main__':
+    conftest.pytest_runtest_setup(None)
     # from keras import backend as keras_backend
     # keras_backend.clear_session()
     # test_model_creation()
     df = data_frame()
-    test_model_training(df)
-    # test_model_predicting(df)
+    # test_model_training(df)
+    test_model_predicting(df)
 

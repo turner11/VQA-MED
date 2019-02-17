@@ -181,11 +181,18 @@ def get_models_data_frame():
     df = pd.DataFrame([[getattr(i, j) for j in variables] for i in models], columns=variables)
 
     scores = get_scores()
-    s_variables = [v for v in scores[0].__dict__.keys() if not v.startswith('_')]
-    s_df = pd.DataFrame([[getattr(i, j) for j in s_variables] for i in scores], columns=s_variables)
+    if len(scores) > 0:
+        s_variables = [v for v in scores[0].__dict__.keys() if not v.startswith('_')] if scores else []
+        s_df = pd.DataFrame([[getattr(i, j) for j in s_variables] for i in scores], columns=s_variables)
 
-    merged_df = s_df.merge(df, left_on='model_id', right_on='id', how='outer')  # how='left')
-    return merged_df
+
+        merged_df = s_df.merge(df, left_on='model_id', right_on='id', how='outer')  # how='left')
+        ret = merged_df
+    else:
+        # Should happen only before we have done ANY evaluations
+        ret = df
+
+    return ret
 
 
 def execute_sql(txt):

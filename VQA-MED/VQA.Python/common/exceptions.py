@@ -4,7 +4,7 @@ class InvalidArgumentException(Exception):
         super().__init__(message)
         self.argument_name = argument_name
         self.has_argument = 'argument' in kwargs
-        self.argument = kwargs.get('argument',None)
+        self.argument = kwargs.get('argument', None)
 
     def __repr__(self):
         return f'{self.__class__.__name__}(argument_name={self.argument_name})'
@@ -17,3 +17,10 @@ class InvalidArgumentException(Exception):
         return msg.strip()
 
 
+class NoDataException(Exception):
+    def __init__(self, *args, **kwargs):
+        """"""
+        super().__init__(args, kwargs)
+
+    def __repr__(self):
+        return super().__repr__()

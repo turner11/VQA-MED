@@ -1,4 +1,7 @@
 import os, sys
+
+from common.settings import data_access
+
 sys.path.append('C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\')
 
 import itertools
@@ -19,6 +22,12 @@ ModelResults = namedtuple('ModelResults', ['loss', 'activation', 'bleu', 'wbss']
 
 
 def debug():
+    # from classes.vqa_model_trainer import VqaModelTrainer
+    # from data_access.model_folder import ModelFolder
+    # model_folder = ModelFolder('C:\\Users\\Public\\Documents\\Data\\2019\\models\\20190216_0518_28')
+    # VqaModelTrainer.model_2_db(model_folder, notes='First 2019 model')
+    # return
+
     from exported_notebooks import aaa
     return
     from tests import test_pre_processing
@@ -265,14 +274,14 @@ def train_model(model_id, optimizer, post_concat_dense_units=16):
     mb = VqaModelBuilder(model_dal.loss_function, model_dal.activation, post_concat_dense_units=post_concat_dense_units,
                          optimizer=optimizer)
     model = mb.get_vqa_model()
-    model_location, summary_fn, fn_image = VqaModelBuilder.save_model(model, mb.categorical_data_frame_name)
+    model_folder = VqaModelBuilder.save_model(model, mb.categorical_data_frame_name)
 
     # Train ------------------------------------------------------------------------
 
     batch_size = 75
     use_augmentation = True
 
-    mt = VqaModelTrainer(model_location, use_augmentation=use_augmentation, batch_size=batch_size)
+    mt = VqaModelTrainer(model_folder, use_augmentation=use_augmentation, batch_size=batch_size, data_access=data_access)
     history = mt.train()
     with VerboseTimer("Saving trained Model"):
         notes = f'post_concat_dense_units: {post_concat_dense_units};\n' \

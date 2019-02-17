@@ -6,6 +6,10 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 from pathlib import Path
+
+from pyarrow.lib import ArrowInvalid
+
+from common.exceptions import NoDataException
 from common.utils import VerboseTimer
 
 logger = logging.getLogger(__name__)
@@ -132,16 +136,17 @@ class DataAccess(object):
 
         dataset = pq.ParquetDataset(path, filters=filters)
         with VerboseTimer("Loading parquet"):
-            prqt = dataset.read(columns=columns)
-            df_data = prqt
-
+            try:
+                prqt = dataset.read(columns=columns)
+                df_data = prqt
+            except ArrowInvalid as e:
+                raise NoDataException(str(e)) from e
 
         if convert_to_pandas:
             with VerboseTimer("Converting to pandas"):
                 df_data = prqt.to_pandas()
 
-        return df_data#[:150]
-
+        return df_data  # [:150]
 
     def save_meta(self, meta_df_dict):
         meta_location = str(self.fn_meta)
@@ -149,7 +154,6 @@ class DataAccess(object):
             os.remove(meta_location)
         except OSError:
             pass
-
 
         for name, df_curr in meta_df_dict.items():
             df_curr.to_hdf(meta_location, name, format='table')
