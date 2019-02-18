@@ -35,9 +35,11 @@ def set_nlp_vector(idx):
     logger.debug(f'Embedding vector set to: {nlp_vector}')
 
 
-seq_length = 26
-input_length = 32  # longest question / answer was 28 words. Rounding up to a nice round number\n
-embedding_dim = 384  # Those are the sizes spacy uses
+# words length ((length, occurrences)): [(16, 76), (14, 13), (13, 154), (11, 2805), (10, 474), (9, 1754) ...]
+# questions length ((length, occurrences)): [(4, 759),(5, 1762),(6, 2965), (7, 4623),(8, 2844), (9, 1416), (10, 380)...]
+seq_length = 16
+input_length = 12
+embedding_dim = 384  # This is the sizes spacy uses
 embedded_sentence_length = input_length * embedding_dim
 
 
