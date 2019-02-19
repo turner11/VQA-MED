@@ -3,7 +3,7 @@
 
 # ### Training the model
 
-# In[1]:
+# In[5]:
 
 
 import IPython
@@ -15,35 +15,35 @@ from common.utils import VerboseTimer
 from data_access.model_folder import ModelFolder
 
 
-# In[2]:
+# In[6]:
 
 
 import logging
-from vqa_logger import init_log
-init_log()
+import vqa_logger 
 logger = logging.getLogger(__name__)
 
 
-# In[3]:
+# In[7]:
 
 
-model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20190210_2236_21\\'
+model_location = 'C:\\Users\\Public\\Documents\\Data\\2019\\models\\20190218_1955_22\\'
 model_folder = ModelFolder(model_location)
+model_folder
 
 
 # ### Loading the model to train:
 
-# In[4]:
+# In[ ]:
 
 
 epochs = 1
-batch_size = 150
+batch_size = 256
 mt = VqaModelTrainer(model_folder, use_augmentation=True,batch_size=batch_size, data_access=data_access)
 
 
 # #### Lets take a look at the parameters:
 
-# In[5]:
+# In[ ]:
 
 
 get_trainable_params_distribution(mt.model)
@@ -52,7 +52,7 @@ get_trainable_params_distribution(mt.model)
 
 # #### And a look at data:
 
-# In[6]:
+# In[ ]:
 
 
 mt.df_meta_answers
@@ -60,7 +60,7 @@ mt.df_meta_words
 mt.df_meta_answers.tail(2)
 
 
-# In[7]:
+# In[ ]:
 
 
 logger.debug(f"train Shape: {mt.data_train.shape}")
@@ -72,7 +72,7 @@ mt.data_train.head(0)
 
 # ##### The functions for getting the features & labels:
 
-# In[8]:
+# In[ ]:
 
 
 from common.functions import get_features, sentences_to_hot_vector, hot_vector_to_words
@@ -95,7 +95,7 @@ IPython.display.display(code_get_features)
 
 # ##### Example of hot vector of answer (AKA answer...)
 
-# In[9]:
+# In[ ]:
 
 
 df = mt.data_train
@@ -114,7 +114,7 @@ classes_indices[idx_sample]
 
 # ##### Will transform the sentences into vector and back using the following:
 
-# In[10]:
+# In[ ]:
 
 
 code = get_highlighted_function_code(hot_vector_to_words,remove_comments=False)
@@ -123,7 +123,7 @@ IPython.display.display(code)
 
 # ##### Check it looks sane by inversing the binarizing:
 
-# In[11]:
+# In[ ]:
 
 
 # words = mt.df_meta_words.word
@@ -141,7 +141,7 @@ print('\n\nThe reversed answer from hot vector:')
 label_words
 
 
-# In[12]:
+# In[ ]:
 
 
 history = mt.train()
@@ -153,11 +153,11 @@ history = mt.train()
 
 
 with VerboseTimer("Saving trained Model"):
-    model_fn, summary_fn, fn_image, fn_history = mt.save(mt.model, history)
+    model_folder = mt.save(mt.model, mt.model_folder, history)
 
 
 # In[ ]:
 
 
-print (model_fn)
+print (model_folder.model_path)
 

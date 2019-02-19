@@ -1,4 +1,3 @@
-import os
 import pandas as pd
 import logging
 from pandas import HDFStore
@@ -31,9 +30,9 @@ def _get_data_frame_from_arg(df_arg):
     if not isinstance(df_data, pd.DataFrame):
         raise TypeError(f'Could not load data for argument "{df_arg}"')
 
-    requiered_columns = {'processed_question', 'processed_answer'}
+    required_columns = {'processed_question', 'processed_answer'}
     existing_columns = set(df_data.columns)
-    missing_columns = requiered_columns - existing_columns
+    missing_columns = required_columns - existing_columns
     assert len(missing_columns) == 0, f'Some columns that are mandatory for metadata where missing:\n{missing_columns}'
 
     return df_data
@@ -42,14 +41,14 @@ def _get_data_frame_from_arg(df_arg):
 def create_meta(df):
     df = _get_data_frame_from_arg(df)
 
-    logger.debug(f"Dataframe had {len(df)} rows")
+    logger.debug(f"Data frame had {len(df)} rows")
     english_stopwords = set(stopwords.words('english'))
 
     def get_unique_words(col):
         single_string = " ".join(df[col])
         exclude = set(string.punctuation)
-        s_no_panctuation = ''.join(ch.lower() for ch in single_string if ch not in exclude)
-        unique_words = set(s_no_panctuation.split(" ")).difference({'', ' '})
+        no_punctuation = ''.join(ch.lower() for ch in single_string if ch not in exclude)
+        unique_words = set(no_punctuation.split(" ")).difference({'', ' '})
         unique_words = unique_words.difference(english_stopwords)
         logger.debug("column {0} had {1} unique words".format(col, len(unique_words)))
         return unique_words
@@ -64,15 +63,7 @@ def create_meta(df):
              or len(w) >= 3
              and not w[0].isdigit()]
 
-    metadata_dict = {}
-    metadata_dict['words'] = {'word': words}
-    metadata_dict['answers'] = {'answer': list(unique_answers)}
+    metadata_dict = {'words': {'word': words}, 'answers': {'answer': list(unique_answers)}}
 
-    df_dict = {k: pd.DataFrame(dictionary, dtype=str) for k, dictionary in metadata_dict.items() }
+    df_dict = {k: pd.DataFrame(dictionary, dtype=str) for k, dictionary in metadata_dict.items()}
     return df_dict
-
-
-
-
-#         df_ix_to_word = pd.DataFrame.from_dict(metadata['ix_to_word'])
-#         light.to_hdf(data_location, 'light', mode='w', data_columns=['image_name', 'imaging_device', 'path'], format='table')
