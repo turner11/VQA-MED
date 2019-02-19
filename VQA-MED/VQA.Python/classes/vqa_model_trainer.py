@@ -170,7 +170,11 @@ class VqaModelTrainer(object):
 
         model = model_folder.load_model()
 
-        h = model.history.history
+        try:
+            h = model.history.history
+        except:
+            h = model_folder.history
+
         loss = model.loss
         out_put_layer = model.layers[-1]
         activation = out_put_layer.activation.__name__
@@ -204,8 +208,12 @@ class VqaModelTrainer(object):
 
 
 def main():
-    model_folder_path = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20190216_0518_28'
+    model_folder_path = 'C:\\Users\\Public\\Documents\\Data\\2019\\models\\20190219_0120_04'
     model_folder = ModelFolder(model_folder_path)
+    # VqaModelTrainer.model_2_db(model_folder,'First model with 65k params')
+    # return
+
+
     model = model_folder.load_model()
 
     VqaModelTrainer.save(model, model_folder.history,'First attempt for 2019')
