@@ -1,35 +1,28 @@
-import pathlib
-import shutil
+import logging
 import keras.layers as keras_layers
-from keras.layers import GlobalAveragePooling2D  # , Dense, Input, Dropout
+from keras.layers import GlobalAveragePooling2D, Flatten  # , Dense, Input, Dropout
 from keras.applications.vgg19 import VGG19
 # from keras.applications.resnet50 import ResNet50
 from keras import Model, Input  # ,models, callbacks
-from keras.layers import Dense, LSTM, BatchNormalization, \
-    Activation  # GlobalAveragePooling2D, Merge, Flatten, Embedding
-
-import logging
+from keras.layers import Dense, LSTM, BatchNormalization, Activation  # GlobalAveragePooling2D, Merge, Embedding
 
 from data_access.model_folder import ModelFolder
-
-logger = logging.getLogger(__name__)
-from common.os_utils import File
 from common.settings import embedded_sentence_length, data_access
 from common.model_utils import save_model, get_trainable_params_distribution
 from common.constatns import vqa_models_folder
 from evaluate.statistical import f1_score, recall_score, precision_score
-import pandas as pd
-import numpy as np
 
-DEFAULT_IMAGE_WIEGHTS = 'imagenet'
+DEFAULT_IMAGE_WEIGHTS = 'imagenet'
 #  Since VGG was trained as a image of 224x224, every new image
 # is required to go through the same transformation
 image_size_by_base_models = {'imagenet': (224, 224)}
 
 LSTM_UNITS = 64
-POST_CONCAT_DENSE_UNITS = 64  # 256
+POST_CONCAT_DENSE_UNITS = 16  # 64  # 256
 DENSE_ACTIVATION = 'relu'
 OPTIMIZER = 'rmsprop'
+
+logger = logging.getLogger(__name__)
 
 
 class VqaModelBuilder(object):
@@ -53,11 +46,8 @@ class VqaModelBuilder(object):
         self.post_concat_dense_units = post_concat_dense_units
         self.optimizer = optimizer
 
-
-
-
     @staticmethod
-    def word_2_vec_model(input_tensor, lstm_units):
+    def word_2_vec_model(input_tensor: object, lstm_units: int) -> object:
         # print(dir(input_tensor))
         #         print('---------------------------------------------')
         #         print('Tensor shape: {0}'.format(input_tensor.get_shape()))
@@ -70,23 +60,21 @@ class VqaModelBuilder(object):
 
         logger.debug("Creating Embedding model")
         x = input_tensor  # Since using spacy
+        if lstm_units > 0:
+            x = LSTM(units=lstm_units
+                     , return_sequences=False
+                     , name='embedding_LSTM'
+                     , input_shape=(1, embedded_sentence_length))(x)
+        else:
+            x = Flatten(name='embedding_Flattening')(x)
 
-        x = LSTM(units=lstm_units, return_sequences=False, name='embbeding_LSTM',
-                 input_shape=(1, embedded_sentence_length))(x)
-        x = BatchNormalization(name='embbeding_batch_normalization')(x)
-
-        #         x = LSTM(units=LSTM_UNITS, return_sequences=True, name='embbeding_LSTM_1',  input_shape=(1,embedded_sentence_length))(x)
-        #         x = BatchNormalization(name='embbeding_batch_normalization_1')(x)
-        #         x = LSTM(units=LSTM_UNITS, return_sequences=False, name='embbeding_LSTM_2')(x)
-        #         x = BatchNormalization(name='embbeding_batch_normalization_2')(x)
-
-        #         x = Dense(units=DENSE_UNITS, activation=DENSE_ACTIVATION)(x)
+        x = BatchNormalization(name='embedding_batch_normalization')(x)
         model = x
         logger.debug("Done Creating Embedding model")
         return model
 
     @staticmethod
-    def get_image_model(base_model_weights=DEFAULT_IMAGE_WIEGHTS):
+    def get_image_model(base_model_weights=DEFAULT_IMAGE_WEIGHTS):
         base_model_weights = base_model_weights
 
         base_model = VGG19(weights=base_model_weights, include_top=False)
@@ -110,7 +98,6 @@ class VqaModelBuilder(object):
 
         image_model, lstm_model, fc_model = None, None, None
         try:
-            # ATTN:
             lstm_input_tensor = Input(shape=(embedded_sentence_length, 1), name='embedding_input')
 
             logger.debug("Getting embedding (lstm model)")
@@ -129,7 +116,8 @@ class VqaModelBuilder(object):
             fc_tensors = BatchNormalization()(fc_tensors)
             fc_tensors = Activation(DENSE_ACTIVATION)(fc_tensors)
 
-            fc_tensors = Dense(units=model_output_num_units, activation=self.output_activation_function
+            fc_tensors = Dense(units=model_output_num_units
+                               , activation=self.output_activation_function
                                , name=f'model_output_{self.output_activation_function}_dense')(fc_tensors)
 
             fc_model = Model(inputs=[lstm_input_tensor, image_input_tensor], output=fc_tensors)
@@ -150,7 +138,7 @@ class VqaModelBuilder(object):
 
     @staticmethod
     def save_model(model: Model, prediction_df_name: str) -> ModelFolder:
-        additional_info ={'prediction_data' : prediction_df_name}
+        additional_info = {'prediction_data': prediction_df_name}
         model_folder: ModelFolder = save_model(model, vqa_models_folder, additional_info, data_access.fn_meta)
         # Copy meta data to local folder
 
@@ -165,20 +153,6 @@ class VqaModelBuilder(object):
     @staticmethod
     def get_trainable_params_distribution(model, params_threshold=1000):
         return get_trainable_params_distribution(model, params_threshold)
-
-    def __getstate__(self):
-        state = {k: v for k, v in self.__dict__.items()}
-        state['df_meta_answers'] = None
-        state['df_meta_imaging_devices'] = None
-        state['df_meta_words'] = None
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-
-        df_meta_answers, df_meta_words, df_meta_imaging_devices = self.__get_data_frames(self.meta_data_location)
-        self.df_meta_answers = df_meta_answers
-        self.df_meta_words = df_meta_words
-        self.df_meta_imaging_devices = df_meta_imaging_devices
 
 
 def main():
