@@ -1,24 +1,35 @@
+import datetime
 import os
 import sys
-import datetime
 import time
-import coloredlogs, logging
+
+import coloredlogs
+import logging
+
 from common.os_utils import File
 
+__is_initialized = False
+
+
 def init_log():
+    global __is_initialized
+    if __is_initialized:
+        return
+
+    __is_initialized = True
     root_logger = logging.getLogger('root')
     # This for avoiding streams to log to root's stderr, which prints in red in jupyter
     for handler in root_logger.handlers:
         # continue
         root_logger.removeHandler(handler)
 
-    format = '[%(asctime)s][%(levelname)s] %(message)s'
-    formatter = logging.Formatter(format)
+    log_format = '[%(asctime)s][%(levelname)s] %(message)s'
+    formatter = logging.Formatter(log_format)
 
     # By default the install() function installs a file_handler on the root root_logger,
     # this means that log messages from your code and log messages from the
     # libraries that you use will all show up on the terminal.
-    coloredlogs.install(level='DEBUG', fmt=format, stream=sys.stdout)
+    coloredlogs.install(level='DEBUG', fmt=log_format, stream=sys.stdout)
 
     now = time.time()
     ts = datetime.datetime.fromtimestamp(now).strftime('%Y%m%d')
@@ -33,9 +44,8 @@ def init_log():
     file_handler = logging.FileHandler(file_name)
     file_handler.setFormatter(formatter)
 
-
     logging.basicConfig(filemode='a',
-                        format=format,
+                        format=log_format,
                         datefmt='%H:%M:%S',
                         level=logging.DEBUG,
                         stream=std_out,
@@ -49,13 +59,13 @@ def init_log():
 
 def test_log():
     # init_log()
-    l = logging.getLogger(__name__)
+    local_logger = logging.getLogger(__name__)
     print('This is just a print')
-    l.debug("this is a debugging message")
-    l.info("this is an informational message")
-    l.warning("this is a warning message")
-    l.error("this is an error message")
-    l.critical("this is a critical message")
+    local_logger.debug("this is a debugging message")
+    local_logger.info("this is an informational message")
+    local_logger.warning("this is a warning message")
+    local_logger.error("this is an error message")
+    local_logger.critical("this is a critical message")
 
 
 init_log()
