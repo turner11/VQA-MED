@@ -3,21 +3,19 @@ from functools import lru_cache
 import numpy as np
 import pandas as pd
 import keras
-
 from common.exceptions import InvalidArgumentException
-from common.functions import get_features, sentences_to_hot_vector, get_image
-from common.os_utils import File
+from common.functions import get_features, sentences_to_hot_vector
 from common.settings import data_access
-from common.utils import VerboseTimer
+
 import logging
+
 logger = logging.getLogger(__name__)
-from vqa_logger import init_log
-init_log
+
 
 class DataGenerator(keras.utils.Sequence):
     'Generates data for Keras'
 
-    def __init__(self,prediction_vector,
+    def __init__(self, prediction_vector,
                  batch_size: int = 32,
                  n_channels: object = 1,
                  shuffle: object = True,
@@ -29,7 +27,8 @@ class DataGenerator(keras.utils.Sequence):
 
         self.orig_data = data_access.load_processed_data(group='train')
 
-        df_augmentations = data_access.load_augmentation_data(augmentations=augmentations).sort_values('augmentation').reset_index(drop=True)
+        df_augmentations = data_access.load_augmentation_data(augmentations=augmentations).sort_values(
+            'augmentation').reset_index(drop=True)
 
         data = self.orig_data.set_index('path')
         augs = df_augmentations.set_index('original_path')
@@ -38,7 +37,6 @@ class DataGenerator(keras.utils.Sequence):
 
         self.batch_size = batch_size
         self.n_channels = n_channels
-
 
         self.on_epoch_end()
 
@@ -67,14 +65,14 @@ class DataGenerator(keras.utils.Sequence):
         'Generate one batch of data'
         # Generate indexes of the batch
         try:
-            indexes = self.indexes[index * self.batch_size :(index+1) * self.batch_size]
+            indexes = self.indexes[index * self.batch_size:(index + 1) * self.batch_size]
             # Find list of IDs
             data = self.data.iloc[indexes]
             # Make sure not to get same question/image from different augmentations at the same pass
             data = data.drop_duplicates(subset=['path', 'question'], keep='first')
 
             if self.shuffle:
-                data = data.sample(frac=1)#.reset_index(drop=True)
+                data = data.sample(frac=1)  # .reset_index(drop=True)
 
             X, y = self.__data_generation(data)
         except Exception as ex:
@@ -93,7 +91,7 @@ class DataGenerator(keras.utils.Sequence):
         self.indexes = np.arange(len(self.data))
 
     def __data_generation(self, df: pd.DataFrame) -> (iter, iter):
-        'Generates data containing batch_size samples' # X : (n_samples, *dim, n_channels)
+        'Generates data containing batch_size samples'  # X : (n_samples, *dim, n_channels)
         # Initialization
         # X = np.empty((self.batch_size, *self.dim, self.n_channels))
         # y = np.empty((self.batch_size), dtype=int)
@@ -102,7 +100,7 @@ class DataGenerator(keras.utils.Sequence):
             # with VerboseTimer(f'Getting {item_count} train features'):
             features = get_features(df)
             # with VerboseTimer(f'Getting {item_count} train labels'):
-            labels  = sentences_to_hot_vector(labels=df.answer, classes=self.prediction_vector)
+            labels = sentences_to_hot_vector(labels=df.processed_answer, classes=self.prediction_vector)
 
         except Exception as ex:
             logger.warning(f'Failed to get features:\n:{ex}')
@@ -110,7 +108,8 @@ class DataGenerator(keras.utils.Sequence):
 
         X = features
         y = labels
-        return X,y
+        return X, y
+
 
 def main():
     meta_dict = data_access.load_meta()
