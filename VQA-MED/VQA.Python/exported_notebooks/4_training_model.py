@@ -3,7 +3,7 @@
 
 # ### Training the model
 
-# In[5]:
+# In[1]:
 
 
 import IPython
@@ -15,7 +15,7 @@ from common.utils import VerboseTimer
 from data_access.model_folder import ModelFolder
 
 
-# In[6]:
+# In[2]:
 
 
 import logging
@@ -23,27 +23,27 @@ import vqa_logger
 logger = logging.getLogger(__name__)
 
 
-# In[7]:
+# In[4]:
 
 
-model_location = 'C:\\Users\\Public\\Documents\\Data\\2019\\models\\20190218_1955_22\\'
+model_location = 'C:\\Users\\Public\\Documents\\Data\\2019\\models\\20190222_1346_47\\'
 model_folder = ModelFolder(model_location)
 model_folder
 
 
 # ### Loading the model to train:
 
-# In[ ]:
+# In[5]:
 
 
 epochs = 1
-batch_size = 256
+batch_size = 75
 mt = VqaModelTrainer(model_folder, use_augmentation=True,batch_size=batch_size, data_access=data_access)
 
 
 # #### Lets take a look at the parameters:
 
-# In[ ]:
+# In[5]:
 
 
 get_trainable_params_distribution(mt.model)
@@ -52,7 +52,7 @@ get_trainable_params_distribution(mt.model)
 
 # #### And a look at data:
 
-# In[ ]:
+# In[6]:
 
 
 mt.df_meta_answers
@@ -60,7 +60,7 @@ mt.df_meta_words
 mt.df_meta_answers.tail(2)
 
 
-# In[ ]:
+# In[8]:
 
 
 logger.debug(f"train Shape: {mt.data_train.shape}")
@@ -72,7 +72,7 @@ mt.data_train.head(0)
 
 # ##### The functions for getting the features & labels:
 
-# In[ ]:
+# In[9]:
 
 
 from common.functions import get_features, sentences_to_hot_vector, hot_vector_to_words
@@ -95,7 +95,7 @@ IPython.display.display(code_get_features)
 
 # ##### Example of hot vector of answer (AKA answer...)
 
-# In[ ]:
+# In[10]:
 
 
 df = mt.data_train
@@ -114,7 +114,7 @@ classes_indices[idx_sample]
 
 # ##### Will transform the sentences into vector and back using the following:
 
-# In[ ]:
+# In[11]:
 
 
 code = get_highlighted_function_code(hot_vector_to_words,remove_comments=False)
@@ -123,7 +123,7 @@ IPython.display.display(code)
 
 # ##### Check it looks sane by inversing the binarizing:
 
-# In[ ]:
+# In[12]:
 
 
 # words = mt.df_meta_words.word
@@ -141,7 +141,7 @@ print('\n\nThe reversed answer from hot vector:')
 label_words
 
 
-# In[ ]:
+# In[13]:
 
 
 history = mt.train()
@@ -149,14 +149,14 @@ history = mt.train()
 
 # ### Save trained model:
 
-# In[ ]:
+# In[14]:
 
 
 with VerboseTimer("Saving trained Model"):
     model_folder = mt.save(mt.model, mt.model_folder, history)
 
 
-# In[ ]:
+# In[15]:
 
 
 print (model_folder.model_path)

@@ -18,6 +18,7 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+
 class VqaModelTrainer(object):
     """"""
 
@@ -33,7 +34,8 @@ class VqaModelTrainer(object):
     def epochs(self):
         return 1  # 20 if self.use_augmentation else 1
 
-    def __init__(self, model_folder: ModelFolder, use_augmentation: bool, batch_size: int, data_access: DataAccess) -> None:
+    def __init__(self, model_folder: ModelFolder, use_augmentation: bool, batch_size: int,
+                 data_access: DataAccess) -> None:
         super().__init__()
 
         self.use_augmentation = use_augmentation
@@ -60,10 +62,8 @@ class VqaModelTrainer(object):
         self.data_train = data_access.load_processed_data(group='train').copy().reset_index()
         self.data_val = data_access.load_processed_data(group='validation').copy().reset_index()
 
-
-
     def get_labels(self, df: pd.DataFrame) -> iter:
-        return sentences_to_hot_vector(labels=df.answer, classes=self.class_df)
+        return sentences_to_hot_vector(labels=df.processed_answer, classes=self.class_df)
 
     def print_shape_sanity(self, features_t, labels_t, features_val, labels_val):
         logger.debug('===========================================================================')
@@ -213,13 +213,9 @@ def main():
     # VqaModelTrainer.model_2_db(model_folder,'First model with 65k params')
     # return
 
-
     model = model_folder.load_model()
 
-    VqaModelTrainer.save(model, model_folder.history,'First attempt for 2019')
-
-
-
+    VqaModelTrainer.save(model, model_folder.history, 'First attempt for 2019')
 
     return
     from keras import backend as keras_backend

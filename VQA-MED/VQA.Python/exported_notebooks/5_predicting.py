@@ -1,24 +1,27 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[4]:
+# In[1]:
 
 
 import pandas as pd
 import numpy as np
 
 
-# In[5]:
+# In[2]:
 
 
 from classes.vqa_model_predictor import VqaModelPredictor, DefaultVqaModelPredictor
 from common.DAL import get_models_data_frame, get_model
+from common.DAL import ModelScore
+from common import DAL
+
 from evaluate.VqaMedEvaluatorBase import VqaMedEvaluatorBase
 from common.functions import get_highlighted_function_code
 import vqa_logger 
 
 
-# In[8]:
+# In[3]:
 
 
 df_models = get_models_data_frame()
@@ -33,7 +36,7 @@ except KeyError: #if no scode yet
 df_show.tail()
 
 
-# In[9]:
+# In[4]:
 
 
 import logging
@@ -42,30 +45,28 @@ logger = logging.getLogger(__name__)
 import IPython
 
 
-# In[10]:
+# In[5]:
 
 
-known_good_model = 163#85
-model_id = known_good_model #df_show.id.iloc[0]
-model_id = 1#int(model_id)
+model_id = None#int(model_id)
 mp = DefaultVqaModelPredictor(model_id)
 mp
 
 
-# In[ ]:
+# In[7]:
 
 
 mp.df_validation.head(2)
 
 
-# In[ ]:
+# In[8]:
 
 
 code = get_highlighted_function_code(mp.predict,remove_comments=False)
 IPython.display.display(code)
 
 
-# In[ ]:
+# In[9]:
 
 
 df_data = mp.df_validation
@@ -73,18 +74,35 @@ df_predictions = mp.predict(mp.df_validation)
 df_predictions.head()
 
 
-# In[ ]:
+# In[10]:
 
 
 df_predictions.describe()
 
 
+# #### Take a look at results for a single image:
+
 # In[ ]:
 
 
-idx = 42
-image_names = df_predictions.image_name.values
-image_name = image_names[idx]
+
+from IPython.display import Image, HTML
+
+df = pd.DataFrame(['./image01.png', './image02.png'], columns = ['Image'])
+
+def path_to_image_html(path):
+    return '<img src="'+ path + '"/>'
+
+pd.set_option('display.max_colwidth', -1)
+
+HTML(df.to_html(escape=False ,formatters=dict(Image=path_to_image_html)))
+
+
+# In[12]:
+
+
+
+image_name = df_predictions.image_name.sample(1).values[0]
 
 df_image = df_predictions[df_predictions.image_name == image_name]
 # print(f'Result: {set(df_image.prediction)}')
@@ -93,24 +111,16 @@ image_path = df_image.path.values[0]
 df_image
 
 
-# In[ ]:
+# In[13]:
 
 
 from IPython.display import Image
 Image(filename = image_path, width=400, height=400)
 
 
-# In[ ]:
-
-
-df_image = df_data[df_data.image_name == image_name].copy().reset_index()
-image_prediction = mp.predict(df_image)
-image_prediction
-
-
 # ## Evaluating the Model
 
-# In[ ]:
+# In[14]:
 
 
 validation_prediction = df_predictions
@@ -120,8 +130,27 @@ results = VqaMedEvaluatorBase.get_all_evaluation(predictions=predictions, ground
 print(f'Got results of\n{results}')
 
 
-# In[ ]:
+# ##### Add the core to DB:
+
+# In[20]:
 
 
-validation_prediction.head(2)
+model_db_id = mp.model_idx_in_db
+assert model_db_id >= 0 
+model_db_id
+
+
+# In[24]:
+
+
+bleu = results['bleu']
+wbss = results['wbss']
+model_score = ModelScore(model_db_id, bleu=bleu, wbss=wbss)
+model_score
+
+
+# In[25]:
+
+
+DAL.insert_dal(model_score)
 

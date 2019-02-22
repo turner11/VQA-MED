@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[2]:
+# In[1]:
 
 
 from classes.vqa_model_builder import VqaModelBuilder
@@ -13,7 +13,7 @@ from common.functions import get_highlighted_function_code
 import vqa_logger 
 
 
-# In[3]:
+# In[2]:
 
 
 # TODO: Do we need this?
@@ -21,26 +21,26 @@ from keras import backend as keras_backend
 keras_backend.clear_session()
 
 
-# In[4]:
+# In[3]:
 
 
 # loss, activation = 'categorical_crossentropy', 'softmax' # good for a model to predict multiple mutually-exclusive classes:
 # loss, activation = 'binary_crossentropy', 'sigmoid'
 # loss, activation = 'categorical_crossentropy', 'sigmoid'
 # loss, activation = 'cosine_proximity', 'relu'
-loss, activation = 'cosine_proximity', 'tanh'
+loss, activation, lstm_units = 'cosine_proximity', 'tanh', 0
 
 
 categorical_data_frame_name = 'answers'
 categorical_data_frame_name = 'words'
 
 with VerboseTimer("Instantiating VqaModelBuilder"):
-    mb = VqaModelBuilder(loss, activation, categorical_data_frame_name=categorical_data_frame_name)
+    mb = VqaModelBuilder(loss, activation, lstm_units=lstm_units, categorical_data_frame_name=categorical_data_frame_name)
 
 
 # #### What does the data looks like?
 
-# In[5]:
+# In[4]:
 
 
 mb.categorical_data_frame.sample(5)
@@ -51,7 +51,7 @@ mb.categorical_data_frame.sample(5)
 # ##### word_2_vec_model
 # Define how to build the word-to vector branch:
 
-# In[6]:
+# In[5]:
 
 
 code = get_highlighted_function_code(VqaModelBuilder.word_2_vec_model,remove_comments=True)
@@ -61,7 +61,7 @@ IPython.display.display(code)
 # ##### get_image_model:
 # In the same manner, defines how to build the image representation branch:
 
-# In[7]:
+# In[6]:
 
 
 code = get_highlighted_function_code(VqaModelBuilder.get_image_model,remove_comments=False)
@@ -70,7 +70,7 @@ IPython.display.display(code)
 
 # ##### And the actual function for getting the model:
 
-# In[8]:
+# In[7]:
 
 
 code = get_highlighted_function_code(mb.get_vqa_model,remove_comments=True)
@@ -79,7 +79,7 @@ IPython.display.display(code)
 
 # ### Creating the model
 
-# In[9]:
+# In[8]:
 
 
 with VerboseTimer("Gettingt the model"):
@@ -90,14 +90,14 @@ with VerboseTimer("Gettingt the model"):
 
 # ##### The saving function:
 
-# In[10]:
+# In[9]:
 
 
 code = get_highlighted_function_code(VqaModelBuilder.save_model,remove_comments=False)
 IPython.display.display(code)  
 
 
-# In[11]:
+# In[10]:
 
 
 model_folder = VqaModelBuilder.save_model(model, mb.categorical_data_frame_name)
@@ -109,20 +109,20 @@ model_folder = VqaModelBuilder.save_model(model, mb.categorical_data_frame_name)
 
 # ##### The function:
 
-# In[12]:
+# In[11]:
 
 
 code = get_highlighted_function_code(VqaModelBuilder.get_trainable_params_distribution,remove_comments=False)
 IPython.display.display(code)
 
 
-# In[13]:
+# In[12]:
 
 
 top = VqaModelBuilder.get_trainable_params_distribution(model)
 
 
-# In[14]:
+# In[13]:
 
 
 display(Image(filename=str(model_folder.image_file_path)))
@@ -131,7 +131,7 @@ model.summary()
 
 # Copy these items to the next notebook of training the model
 
-# In[15]:
+# In[14]:
 
 
 msg = f"Summary: {str(model_folder.summary_path)}\n"
