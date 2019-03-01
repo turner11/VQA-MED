@@ -19,6 +19,9 @@ namespace Utils
 {
     public abstract class InteractivePythonWrapper : IDisposable
     {
+        public const string PYTHON_INTERP_PATH = @"C:\local\Anaconda3-4.1.1-Windows-x86_64\envs\vqa\python.exe";
+        const string WORKINGDIR = @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\VQA.Python";
+
         const string ERROR_KEY = "error";
         const string ENV_PATH_VARIABLE_NAME = "PATH";
 
@@ -38,23 +41,16 @@ namespace Utils
 
         private readonly ObservableCollection<string> _commands = new ObservableCollection<string>();
         private readonly ObservableCollection<string> _responces = new ObservableCollection<string>();
-        private ObservableCollection<string> _safeCommands
-        {
-            get
-            {
-                lock (this._lockObject)
-                {
-                    return this._commands;
-                }
-            }
-        }
+        private readonly ObservableCollection<string> _prints = new ObservableCollection<string>();
+
+
 
         private event EventHandler<DataReceivedEventArgs> _errorDataReceived;
         private event EventHandler<DataReceivedEventArgs> _outputDataReceived;
 
 
 
-        public InteractivePythonWrapper(string script, string interpeter = null, string workingDir = null)
+        public InteractivePythonWrapper(string script, string interpeter=InteractivePythonWrapper.PYTHON_INTERP_PATH, string workingDir=WORKINGDIR)
         {
             FileInfo fi = new FileInfo(script);
             if (!fi.Exists)
@@ -62,7 +58,7 @@ namespace Utils
 
             this._script = script;
             this._workDir = workingDir ?? fi.Directory.FullName; //new DirectoryInfo(Path.GetDirectoryName(this._script)).Parent.FullName;
-            this._interpeter = interpeter ?? "python"; 
+            this._interpeter = interpeter ?? PYTHON_INTERP_PATH; 
 
             this._outputDataReceived += InteractivePythonWrapper__outputDataReceived;
             this._errorDataReceived += InteractivePythonWrapper__errorDataReceived;
@@ -80,6 +76,12 @@ namespace Utils
 
         }
 
+
+        public override string ToString()
+        {
+            return $"InteractivePythonWrapper: ";
+        }
+
         private void _responces_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             if (e.Action == NotifyCollectionChangedAction.Add)
@@ -91,14 +93,32 @@ namespace Utils
         private void InteractivePythonWrapper__errorDataReceived(object sender, DataReceivedEventArgs e)
         {
             Debug.WriteLine($"Got Error:{e.Data }");
-            this._responces.Add(e.Data);
+            this.AddPythonOutput(e.Data);
         }
 
+       
         private void InteractivePythonWrapper__outputDataReceived(object sender, DataReceivedEventArgs e)
         {
             Debug.WriteLine($"Got Output:{e.Data }");
-            this._responces.Add(e.Data);
+            this.AddPythonOutput(e.Data);
         }
+
+        private void AddPythonOutput(string text)
+        {
+            string prefix = text.Substring(0, Math.Min(text.Length, 10));
+            prefix = prefix.Replace("'", "").Replace("\"", "");
+            prefix = prefix.ToLower();
+            var isJson = prefix.StartsWith("{");
+
+            var knownResponces = new List<string>(){"true", "false"};
+            bool isResponce = isJson || knownResponces.Contains(prefix);
+            if (isResponce)
+                this._responces.Add(text);
+
+            this._prints.Add(text);
+
+        }
+
 
         private void AddCurrentDirectoryToPath()
         {
@@ -133,8 +153,8 @@ namespace Utils
             try
             {
                 this._responces.Clear();
-                this._safeCommands.Clear();
-                this._safeCommands.Add(cmd);
+                this._commands.Clear();
+                this._commands.Add(cmd);
                 this._signalGotResponceEvent.WaitOne();
 
                 
@@ -266,7 +286,6 @@ namespace Utils
             // Redirect the standard output of the sort command.  
             // This stream is read asynchronously using an event handler.
             process.StartInfo.RedirectStandardOutput = true;
-            var sortOutput = new StringBuilder("");
 
             // Set our event handler to asynchronously read the sort output.
             process.OutputDataReceived += (s, e) => this._outputDataReceived?.Invoke(this, e);
@@ -308,7 +327,7 @@ namespace Utils
                     sWriter.WriteLine(args);
                 }
 
-                if (this._safeCommands.Count == 0)
+                if (this._commands.Count == 0)
                 {
                     this._signalGotCommandEvent.WaitOne();
                 }
@@ -318,7 +337,7 @@ namespace Utils
         private string getNextCommand()
         {
             var command = "";
-            if (this._safeCommands.Count > 0)
+            if (this._commands.Count > 0)
                 lock (this._lockObject)
                 {
                     command = this._commands[0];

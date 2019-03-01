@@ -53,20 +53,20 @@ mp = DefaultVqaModelPredictor(model_id)
 mp
 
 
-# In[7]:
+# In[6]:
 
 
 mp.df_validation.head(2)
 
 
-# In[8]:
+# In[7]:
 
 
 code = get_highlighted_function_code(mp.predict,remove_comments=False)
 IPython.display.display(code)
 
 
-# In[9]:
+# In[8]:
 
 
 df_data = mp.df_validation
@@ -74,7 +74,7 @@ df_predictions = mp.predict(mp.df_validation)
 df_predictions.head()
 
 
-# In[10]:
+# In[9]:
 
 
 df_predictions.describe()
@@ -82,23 +82,7 @@ df_predictions.describe()
 
 # #### Take a look at results for a single image:
 
-# In[ ]:
-
-
-
-from IPython.display import Image, HTML
-
-df = pd.DataFrame(['./image01.png', './image02.png'], columns = ['Image'])
-
-def path_to_image_html(path):
-    return '<img src="'+ path + '"/>'
-
-pd.set_option('display.max_colwidth', -1)
-
-HTML(df.to_html(escape=False ,formatters=dict(Image=path_to_image_html)))
-
-
-# In[12]:
+# In[85]:
 
 
 
@@ -111,16 +95,17 @@ image_path = df_image.path.values[0]
 df_image
 
 
-# In[13]:
+# In[86]:
 
 
-from IPython.display import Image
-Image(filename = image_path, width=400, height=400)
+from IPython.display import Image, HTML, display_html
+image = Image(filename = image_path, width=400, height=400)
+image
 
 
 # ## Evaluating the Model
 
-# In[14]:
+# In[13]:
 
 
 validation_prediction = df_predictions
@@ -132,7 +117,7 @@ print(f'Got results of\n{results}')
 
 # ##### Add the core to DB:
 
-# In[20]:
+# In[14]:
 
 
 model_db_id = mp.model_idx_in_db
@@ -140,7 +125,7 @@ assert model_db_id >= 0
 model_db_id
 
 
-# In[24]:
+# In[15]:
 
 
 bleu = results['bleu']
@@ -149,7 +134,7 @@ model_score = ModelScore(model_db_id, bleu=bleu, wbss=wbss)
 model_score
 
 
-# In[25]:
+# In[16]:
 
 
 DAL.insert_dal(model_score)

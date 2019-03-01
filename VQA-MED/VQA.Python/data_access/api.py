@@ -84,13 +84,18 @@ class DataAccess(object):
         return full_path
 
     def load_processed_data(self, group: str = None, columns: list = None) -> pd.DataFrame:
-        full_path = str(self.processed_data_location)
-        logger.debug(f'loading processed data from:\n{full_path}')
+
         if group is not None:
             filters = [('group', '==', str(group)), ]
         else:
             filters = None
 
+        df_data = self._load_processed_data(filters=filters, columns=columns)
+        return df_data
+
+    def _load_processed_data(self, filters: list = None, columns: list = None) -> pd.DataFrame:
+        full_path = str(self.processed_data_location)
+        logger.debug(f'loading processed data from:\n{full_path}')
         df_data = self._load_parquet(full_path, columns, filters=filters)
         return df_data
 

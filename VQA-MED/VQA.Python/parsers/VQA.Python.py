@@ -1,31 +1,17 @@
 import json
-import argparse
-import itertools
-import sys
-import os
-# from collections import OrderedDict
-# from .vqa_logger import logger
-
-import pandas as pd
-
-# from common.utils import VerboseTimer
+from common.settings import data_access
+from common.supress_print import SupressPrint
 
 ERROR_KEY = "error"
-df_path = 'C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\data\\model_input.h5'
-# print(f'Loading data from \n"{df_path}"\n\n')
-# with VerboseTimer('Loading Data'):
-#     with pd.HDFStore(df_path) as store:
-#         df_data = store['data']
-
-result_columns = ['image_name', 'question', 'answer', 'imaging_device']
-global df_light
-df_light=None
+result_columns = ['image_name', 'question', 'answer']
+df_columns = ['image_name', 'question', 'answer', 'path', 'processed_question', 'processed_answer', 'diagnosis','question_category', 'group']
+df_light = data_access._load_processed_data(columns=df_columns)
 
 def service_decorator(func):
-    def wrapper(dataframe_path=None, *args, **kwargs):
-        dataframe_path = dataframe_path or df_path
+    def wrapper(*args, **kwargs):
         try:
-            df = func(dataframe_path=dataframe_path, *args, **kwargs)
+            with SupressPrint():
+                df = func(*args, **kwargs)
             df_ret = df[result_columns]
             orientation='columns'#'records'#'values'#'table'#'index'#'split'#
             json_ret = df_ret.reset_index().to_json(orient=orientation)
@@ -39,18 +25,14 @@ def service_decorator(func):
     return wrapper
 
 @service_decorator
-def get_image_data(image_name, dataframe_path=None):
-    df_ret = pd.read_hdf(dataframe_path, key='light', where=[f'image_name="{image_name}"'])
+def get_image_data(image_name):
+    df_ret = df_light[df_light.image_name == image_name]
     return df_ret
 
 
 @service_decorator
-def query_data(query_string, dataframe_path=None):
-    global df_light
-    dataframe_path = dataframe_path or df_path
-    if df_light is None:
-        df_light = pd.read_hdf(dataframe_path, key='light')
-    res_vec = [False]* len(df_light)
+def query_data(query_string):
+    res_vec = [False] * len(df_light)
     for col in result_columns:
         res_vec = res_vec | df_light[col].str.contains(query_string, case=False)
     df_ret = df_light[res_vec]
@@ -58,11 +40,9 @@ def query_data(query_string, dataframe_path=None):
 
 
 
-
-
-
 if __name__ == "__main__":
-
+    # dd = get_image_data(image_name='synpic100295.jpg')
+    # dd = get_image_data(image_name='synpic100295.jpg')
     # image = '0392-100X-31-222-g002.jpg'#'0392-100X-33-350-g002.jpg' #'0392-100X-31-109-g001.jpg'
     # ret_val = get_image_data(image_name=image)
     #

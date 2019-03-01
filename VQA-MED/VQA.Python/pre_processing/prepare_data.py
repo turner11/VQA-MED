@@ -30,18 +30,19 @@ def pre_process_raw_data(df):
         stops = set(stopwords.words("english"))
         remove_stops = lambda x: ' '.join([word for word in x.split() if word not in stops])
         logger.info('Answer: removing stop words and tokenizing')
-        with VerboseTimer("Answer Tokenizing"):
-            df['processed_answer'] = df['processed_answer'].apply(remove_stops)
-
-        logger.info('Question: removing stop words and tokenizing')
-        with VerboseTimer("Question Tokenizing"):
-            df['processed_question'] = df['processed_question'].apply(remove_stops)
-
-        ddata = dd.from_pandas(df, npartitions=8)
 
         for col in ['processed_answer', 'answer']:
             if col not in df.columns:  # e.g. in test set...
                 df[col] = ''
+
+        with VerboseTimer("Answer Tokenizing"):
+            df['processed_answer'] = df['answer'].apply(remove_stops)
+
+        logger.info('Question: removing stop words and tokenizing')
+        with VerboseTimer("Question Tokenizing"):
+            df['processed_question'] = df['question'].apply(remove_stops)
+
+        ddata = dd.from_pandas(df, npartitions=8)
 
         def get_string_features(s, *a, **kw):
             features = get_text_features(s)

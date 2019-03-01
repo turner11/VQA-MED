@@ -13,9 +13,6 @@ namespace VQA.Logic
 {
     public class VqaLogics
     {
-        private const string PYTHON_INTERP_PATH = @"C:\local\Anaconda3-4.1.1-Windows-x86_64\envs\conda_env\python.exe";
-        //"\"C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\Anaconda3_64\\python.exe\"";
-        //"\"C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\Anaconda3_64\\python.exe\"";
         public const string ERROR_KEY = "error"; //this is also impelemnted on python's side
 
         public readonly string jsonPath;
@@ -26,8 +23,8 @@ namespace VQA.Logic
 
         public VqaLogics(string jsonPath, string pixalMapPath, string pythonHandler)
         {
-            if (String.IsNullOrWhiteSpace(jsonPath))
-                throw new ArgumentException("Cannot work without a json path", nameof(jsonPath));
+            //if (String.IsNullOrWhiteSpace(jsonPath))
+            //    throw new ArgumentException("Cannot work without a json path", nameof(jsonPath));
             this.jsonPath = jsonPath;
             this.pixalMapPath = pixalMapPath;
             this.pythonHandler = pythonHandler;

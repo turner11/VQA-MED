@@ -2,7 +2,6 @@ import os
 import warnings
 import pandas as pd
 from keras.callbacks import History
-from pandas import HDFStore
 from classes.DataGenerator import DataGenerator
 import logging
 from data_access.api import DataAccess
@@ -202,7 +201,8 @@ class VqaModelTrainer(object):
             precsision=get_val('precision_score'),
             precsision_val=get_val('val_precision_score'),
             loss_function=loss,
-            activation=activation)
+            activation=activation,
+            class_strategy=model_folder.additional_info.get('prediction_data', None))
 
         DAL.insert_dal(dal_model)
 

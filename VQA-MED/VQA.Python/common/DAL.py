@@ -84,8 +84,8 @@ class Model(Base):
                  precsision,
                  precsision_val,
                  loss_function,
-                 activation
-                 ):
+                 activation,
+                 class_strategy):
         """"""
         self.model_location = model_location
         self.history_location = history_location
@@ -105,6 +105,7 @@ class Model(Base):
         self.precsision_val = precsision_val
         self.loss_function = loss_function
         self.activation = activation
+        self.class_strategy = class_strategy
 
     def __repr__(self):
         return f'{self.__class__.__name__}(id={self.id},\n' \

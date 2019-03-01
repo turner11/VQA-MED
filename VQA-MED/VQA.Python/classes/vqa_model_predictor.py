@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class VqaModelPredictor(object):
     """"""
 
-    def __init__(self, model: Union[str, int, ModelFolder]):
+    def __init__(self, model: Union[str, int, ModelFolder, keras_model, None]):
         """"""
         super(VqaModelPredictor, self).__init__()
         self.model, model_idx_in_db, model_folder = self.get_model(model)
@@ -33,7 +33,7 @@ class VqaModelPredictor(object):
         return super(VqaModelPredictor, self).__repr__()
 
     @staticmethod
-    def get_model(model: Union[int, keras_model, str, None]) -> (keras_model, int, ModelFolder):
+    def get_model(model: Union[int, keras_model,ModelFolder, str, None]) -> (keras_model, int, ModelFolder):
 
         df_models = None
         model_id = -1
@@ -93,6 +93,8 @@ class VqaModelPredictor(object):
             p = model.predict(features)
 
         assert len(words_decoder) == len(p[0])
+        allow_multi_predictions = all(len(txt.split()) <= 1 for txt in words_decoder.values)
+
         # noinspection PyTypeChecker
         percentiles = [np.percentile(curr_pred, percentile) for curr_pred in p]
         enumrated_p = [[(i, v) for i, v in enumerate(curr_p)] for curr_p in p]
@@ -110,10 +112,15 @@ class VqaModelPredictor(object):
         results = []
         for i, (curr_prediction, curr_probabilities) in enumerate(zip(predictions, probabilities)):
             prediction_df = pd.DataFrame({'word_idx': curr_prediction,
-                                          'word': list(words_decoder.iloc[curr_prediction].values),
-                                          'probabilities': curr_probabilities})
+                                          'prediction': list(words_decoder.iloc[curr_prediction].values),
+                                          'probabilities': curr_probabilities}
+                                         ).sort_values(by='probabilities', ascending=False).reset_index(drop=True)
 
-            curr_prediction_str = ' '.join([str(w) for w in list(prediction_df.word.values)])
+            prediction_df = prediction_df[prediction_df.prediction.str.strip().str.len() > 0]
+            if not allow_multi_predictions:
+                prediction_df = prediction_df.head(1)
+
+            curr_prediction_str = ' '.join([str(w) for w in list(prediction_df.prediction.values)])
             probabilities_str = ', '.join(['({:.3f})'.format(p) for p in list(prediction_df.probabilities.values)])
 
             light_pred_df = pd.DataFrame({
@@ -134,7 +141,7 @@ class VqaModelPredictor(object):
 class DefaultVqaModelPredictor(VqaModelPredictor):
     """"""
 
-    def __init__(self, model, df_test=None, df_validation=None):
+    def __init__(self, model: Union[str, int, ModelFolder, keras_model, None], df_test=None, df_validation=None):
         """"""
         super(DefaultVqaModelPredictor, self).__init__(model)
         df_test, df_validation = self.get_data(df_test, df_validation)

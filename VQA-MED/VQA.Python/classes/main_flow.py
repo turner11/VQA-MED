@@ -1,71 +1,29 @@
+import itertools
+import logging
 import os, sys
-
-from common.settings import data_access
+from tqdm import tqdm
+from common import DAL
+from common.DAL import ModelScore
+from common.utils import VerboseTimer
+from data_access.model_folder import ModelFolder
 
 sys.path.append('C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\')
-
-import itertools
-import pathlib
-from tqdm import tqdm
-import logging
-
-# import exported_notebooks
-from common.DAL import ModelScore
-from common.os_utils import File
-from common.utils import VerboseTimer
-from collections import namedtuple
-from common import DAL
 import vqa_logger
-
 logger = logging.getLogger(__name__)
-ModelResults = namedtuple('ModelResults', ['loss', 'activation', 'bleu', 'wbss'])
-
 
 def debug():
-    # from classes.vqa_model_trainer import VqaModelTrainer
-    # from data_access.model_folder import ModelFolder
-    # model_folder = ModelFolder('C:\\Users\\Public\\Documents\\Data\\2019\\models\\20190216_0518_28')
-    # VqaModelTrainer.model_2_db(model_folder, notes='First 2019 model')
+    # from exported_notebooks import aaa
+    # aaa.do()
     # return
-
-    from exported_notebooks import aaa
+    # from exported_notebooks import concise_train
+    # concise_train.do()
+    # return
+    train_all()
     return
-    from tests import test_pre_processing
-    test_pre_processing.main()
-    return
-    from parsers.data_loader import DataLoader
-    from common.settings import validation_data
-    df_valid = DataLoader.get_data(validation_data.qa_path)
-    str()
 
-    from classes.vqa_model_trainer import VqaModelTrainer
-    from common.functions import get_features, concat_row, sentences_to_hot_vector, hot_vector_to_words
-    model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20190125_1052_13\\vqa_model_.h5'
-    mt = VqaModelTrainer(model_location, use_augmentation=True, batch_size=75)
 
-    #
-    # classes = mt.class_df
-    # arr_one_hot_vector = mt.get_labels(mt.data_train)
-    # categorial_labels = arr_one_hot_vector
-    #
-    # idx = 0
-    # class_i = classes.loc[idx]
-    # print(f'The sentence:\n{class_i}')
-    #
-    # one_hot_vector = arr_one_hot_vector[idx]
-    # label_words = \
-    #     hot_vector_to_words(one_hot_vector, mt.class_df).values
-    # print('\n\nThe highlighed labels:')
-    # label_words
 
-    history = mt.train()
 
-    with VerboseTimer("Saving trained Model"):
-        model_fn, summary_fn, fn_image, fn_history = mt.save(mt.model, history)
-
-    str()
-
-    print(model_fn)
 
 def main():
     debug()
@@ -267,7 +225,6 @@ def train_model(model_id, optimizer, post_concat_dense_units=16):
     from classes.vqa_model_trainer import VqaModelTrainer
     from classes.vqa_model_builder import VqaModelBuilder
     from keras import backend as keras_backend
-    keras_backend.clear_session()
 
     # Get------------------------------------------------------------------------
     model_dal = DAL.get_model_by_id(model_id=model_id)
@@ -319,6 +276,7 @@ def evaluate_model(model=None):
 
 
 def train_all():
+    from common.settings import data_access
     # Doing all of this here in order to not import tensor flow for other functions
     from evaluate.VqaMedEvaluatorBase import VqaMedEvaluatorBase
     from classes.vqa_model_builder import VqaModelBuilder
@@ -326,22 +284,23 @@ def train_all():
     from classes.vqa_model_trainer import VqaModelTrainer
     from keras import backend as keras_backend
     # Create------------------------------------------------------------------------
-    # good for a model to predict multiple mutually-exclusive classes:
-    loss, activation = 'categorical_crossentropy', 'softmax'
-    # loss, activation = 'binary_crossentropy', 'sigmoid'
-    # loss, activation = 'categorical_crossentropy', 'sigmoid'
-    losses = ['categorical_crossentropy', 'binary_crossentropy', 'kullback_leibler_divergence', 'poisson',
-              'cosine_proximity', 'mean_squared_error', 'mean_absolute_error', 'mean_absolute_percentage_error',
-              'mean_squared_logarithmic_error', 'squared_hinge', 'hinge', 'categorical_hinge', 'logcosh']
-    activations = ['softmax', 'sigmoid', 'relu', 'tanh']
-    losses_and_activations = list(itertools.product(losses, activations))
+    ## good for a model to predict multiple mutually-exclusive classes:
+    # loss, activation = 'categorical_crossentropy', 'softmax'
+    # losses = ['categorical_crossentropy', 'binary_crossentropy', 'kullback_leibler_divergence', 'poisson',
+    #           'cosine_proximity', 'mean_squared_error', 'mean_absolute_error', 'mean_absolute_percentage_error',
+    #           'mean_squared_logarithmic_error', 'squared_hinge', 'hinge', 'categorical_hinge', 'logcosh']
+    # activations = ['softmax', 'sigmoid', 'relu', 'tanh']
+    # losses_and_activations = list(itertools.product(losses, activations))
 
     optimizers = ['RMSprop', 'Adam']  # ['SGD', 'Adagrad', 'Adadelta', 'RMSprop', 'Adam']
-    dense_units = [16, 32]
+    dense_units = [8, 16, 32, 64]
+    lstm_units = [0, 8, 16]
+    pred_vectors = ['answers', 'words']
     top_models = [
         ('cosine_proximity', 'sigmoid'),
         ('cosine_proximity', 'tanh'),
         ('cosine_proximity', 'relu'),
+        ('cosine_proximity', 'softmax'),
         ('poisson', 'softmax'),
         ('kullback_leibler_divergence', 'softmax'),
         ('mean_absolute_percentage_error', 'relu'),
@@ -350,15 +309,21 @@ def train_all():
         ('mean_squared_error', 'relu'),
         ('mean_absolute_error', 'relu'), ]
 
-    la_units_opts = list(itertools.product(top_models, dense_units, optimizers))
+    la_units_opts = list(itertools.product(top_models, dense_units, optimizers, lstm_units, pred_vectors))
 
     existing_scores = DAL.get_scores()
     models_ids = [s.model_id for s in existing_scores]
     existing_models = DAL.get_models()
     models_with_scores = [m for m in existing_models if m.id in models_ids]
-
     # for loss, activation in losses_and_activations:
-    for (loss, activation), post_concat_dense_units, opt in la_units_opts:
+
+    batch_size = 64
+    use_augmentation = True
+    la_units_opts = la_units_opts[9:]
+    pbar = tqdm(la_units_opts)
+    for (loss, activation), post_concat_dense_units, opt, lstm, pred_vector in pbar:
+        pbar.set_description(f'====== working on loss {loss}, activation {activation}, post_concat_dense_units {post_concat_dense_units}, opt {opt}, lstm {lstm}, pred_vector {pred_vector}====== ')
+        keras_backend.clear_session()
         try:
 
             def match(m):
@@ -376,50 +341,52 @@ def train_all():
 
             # keras_backend.clear_session()
 
-            mb = VqaModelBuilder(loss, activation, post_concat_dense_units=post_concat_dense_units, optimizer=opt)
+            mb = VqaModelBuilder(loss, activation, lstm_units=lstm, categorical_data_frame_name=pred_vector)
+            # mb = VqaModelBuilder(loss, activation, post_concat_dense_units=post_concat_dense_units, optimizer=opt)
             model = mb.get_vqa_model()
-            model_fn, summary_fn, fn_image = VqaModelBuilder.save_model(model)
+            out_model_folder = VqaModelBuilder.save_model(model, mb.categorical_data_frame_name)
 
             # Train ------------------------------------------------------------------------
-
-            epochs = 1
-            # batch_size = 20
             keras_backend.clear_session()
+            model_folder = ModelFolder(str(out_model_folder.folder))
 
-            batch_size = 75
-            use_augmentation = True
-
-            model_location = model_fn
-
-            mt = VqaModelTrainer(model_location, use_augmentation=use_augmentation, batch_size=batch_size)
+            mt = VqaModelTrainer(model_folder, use_augmentation=use_augmentation,batch_size=batch_size, data_access=data_access)
             history = mt.train()
             with VerboseTimer("Saving trained Model"):
                 notes = f'post_concat_dense_units: {post_concat_dense_units};\n' \
                     f'Optimizer: {opt}\n' \
                     f'loss: {loss}\n' \
                     f'activation: {activation}\n' \
-                    f'epochs: {epochs}\n' \
+                    f'prediction vector: {pred_vector}\n' \
+                    f'lstm_units: {lstm}\n' \
                     f'batch_size: {batch_size}'
-                model_fn, summary_fn, fn_image, fn_history = VqaModelTrainer.save(mt.model, history, notes)
-            print(model_fn)
+
+                model_folder = mt.save(mt.model, mt.model_folder, history, notes=notes)
+            logger.debug(f'model_folder: {model_folder}')
 
             # Evaluate ------------------------------------------------------------------------
-            mp = DefaultVqaModelPredictor(model=None)
+            keras_backend.clear_session()
+
+            model_id_in_db = None #latest...
+            mp = DefaultVqaModelPredictor(model=model_id_in_db)
             validation_prediction = mp.predict(mp.df_validation)
             predictions = validation_prediction.prediction.values
             ground_truth = validation_prediction.answer.values
             results = VqaMedEvaluatorBase.get_all_evaluation(predictions=predictions, ground_truth=ground_truth)
 
-            ms = ModelScore(model_id=mp.model_idx_in_db, bleu=results['bleu'], wbss=results['wbss'])
-            DAL.insert_dal(ms)
+            bleu = results['bleu']
+            wbss = results['wbss']
+            model_db_id = mp.model_idx_in_db
+            model_score = ModelScore(model_db_id, bleu=bleu, wbss=wbss)
+            DAL.insert_dal(model_score)
             logger.info('----------------------------------------------------------------------------------------')
             logger.info(f'@@@For:\tLoss: {loss}\tActivation: {activation}: Got results of {results}@@@')
             logger.info('----------------------------------------------------------------------------------------')
 
-            print(f"###Completed full flow for {loss} and {activation}")
+            logger.debug(f"### Completed full flow for {loss} and {activation}")
         except Exception as ex:
             import traceback as tb
-            print(f"^^^Failed full flow for {loss} and {activation}\n:{ex}")
+            logger.error(f"^^^ Failed full flow for {loss} and {activation}\n:{ex}")
             tb.print_exc()
             tb.print_stack()
 

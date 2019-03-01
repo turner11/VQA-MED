@@ -1,9 +1,13 @@
 import argparse
 import os
+from pathlib import Path
+
 from common.supress_print import supress_print
 import json
+from classes.vqa_model_predictor import DefaultVqaModelPredictor
 
-model = None
+default_model_id = 5
+model: DefaultVqaModelPredictor = None
 
 def error_to_json(func):
     def wrapper(*args, **kw):
@@ -11,6 +15,8 @@ def error_to_json(func):
             result = func(*args, **kw)
         except Exception as ex:
             result = json.dumps({'error': str(ex)})
+            # import traceback as tb
+            # print(tb.format_exc())
 
         return result
     return wrapper
@@ -31,21 +37,16 @@ def get_models():
 
 
 @supress_print
-def set_model(model_id, cpu=True):
+def set_model(model_id=default_model_id, cpu=True):
+    global model
     if cpu:
         set_cpu()
-    from common import DAL
-    global model
-
 
     try:
-        from classes.vqa_model_predictor import VqaModelPredictor
-        model_dal = DAL.get_model_by_id(model_id)
-        mp = VqaModelPredictor(model_dal)
+        mp = DefaultVqaModelPredictor(model_id)
         model = mp
         success = True
     except:
-        success = False
         raise
     return success
 
@@ -53,16 +54,22 @@ def set_model(model_id, cpu=True):
 
 
 @error_to_json
-@supress_print
+# @supress_print
 def predict(question, image_path):
     import pandas as pd
     from pre_processing.prepare_data import pre_process_raw_data
+    if model is None:
+        set_model()
+
 
     #,get_highlited_function_code, get_image, get_size
 
-    data = {'question':  [question],
-            'path':      [image_path],
-            'image_name':[os.path.split(image_path)[-1]]}
+
+    data = {
+            'image_name': [Path(image_path).name],
+            'question':   [question],
+            'path':       [image_path],
+    }
     df = pd.DataFrame(data)
     pre_processed = pre_process_raw_data(df)
     # df['question']
@@ -90,16 +97,18 @@ def main():
     if True or args.cpu:
         set_cpu()
 
-    # set_model(args.model_id)
-    # question = 'what does CT show?'
-    # curr_image_path = r'C:\Users\Public\Documents\Data\2018\VQAMed2018Train\VQAMed2018Train-images\0392-100X-30-209-g003.jpg'
-    # predict(question=question,curr_image_path=curr_image_path)
+    # set_model(5)
+    # a = predict(question='what type of imaging modality is shown?',
+    #             image_path=r'C:\\Users\\Public\\Documents\\Data\\2019\\validation\\Val_images\\synpic100545.jpg')
+    # #
+    # str()
     # ms =  get_models()
 
 
 def set_cpu():
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"  # see issue #152
     os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
 
 
 if __name__ == '__main__':

@@ -16,10 +16,8 @@ namespace Utils
 {
     public class PythonModelInfo : InteractivePythonWrapper
     {
-        const string SCRIPT = @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\VQA.Python\parsers\temp_cs_glue.py";
-        const string WORKINGDIR = @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\VQA.Python";
-        private const string PYTHON_INTERP_PATH = @"C:\local\Anaconda3-4.1.1-Windows-x86_64\envs\conda_env\python.exe";
-        public PythonModelInfo() : base(script: SCRIPT, interpeter: PYTHON_INTERP_PATH, workingDir: WORKINGDIR)
+        const string SCRIPT = @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\VQA.Python\parsers\temp_cs_glue.py";        
+        public PythonModelInfo() : base(script: SCRIPT, interpeter: PYTHON_INTERP_PATH)
         {
 
         }

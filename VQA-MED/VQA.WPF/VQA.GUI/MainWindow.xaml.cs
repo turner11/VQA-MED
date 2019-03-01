@@ -18,8 +18,6 @@ using Interfaces;
 
 namespace SDKSamples.ImageSample
 {
-
-
     public sealed partial class MainWindow : Window
     {
 
@@ -59,7 +57,20 @@ namespace SDKSamples.ImageSample
                                 , pixelMaps: @""
                                 , pythonHandler: @"C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\VQA.Python\parsers\VQA18.py");
 
-                return new List<VqaData>{ vqa2018_train, vqa2018_validation, vqa2015, vqa2017, vqa2014};
+
+                var vqa2019_train = new VqaData(description: "VQA 2019 train"
+                               , images: @"C:\Users\Public\Documents\Data\2019\train\Train_images"
+                               , dataFile: @""
+                               , pixelMaps: @""
+                               , pythonHandler: @"");
+
+                var vqa2019_validation = new VqaData(description: "VQA 2018 validation"
+                               , images: @"C:\Users\Public\Documents\Data\2019\validation\Val_images"
+                               , dataFile: @""
+                               , pixelMaps: @""
+                               , pythonHandler: @"");
+
+                return new List<VqaData>{ vqa2019_validation,  vqa2019_train,  vqa2018_train, vqa2018_validation, vqa2015, vqa2017, vqa2014};
             }
         }
 
@@ -119,16 +130,16 @@ namespace SDKSamples.ImageSample
             {
                 this.logics = new VqaLogics(vqaData.Captions, vqaData.PixelMaps, vqaData.PythonHandler);
 
+
+                this.Photos.Path = vqaData.Images;
+                //this.Photos.Captions = vqaData.Captions;
+                //this.Photos.PixelMaps = vqaData.PixelMaps;
+
                 var models = await this.logics.GetModels();
                 this._viewModel.ModelsList.Clear();
 
                 foreach (var m in models)
                     this._viewModel.ModelsList.Add(m);
-
-
-                this.Photos.Path = vqaData.Images;
-                this.Photos.Captions = vqaData.Captions;
-                this.Photos.PixelMaps = vqaData.PixelMaps;
             }
         }
 
