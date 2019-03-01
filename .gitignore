@@ -352,3 +352,6 @@ VQA-MED/VQA.Python/.vscode/settings.json
 VQA-MED/VQA.Python/bezalel.ipynb
 
 VQA-MED/VQA.Python/exported_notebooks/concise_train.py
+VQA-MED/VQA.Python/run_tests.bat
+VQA-MED/VQA.Python/.coverage*
+VQA-MED/VQA.Python/reports/*
