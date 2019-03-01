@@ -25,11 +25,15 @@ def error_to_json(func):
 @error_to_json
 def get_models():
     from common import DAL
+    from data_access.model_folder import ModelFolder
 
     models = DAL.get_models_data_frame()
     #'columns' # 'records'#'values'#'table'#'index'#'split'#
     # j = models.to_json(orient='columns')
 
+    models['image_path'] = models.model_location.apply(lambda location: str(ModelFolder(Path(location).parent).image_file_path))
+    models['summary'] = models.model_location.apply(
+        lambda location: str(ModelFolder(Path(location).parent).summary))
     cols = [c for c in models.columns if c.lower() != 'models']
     j = models[cols].to_json(orient='columns')
     # m = models[['models']]
@@ -103,6 +107,7 @@ def main():
     # #
     # str()
     # ms =  get_models()
+    # str()
 
 
 def set_cpu():

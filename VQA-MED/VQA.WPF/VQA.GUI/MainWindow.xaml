@@ -19,7 +19,7 @@
                 <!--Background="LightGoldenrodYellow"-->
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="50"/>
-                    <ColumnDefinition Width="160"/>
+                    <ColumnDefinition Width="10"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
@@ -31,17 +31,12 @@
                     <RowDefinition Height="20*"></RowDefinition>
                     
                 </Grid.RowDefinitions>
-                <!--<Border Margin="5" BorderBrush="Black" BorderThickness="1">
-                    <Image Source="{Binding Path=Image}" Stretch="Fill" Width="50" Height="50" />
-                </Border>-->
+              
                 <!--<WrapPanel Grid.Column="0" Grid.Row="0" Margin="0" >-->
                 <Viewbox Grid.Row="0" Grid.Column="0" Grid.RowSpan="6" >
                     <TextBlock  Padding="2"
                            Text="{Binding Path=Model_Id, FallbackValue=Model_Id}" 
                            TextBlock.FontWeight="ExtraLight"/>
-
-                
-                   
                 </Viewbox>
                 <StackPanel Orientation="Horizontal" TextBlock.FontWeight="Bold" 
                             Grid.Row="0" Grid.Column="1" >
@@ -52,6 +47,7 @@
 
                 <TextBlock Grid.Row="2" Grid.Column="1" Text="# Trainable params:"  FontWeight="Bold" />
                 <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding Path=Trainable_Parameter_Count, FallbackValue=Trainable_Parameter_Count}" />
+               
 
                 <StackPanel Orientation="Horizontal" 
                             Grid.Row="3" Grid.Column="1">
@@ -402,12 +398,40 @@
                 </Grid>
 
             </TabItem>
-            <TabItem Header="Settings" >
-                <ListView Margin="10" Name="lvModels"
+            <TabItem Header="Models" >
+                <Grid Background="{Binding Converter={StaticResource ModelColorConverter}}">
+                    <!--Background="LightGoldenrodYellow"-->
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"></RowDefinition>
+                    </Grid.RowDefinitions>
+                    
+                    <ListView Margin="5" Name="lvModels"
                            ItemsSource="{Binding ModelsList}"
                            ItemTemplate="{StaticResource ModelDataTemplate}"
-                           SelectionChanged="lvModels_SelectionChanged">
-                </ListView>
+                           SelectionChanged="lvModels_SelectionChanged"
+                          MouseDoubleClick="lvModels_MouseDoubleClick"
+                           Grid.Column="0">
+                        
+                    </ListView>
+
+                    <ScrollViewer Grid.Row="0" Grid.Column="1" Name="svModelImage">
+                    <Image Source="{Binding ModelImagePath}">
+
+                        <!--<Image.Source>
+                        <CroppedBitmap Source="{Binding ImagePath}" SourceRect="00,100,100,100"/>
+                    </Image.Source>-->
+                    </Image>
+                    </ScrollViewer>
+
+                    <ScrollViewer Grid.Row="0" Grid.Column="2" Name="svSummary">
+                        <TextBox  Text="{Binding ModelSummary, Mode=OneWay}" />
+                    </ScrollViewer>
+                </Grid>
             </TabItem>
         </TabControl>
     </Grid>

@@ -293,18 +293,32 @@ namespace SDKSamples.ImageSample
             e.Handled = true;
         }
 
-        private void lvModels_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            var model = lvModels.SelectedItem as IModelInfo;
-            if (model == null)
-                return;
-
-            bool success = this.logics.SetModel(model.Model_Id);
-        }
+        
 
         private void OnPhotoClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
 
+        }
+
+        private void lvModels_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+            var model = lvModels.SelectedItem as IModelInfo;
+            if (model == null)
+                return;
+
+            this._viewModel.SelectedModel = model;
+            this.svModelImage.ScrollToBottom();
+            this.svSummary.ScrollToBottom();
+        }
+
+        private void lvModels_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            var model = lvModels.SelectedItem as IModelInfo;
+            if (model == null)
+                return;
+            
+            bool success = this.logics.SetModel(model.Model_Id);
         }
     }
 }

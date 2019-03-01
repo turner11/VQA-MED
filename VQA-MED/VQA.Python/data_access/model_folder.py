@@ -46,6 +46,14 @@ class ModelFolderStructure(object):
         return self.folder / self.MODEL_SUMMARY_FILE_NAME
 
     @property
+    def summary(self):
+        try:
+            smmry = File.read_text(self.summary_path)
+        except Exception as ex:
+            smmry = f'Failed to read summary:\n{ex}'
+        return smmry
+
+    @property
     def history_path(self):
         return self.folder / self.HISTORY_FILE_NAME
 

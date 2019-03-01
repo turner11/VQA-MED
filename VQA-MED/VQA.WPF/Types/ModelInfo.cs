@@ -17,8 +17,10 @@ namespace Types
         public double Bleu { get; }
         public double Wbss { get; }
         public string Notes { get; }
+        public string ImagePath { get; }
+        public string Summary { get; }
 
-        public ModelInfo(int model_id, string loss_function, string activation, int trainable_parameter_count, double bleu, double wbss, string notes)
+        public ModelInfo(int model_id, string loss_function, string activation, int trainable_parameter_count, double bleu, double wbss, string notes, string imagePath, string summary)
         {
             this.Model_Id = model_id;
             this.Loss_Function = loss_function;
@@ -29,6 +31,8 @@ namespace Types
             this.Wbss = wbss;
 
             this.Notes = notes;
+            this.ImagePath = imagePath;
+            this.Summary = summary;
         }
 
         public override string ToString()

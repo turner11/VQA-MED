@@ -9,5 +9,8 @@
         double Bleu { get; }
         double Wbss { get; }
         string Notes { get; }
+        string ImagePath { get; }
+        string Summary{ get; }
+        
     }
 }

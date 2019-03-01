@@ -44,7 +44,11 @@ namespace Utils
                     double wbss = Convert.ToDouble(currDynamic.wbss ?? Double.NaN);
                     string notes = currDynamic.notes?.ToString() ?? "";
                     notes = notes.Replace("\\n", Environment.NewLine);
-                    
+                    string imagePath = currDynamic.image_path?.ToString() ?? "";
+                    string summary = currDynamic.summary?.ToString() ?? "";
+                    summary = summary.Replace("\\n", Environment.NewLine);
+
+
 
                     var modelInfo = new ModelInfo(model_id: model_id
                                                  , loss_function: loss_function
@@ -52,7 +56,9 @@ namespace Utils
                                                  , trainable_parameter_count: trainable_parameter_count
                                                  , bleu: bleu
                                                  , wbss: wbss
-                                                 , notes: notes);
+                                                 , notes: notes
+                                                 , imagePath: imagePath
+                                                 , summary: summary);
                     
                     models.Add(modelInfo);
                 }
