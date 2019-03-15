@@ -124,7 +124,10 @@ def get_features(df: pd.DataFrame):
 
     question_features = np.reshape(list(series_reshaped.values), set_shape)
 
-    image_features = np.asarray([np.array(get_image(im_path)) for im_path in df['path']])
+    image_by_path = {im_path:np.array(get_image(im_path)) for im_path in df.path.drop_duplicates()}
+    image_features = np.asarray([ image_by_path[im_path] for im_path in df['path']])
+
+    # image_features = np.asarray([np.array(get_image(im_path)) for im_path in df['path']])
     features = [question_features, image_features]
 
     return features
