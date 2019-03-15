@@ -2,13 +2,14 @@ import os
 import warnings
 import pandas as pd
 from keras.callbacks import History
+from pandas import DataFrame
+
 from classes.DataGenerator import DataGenerator
 import logging
-from data_access.api import DataAccess
+from data_access.api import DataAccess, SpecificDataAccess
 from data_access.model_folder import ModelFolder
 
 from keras import callbacks as K_callbacks, Model  # , backend as keras_backend,
-from common.functions import get_features, sentences_to_hot_vector, hot_vector_to_words
 from common.constatns import vqa_models_folder  # train_data, validation_data,
 from common.utils import VerboseTimer
 from common.model_utils import save_model, EarlyStoppingByAccuracy
@@ -20,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 class VqaModelTrainer(object):
     """"""
+
 
     @property
     def model(self):
@@ -33,11 +35,11 @@ class VqaModelTrainer(object):
     def epochs(self):
         return 1  # 20 if self.use_augmentation else 1
 
-    def __init__(self, model_folder: ModelFolder, use_augmentation: bool, batch_size: int,
-                 data_access: DataAccess) -> None:
+    def __init__(self, model_folder: ModelFolder, augmentations: int, batch_size: int,
+                 data_access: DataAccess, question_category: str = None) -> None:
         super().__init__()
 
-        self.use_augmentation = use_augmentation
+        self.augmentations = augmentations
 
         self.batch_size = batch_size
         self.data_access = data_access
@@ -45,24 +47,28 @@ class VqaModelTrainer(object):
         self.model_folder = model_folder
         self._model = model_folder.load_model()
         self.model_location = str(model_folder.model_path)
+        self.question_category = question_category
 
-        # ---- Getting meta_loc ----
-        with VerboseTimer("Loading Meta"):
-            meta_dicts = data_access.load_meta()
-            self.df_meta_answers = meta_dicts['answers']
-            self.df_meta_words = meta_dicts['words']
 
-            self.class_count = len(self.class_df)
+        # # ---- Getting Data ----
+        # data_train: DataFrame = data_access.load_processed_data(group='train').reset_index()
+        # data_val: DataFrame = data_access.load_processed_data(group='validation').reset_index()
+        # # if question_category:
+        # #     existing_categories = data_train.question_category.drop_duplicates().values
+        # #     assert question_category in existing_categories , \
+        # #         f'got a non existing question category ("{question_category}" not in {existing_categories})'
+        # #     data_train = data_train[data_train.question_category == question_category ]
+        # #     data_val = data_val[data_val.question_category == question_category]
+        #
+        # self.data_train = data_train
+        # self.data_val = data_val
 
-        # ---- Getting Data ----
+    def __repr__(self) -> str:
+        return f'{self.__class__.__name__}(model_folder={self.model_folder}, augmentations={self.augmentations}, ' \
+            f'batch_size={self.batch_size},data_access={self.data_access}, question_category={self.question_category})'
 
-        self.data_location = str(data_access.processed_data_location)
-
-        self.data_train = data_access.load_processed_data(group='train').copy().reset_index()
-        self.data_val = data_access.load_processed_data(group='validation').copy().reset_index()
-
-    def get_labels(self, df: pd.DataFrame) -> iter:
-        return sentences_to_hot_vector(labels=df.processed_answer, classes=self.class_df)
+    def __str__(self) -> str:
+        return f'VqaModelTrainer{"" if self.question_category is not None else ": "+str(self.question_category)}'
 
     def print_shape_sanity(self, features_t, labels_t, features_val, labels_val):
         logger.debug('===========================================================================')
@@ -76,12 +82,19 @@ class VqaModelTrainer(object):
         logger.debug('===========================================================================')
 
     def train(self):
+        data_access_train = SpecificDataAccess.factory(self.data_access, group='train')
+        data_access_val = SpecificDataAccess.factory(self.data_access, group='validation')
 
-        with VerboseTimer(f'Getting {len(self.data_val)} validation features'):
-            features_val = get_features(self.data_val)
-        with VerboseTimer(f'Getting {len(self.data_val)} validation labels'):
-            labels_val = self.get_labels(self.data_val)
 
+        prediction_vector = self.model_folder.prediction_vector
+        dg = DataGenerator(data_access_train, prediction_vector=prediction_vector,
+                           batch_size=self.batch_size,
+                           augmentations=self.augmentations,
+                           # question_category=self.question_category
+                           )
+
+        data_val = data_access_val.load_processed_data()
+        features_val, labels_val = DataGenerator._generate_data(data_val , prediction_vector)
         validation_input = (features_val, labels_val)
 
         model = self.model
@@ -98,36 +111,17 @@ class VqaModelTrainer(object):
             callbacks = [stop_callback, acc_early_stop, tensor_board_callback]
             callbacks = [c for c in callbacks if c is not None]
 
+
             with VerboseTimer("Training Model"):
+                features_t, labels_t = dg[0]
+                self.print_shape_sanity(features_t, labels_t, features_val, labels_val)
 
-                if not self.use_augmentation:
-
-                    with VerboseTimer('Getting train features'):
-                        features_t = get_features(self.data_train)
-                    with VerboseTimer('Getting train labels'):
-                        labels_t = self.get_labels(self.data_train)
-                    self.print_shape_sanity(features_t, labels_t, features_val, labels_val)
-
-                    history = model.fit(features_t, labels_t,
-                                        epochs=self.epochs,
-                                        batch_size=self.batch_size,
-                                        validation_data=validation_input,
-                                        shuffle=True,
-                                        callbacks=callbacks)
-
-                else:
-                    prediction_vector = self.model_folder.prediction_vector
-                    dg = DataGenerator(prediction_vector, shuffle=True, batch_size=self.batch_size)
-
-                    features_t, labels_t = dg[0]
-                    self.print_shape_sanity(features_t, labels_t, features_val, labels_val)
-
-                    history = model.fit_generator(generator=dg,
-                                                  validation_data=validation_input,
-                                                  epochs=self.epochs,
-                                                  callbacks=callbacks,
-                                                  use_multiprocessing=True,
-                                                  workers=3)
+                history = model.fit_generator(generator=dg,
+                                              validation_data=validation_input,
+                                              epochs=self.epochs,
+                                              callbacks=callbacks,
+                                              use_multiprocessing=True,
+                                              workers=3)
 
         #             sess.close()
 
@@ -208,26 +202,29 @@ class VqaModelTrainer(object):
 
 
 def main():
-    model_folder_path = 'C:\\Users\\Public\\Documents\\Data\\2019\\models\\20190219_0120_04'
-    model_folder = ModelFolder(model_folder_path)
-    # VqaModelTrainer.model_2_db(model_folder,'First model with 65k params')
-    # return
-
-    model = model_folder.load_model()
-
-    VqaModelTrainer.save(model, model_folder.history, 'First attempt for 2019')
-
-    return
     from keras import backend as keras_backend
+    from classes.vqa_model_predictor import DefaultVqaModelPredictor
+    from common.settings import data_access
     keras_backend.clear_session()
 
+
+    best_model_id = 5
+    best_model_location = 'C:\\Users\\Public\\Documents\\Data\\2019\\models\\20190223_2239_45\\'
+    model_folder = ModelFolder(best_model_location)
+
+    # model_folder_path = 'C:\\Users\\Public\\Documents\\Data\\2019\\models\\20190219_0120_04'
+    # model_folder = ModelFolder(model_folder_path)
+    # model = model_folder.load_model()
+
     batch_size = 75
-    model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180831_1244_55\\vqa_model_.h5'
-    mt = VqaModelTrainer(model_location, use_augmentation=True, batch_size=batch_size)
+    mt = VqaModelTrainer(model_folder, augmentations=20, batch_size=batch_size,data_access=data_access,
+                         question_category='Abnormality')
     history = mt.train()
     with VerboseTimer("Saving trained Model"):
-        model_folder = VqaModelTrainer.save(mt.model, history)
-    logger.debug(model_folder.model_path)
+        model_folder = VqaModelTrainer.save(mt.model, history, notes='Abnormality model\n20 augmentations\nbased on model 5')
+
+    str()
+
 
 
 if __name__ == '__main__':
