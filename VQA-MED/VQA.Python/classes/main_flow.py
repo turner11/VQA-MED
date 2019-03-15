@@ -1,6 +1,8 @@
 import itertools
 import logging
 import os, sys
+from pathlib import Path
+
 from tqdm import tqdm
 from common import DAL
 from common.DAL import ModelScore
@@ -9,7 +11,9 @@ from data_access.model_folder import ModelFolder
 
 sys.path.append('C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\')
 import vqa_logger
+
 logger = logging.getLogger(__name__)
+
 
 def debug():
     # from exported_notebooks import aaa
@@ -22,10 +26,22 @@ def debug():
     return
 
 
-
+def remove_folders():
+    existing_folders = Path('C:\\Users\\Public\\Documents\\Data\\2019\\models')
+    folders = {d for d in existing_folders.iterdir() if str(d.name).replace('_', '').isdigit()}
+    model_folder = {Path(m.model_location).parent for m in DAL.get_models()}
+    diff = folders - model_folder
+    a = sorted(list(diff), key=lambda p: len(str(p)))
+    import shutil
+    pbar = tqdm(a)
+    for p in pbar:
+        shutil.rmtree(str(p))
 
 
 def main():
+    # remove_folders()
+    #
+    # return
     debug()
     return
     copy_specs_to_model_folder()
@@ -36,34 +52,6 @@ def main():
     evaluate_model(162)
     return
     train_model(model_id=85, optimizer='Adam', post_concat_dense_units=16)
-    # evaluate_missing_models()
-    # train_all()
-    # add_scores()
-
-
-def copy_specs_to_model_folder():
-    from common.constatns import vqa_models_folder, vqa_specs_location
-    from common.classes import VqaSpecs
-    import pandas as pd
-    import shutil
-
-    root = pathlib.Path(vqa_models_folder)
-    folders = [x for x in root.iterdir() if x.name.startswith('2')]
-    specs_path = pathlib.Path(vqa_specs_location)
-    specs = File.load_pickle(str(specs_path))
-
-    pbar = tqdm(folders)
-    for f in pbar:
-        dest = f / specs_path.name
-
-        meta_location = str(dest.parent / pathlib.Path(specs.meta_data_location).name)
-        new_spec = VqaSpecs(embedding_dim=specs.embedding_dim
-                            , seq_length=specs.seq_length
-                            , data_location=specs.data_location
-                            , meta_data_location=meta_location)
-
-        # shutil.copy(specs.meta_data_location, meta_location)
-        File.dump_pickle(new_spec, str(dest))
 
 
 def predict_test(model_id):
@@ -116,114 +104,11 @@ def evaluate_missing_models():
             logger.error(f'Failed to evaluate model:{model.id}:\n{ex}')
 
 
-def add_scores():
-    mrs = \
-        [
-            ModelResults(loss='categorical_crossentropy', activation='softmax', bleu=0.2103365798666068,
-                         wbss=0.1618619696290538),
-            ModelResults(loss='categorical_crossentropy', activation='sigmoid', bleu=0.20716465254174818,
-                         wbss=0.1626061924793508),
-            ModelResults(loss='categorical_crossentropy', activation='relu', bleu=0.15736855849732678,
-                         wbss=0.14544359117093514),
-            ModelResults(loss='categorical_crossentropy', activation='tanh', bleu=0.12281738185824935,
-                         wbss=0.13295906282738015),
-            ModelResults(loss='binary_crossentropy', activation='softmax', bleu=0.20709800314167512,
-                         wbss=0.16505984800946585),
-            ModelResults(loss='binary_crossentropy', activation='sigmoid', bleu=0.011066186753122757,
-                         wbss=0.07059635035866542),
-            ModelResults(loss='binary_crossentropy', activation='relu', bleu=0.17719091533345543,
-                         wbss=0.18922594334323695),
-            ModelResults(loss='binary_crossentropy', activation='tanh', bleu=0.17134064846338432,
-                         wbss=0.14325001923326888),
-            ModelResults(loss='kullback_leibler_divergence', activation='softmax', bleu=0.21097555547161706,
-                         wbss=0.1681282783438653),
-            ModelResults(loss='kullback_leibler_divergence', activation='sigmoid', bleu=0.18821248683499342,
-                         wbss=0.1554047580462376),
-            ModelResults(loss='kullback_leibler_divergence', activation='relu', bleu=0.02697774568345777,
-                         wbss=0.07583004566334839),
-            ModelResults(loss='kullback_leibler_divergence', activation='tanh', bleu=0.09744046635625582,
-                         wbss=0.1252390938198901),
-            ModelResults(loss='poisson', activation='softmax', bleu=0.2113286732842069, wbss=0.16922309171600097),
-            ModelResults(loss='poisson', activation='sigmoid', bleu=0.07885259511687942, wbss=0.09959880189229278),
-            ModelResults(loss='poisson', activation='relu', bleu=0.18292855547920547, wbss=0.19228694357546577),
-            ModelResults(loss='poisson', activation='tanh', bleu=0.17094432009760965, wbss=0.12700311138909282),
-            ModelResults(loss='cosine_proximity', activation='softmax', bleu=0.17744901705310637,
-                         wbss=0.14867902825006596),
-            ModelResults(loss='cosine_proximity', activation='sigmoid', bleu=0.21354887627017066,
-                         wbss=0.165517190063791),
-            ModelResults(loss='cosine_proximity', activation='relu', bleu=0.21319867901229575,
-                         wbss=0.16398778552485363),
-            ModelResults(loss='cosine_proximity', activation='tanh', bleu=0.2131769238659314, wbss=0.16531721891857265),
-            ModelResults(loss='mean_squared_error', activation='softmax', bleu=0.01705038450237624,
-                         wbss=0.06610480116424522),
-            ModelResults(loss='mean_squared_error', activation='sigmoid', bleu=0.03188850893171434,
-                         wbss=0.06849953295109426),
-            ModelResults(loss='mean_squared_error', activation='relu', bleu=0.10878383465433829,
-                         wbss=0.1942925922238055),
-            ModelResults(loss='mean_squared_error', activation='tanh', bleu=0.1208971391434066,
-                         wbss=0.13415198668126332),
-            ModelResults(loss='mean_absolute_error', activation='softmax', bleu=0.007377457835415172,
-                         wbss=0.056711486212989555),
-            ModelResults(loss='mean_absolute_error', activation='sigmoid', bleu=0.011066186753122757,
-                         wbss=0.05060702607306806),
-            ModelResults(loss='mean_absolute_error', activation='relu', bleu=0.15110741206227213,
-                         wbss=0.3474417013103914),
-            ModelResults(loss='mean_absolute_error', activation='tanh', bleu=0.008607034141317702,
-                         wbss=0.06062920222217075),
-            ModelResults(loss='mean_absolute_percentage_error', activation='softmax', bleu=0.20967127162659935,
-                         wbss=0.16977735361334204),
-            ModelResults(loss='mean_absolute_percentage_error', activation='sigmoid', bleu=0.004918305223610114,
-                         wbss=0.055123040735561055),
-            ModelResults(loss='mean_absolute_percentage_error', activation='relu', bleu=0.13164848029153245,
-                         wbss=0.30421125399691823),
-            ModelResults(loss='mean_absolute_percentage_error', activation='tanh', bleu=0.009836610447220229,
-                         wbss=0.057061637779877626),
-            ModelResults(loss='mean_squared_logarithmic_error', activation='softmax', bleu=0.008607034141317702,
-                         wbss=0.06281686017414999),
-            ModelResults(loss='mean_squared_logarithmic_error', activation='sigmoid', bleu=0.014754915670830341,
-                         wbss=0.06720042790426754),
-            ModelResults(loss='mean_squared_logarithmic_error', activation='relu', bleu=0.1096212108707012,
-                         wbss=0.2306262082411956),
-            ModelResults(loss='mean_squared_logarithmic_error', activation='tanh', bleu=0.08161636305331728,
-                         wbss=0.10059043806662184),
-            ModelResults(loss='squared_hinge', activation='softmax', bleu=0.009836610447220229,
-                         wbss=0.059131262544423704),
-            ModelResults(loss='squared_hinge', activation='sigmoid', bleu=0.19130433140548395, wbss=0.1555977820976305),
-            ModelResults(loss='squared_hinge', activation='relu', bleu=0.13066012886469555, wbss=0.12980854372132594),
-            ModelResults(loss='squared_hinge', activation='tanh', bleu=0.1548624908321035, wbss=0.14460742245693822),
-            ModelResults(loss='hinge', activation='softmax', bleu=0.007377457835415172, wbss=0.06310635918402367),
-            ModelResults(loss='hinge', activation='sigmoid', bleu=0.20888872792738816, wbss=0.16562621908978492),
-            ModelResults(loss='hinge', activation='relu', bleu=0.14198420222651467, wbss=0.13949713675547962),
-            ModelResults(loss='hinge', activation='tanh', bleu=0.17038926724670586, wbss=0.1477681303467244),
-            ModelResults(loss='categorical_hinge', activation='softmax', bleu=0.14166722958709976,
-                         wbss=0.13673830859283906),
-            ModelResults(loss='categorical_hinge', activation='sigmoid', bleu=0.11804193279357406,
-                         wbss=0.128798972499981),
-            ModelResults(loss='categorical_hinge', activation='relu', bleu=0.1000009216111366,
-                         wbss=0.11793839526803596),
-            ModelResults(loss='categorical_hinge', activation='tanh', bleu=0.10783078390918409,
-                         wbss=0.12366018074656748),
-            ModelResults(loss='logcosh', activation='softmax', bleu=0.0012295763059025286, wbss=0.050907419909431734),
-            ModelResults(loss='logcosh', activation='sigmoid', bleu=0.022750794548321275, wbss=0.07167066616004447),
-            ModelResults(loss='logcosh', activation='relu', bleu=0.10784426570469208, wbss=0.22956577415180102),
-            ModelResults(loss='logcosh', activation='tanh', bleu=0.10173751732258726, wbss=0.11651390737432664)
-        ]
-
-    from common.DAL import ModelScore
-    score_dals = []
-    for mr in mrs:
-        model = DAL.get_model(lambda m: m.loss_function == mr.loss and m.activation == mr.activation)
-        mid = model.id
-        ms = ModelScore(mid, bleu=mr.bleu, wbss=mr.wbss)
-        score_dals.append(ms)
-    DAL.insert_dals(score_dals)
-
-
 def train_model(model_id, optimizer, post_concat_dense_units=16):
     # Doing all of this here in order to not import tensor flow for other functions
-
     from classes.vqa_model_trainer import VqaModelTrainer
     from classes.vqa_model_builder import VqaModelBuilder
+    from common.settings import data_access
     from keras import backend as keras_backend
 
     # Get------------------------------------------------------------------------
@@ -236,9 +121,11 @@ def train_model(model_id, optimizer, post_concat_dense_units=16):
     # Train ------------------------------------------------------------------------
 
     batch_size = 75
-    use_augmentation = True
+    augmentations = 10
 
-    mt = VqaModelTrainer(model_folder, use_augmentation=use_augmentation, batch_size=batch_size, data_access=data_access)
+
+    mt = VqaModelTrainer(model_folder, augmentations=augmentations, batch_size=batch_size,
+                         data_access=data_access)
     history = mt.train()
     with VerboseTimer("Saving trained Model"):
         notes = f'post_concat_dense_units: {post_concat_dense_units};\n' \
@@ -318,11 +205,12 @@ def train_all():
     # for loss, activation in losses_and_activations:
 
     batch_size = 64
-    use_augmentation = True
-    la_units_opts = la_units_opts[9:]
+    augmentations = 10
+    la_units_opts = la_units_opts[60:]
     pbar = tqdm(la_units_opts)
     for (loss, activation), post_concat_dense_units, opt, lstm, pred_vector in pbar:
-        pbar.set_description(f'====== working on loss {loss}, activation {activation}, post_concat_dense_units {post_concat_dense_units}, opt {opt}, lstm {lstm}, pred_vector {pred_vector}====== ')
+        pbar.set_description(
+            f'====== working on loss {loss}, activation {activation}, post_concat_dense_units {post_concat_dense_units}, opt {opt}, lstm {lstm}, pred_vector {pred_vector}====== ')
         keras_backend.clear_session()
         try:
 
@@ -350,7 +238,8 @@ def train_all():
             keras_backend.clear_session()
             model_folder = ModelFolder(str(out_model_folder.folder))
 
-            mt = VqaModelTrainer(model_folder, use_augmentation=use_augmentation,batch_size=batch_size, data_access=data_access)
+            mt = VqaModelTrainer(model_folder, augmentations=augmentations, batch_size=batch_size,
+                                 data_access=data_access)
             history = mt.train()
             with VerboseTimer("Saving trained Model"):
                 notes = f'post_concat_dense_units: {post_concat_dense_units};\n' \
@@ -367,15 +256,21 @@ def train_all():
             # Evaluate ------------------------------------------------------------------------
             keras_backend.clear_session()
 
-            model_id_in_db = None #latest...
+            model_id_in_db = None  # latest...
             mp = DefaultVqaModelPredictor(model=model_id_in_db)
             validation_prediction = mp.predict(mp.df_validation)
             predictions = validation_prediction.prediction.values
             ground_truth = validation_prediction.answer.values
-            results = VqaMedEvaluatorBase.get_all_evaluation(predictions=predictions, ground_truth=ground_truth)
 
-            bleu = results['bleu']
-            wbss = results['wbss']
+            max_length = max([len(s) for s in predictions])
+            if max_length < 100:
+                results = VqaMedEvaluatorBase.get_all_evaluation(predictions=predictions, ground_truth=ground_truth)
+                bleu = results['bleu']
+                wbss = results['wbss']
+            else:
+                bleu = -1
+                wbss = -1
+
             model_db_id = mp.model_idx_in_db
             model_score = ModelScore(model_db_id, bleu=bleu, wbss=wbss)
             DAL.insert_dal(model_score)
