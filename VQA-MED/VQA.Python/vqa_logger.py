@@ -6,6 +6,8 @@ import time
 import coloredlogs
 import logging
 
+
+
 from common.os_utils import File
 
 __is_initialized = False
@@ -23,7 +25,7 @@ def init_log():
         # continue
         root_logger.removeHandler(handler)
 
-    log_format = '[%(asctime)s][%(levelname)s] %(message)s'
+    log_format = '[%(asctime)s][%(name)s][%(levelname)s] %(message)s'
     formatter = logging.Formatter(log_format)
 
     std_out_log_level = logging.DEBUG
