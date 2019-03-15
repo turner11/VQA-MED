@@ -7,9 +7,10 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 from pathlib import Path
 
-from pyarrow.lib import ArrowInvalid
+from pyarrow.lib import ArrowInvalid, Table
+from typing import Union
 
-from common.exceptions import NoDataException
+from common.exceptions import NoDataException, InvalidArgumentException
 from common.utils import VerboseTimer
 
 logger = logging.getLogger(__name__)
@@ -47,7 +48,7 @@ class DataAccess(object):
     def augmentation_location(self):
         return self.folder / 'augmentations.parquet'
 
-    def save_raw_input(self, df: pd.DataFrame) -> None:
+    def save_raw_input(self, df: pd.DataFrame) -> str:
         """
         For saving the normalized raw data
         :param df: the raw data data frame
@@ -110,6 +111,9 @@ class DataAccess(object):
         path = str(self.augmentation_location)
         logger.debug(f"Loading augmentations:\n{path}")
 
+        if isinstance(augmentations, (int, float)):
+            augmentations = max(augmentations, 1)
+
         if augmentations is not None:
             filters = [('augmentation', '<', int(augmentations)), ]
         else:
@@ -129,7 +133,8 @@ class DataAccess(object):
             except Exception as ex:
                 logger.warning(f'Failed to delete parquet: {ex}')
 
-        table = pa.Table.from_pandas(df)
+        # noinspection PyArgumentList
+        table: Table = pa.Table.from_pandas(df)
         return pq.write_to_dataset(table,
                                    root_path=path,
                                    partition_cols=[partition_col],
@@ -139,18 +144,18 @@ class DataAccess(object):
     def _load_parquet(path, columns=None, filters=None, convert_to_pandas=True):
         logger.debug(f'loading parquet from:\n{path}')
 
-        dataset = pq.ParquetDataset(path, filters=filters)
+        data_set = pq.ParquetDataset(path, filters=filters)
         with VerboseTimer("Loading parquet"):
             try:
-                prqt = dataset.read(columns=columns)
-                df_data = prqt
+                prqt = data_set.read(columns=columns)
             except ArrowInvalid as e:
                 raise NoDataException(str(e)) from e
 
-        if convert_to_pandas:
-            with VerboseTimer("Converting to pandas"):
-                df_data = prqt.to_pandas()
+        if not convert_to_pandas:
+            return prqt
 
+        with VerboseTimer("Converting to pandas"):
+            df_data = prqt.to_pandas()
         return df_data  # [:150]
 
     def save_meta(self, meta_df_dict):
@@ -177,3 +182,34 @@ class DataAccess(object):
             ret = {key: metadata_store[key] for key in ['answers', 'words']}
 
         return ret
+
+
+class SpecificDataAccess(DataAccess):
+    def __init__(self, folder: Union[str, Path], group: str, question_category: str = None) -> None:
+        super().__init__(folder)
+        self.group = group
+        self.question_category = question_category
+
+    def load_processed_data(self, group: str = None, columns: list = None) -> pd.DataFrame:
+        if group is not None:
+            msg = f'For {self.__class__.__name__}, group cannot be specified. It should be specified via ctor'
+            raise InvalidArgumentException(group, msg)
+        df_data = super().load_processed_data(self.group, columns)
+
+        if self.question_category:
+            df_data = df_data[df_data.question_category == self.question_category]
+        return df_data
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}(folder={str(self.folder)}, group={self.group}, ' \
+            f'question_category={self.question_category}) '
+
+    @staticmethod
+    def factory(data_access: Union[DataAccess, str, Path], group: str, question_category: str = None):
+        folder = data_access if not isinstance(data_access, DataAccess) else data_access.folder
+
+        if isinstance(data_access, SpecificDataAccess):
+            group = group or data_access.group
+            question_category = data_access.question_category
+
+        return SpecificDataAccess(folder, group, question_category)
