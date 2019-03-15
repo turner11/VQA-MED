@@ -29,12 +29,13 @@ class VqaModelTrainer(object):
 
     @property
     def epochs(self):
-        return 1  # 20 if self.use_augmentation else 1
+        return self._epochs #1  # 20 if self.use_augmentation else 1
 
     def __init__(self, model_folder: ModelFolder, augmentations: int, batch_size: int,
-                 data_access: DataAccess, question_category: str = None) -> None:
+                 data_access: DataAccess, epochs: int = 1, question_category: str = None) -> None:
         super().__init__()
 
+        self._epochs = epochs
         self.augmentations = augmentations
 
         self.batch_size = batch_size
@@ -214,8 +215,9 @@ def main():
     # model = model_folder.load_model()
 
     batch_size = 75
+    epochs = 3
     data_access = SpecificDataAccess.factory(common_data_access, question_category='Abnormality')
-    mt = VqaModelTrainer(model_folder, augmentations=20, batch_size=batch_size,data_access=data_access)
+    mt = VqaModelTrainer(model_folder, augmentations=20, batch_size=batch_size, epochs=epochs, data_access=data_access)
     history = mt.train()
     with VerboseTimer("Saving trained Model"):
         model_folder = VqaModelTrainer.save(mt.model, history, notes='Abnormality model\n20 augmentations\nbased on model 5')
