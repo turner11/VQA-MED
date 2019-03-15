@@ -13,6 +13,7 @@ model_path = str((data_folder / 'test_model\\vqa_model.h5').absolute())
 data_access: DataAccess = None
 
 def pytest_runtest_setup(item):
+    # __generate_data_folder()
     global data_access
     if data_access is None:
         da = DataAccess(data_folder)
@@ -28,8 +29,11 @@ def __generate_data_folder():
     groups = dr['group'].drop_duplicates().values
     dfs = []
     for group in groups:
-        df = dr[dr['group'] == group].head()
-        dfs.append(df)
+        df = dr[dr['group'] == group]
+        question_categorys = df.question_category.drop_duplicates().values
+        for question_category in question_categorys:
+            df_2 = df[df.question_category == question_category].head(5)
+            dfs.append(df_2)
     res = pd.concat(dfs)
     print(len(res))
     da.save_processed_data(res)
