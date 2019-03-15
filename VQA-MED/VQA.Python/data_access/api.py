@@ -198,14 +198,16 @@ class SpecificDataAccess(DataAccess):
 
         if self.question_category:
             df_data = df_data[df_data.question_category == self.question_category]
+        if len(df_data) == 0:
+            logger.warning('Something is fishy. Got an empty data frame.')
         return df_data
 
     def __repr__(self):
-        return f'{self.__class__.__name__}(folder={str(self.folder)}, group={self.group}, ' \
-            f'question_category={self.question_category}) '
+        return f'{self.__class__.__name__}(folder="{str(self.folder)}", group="{self.group}", ' \
+            f'question_category="{self.question_category}") '
 
     @staticmethod
-    def factory(data_access: Union[DataAccess, str, Path], group: str, question_category: str = None):
+    def factory(data_access: Union[DataAccess, str, Path], group: str = None, question_category: str = None):
         folder = data_access if not isinstance(data_access, DataAccess) else data_access.folder
 
         if isinstance(data_access, SpecificDataAccess):

@@ -139,7 +139,7 @@ class ModelFolder(ModelFolderStructure):
     def history(self):
         return File.load_pickle(self.history_path)
 
-    def load_model(self):
+    def load_model(self) -> object:#keras.engine.training.Model:
         with VerboseTimer("Loading Model"):
             model = keras_load_model(str(self.model_path),
                                      custom_objects={'f1_score': f1_score,

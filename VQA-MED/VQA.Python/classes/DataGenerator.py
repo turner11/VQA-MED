@@ -38,7 +38,7 @@ class DataGenerator(keras.utils.Sequence):
         self.batch_size = batch_size
         self.n_channels = n_channels
 
-        self.indexes = np.arange(0)
+        self.indexes = np.arange(0)# Will be set in on_epoch_end
         self.on_epoch_end()
 
     @staticmethod

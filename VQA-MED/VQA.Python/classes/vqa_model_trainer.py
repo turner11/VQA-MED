@@ -1,9 +1,5 @@
 import os
-import warnings
-import pandas as pd
 from keras.callbacks import History
-from pandas import DataFrame
-
 from classes.DataGenerator import DataGenerator
 import logging
 from data_access.api import DataAccess, SpecificDataAccess
@@ -85,12 +81,12 @@ class VqaModelTrainer(object):
         data_access_train = SpecificDataAccess.factory(self.data_access, group='train')
         data_access_val = SpecificDataAccess.factory(self.data_access, group='validation')
 
-
         prediction_vector = self.model_folder.prediction_vector
+
+
         dg = DataGenerator(data_access_train, prediction_vector=prediction_vector,
                            batch_size=self.batch_size,
                            augmentations=self.augmentations,
-                           # question_category=self.question_category
                            )
 
         data_val = data_access_val.load_processed_data()
@@ -151,8 +147,9 @@ class VqaModelTrainer(object):
         try:
             notes = f'{notes or ""}\n\n{location_message}'
             VqaModelTrainer.model_2_db(model_folder, notes=notes)
-        except Exception as ex:
-            warnings.warn(f'Failed to insert model to DB:\n{ex}')
+        except Exception:
+            logger.exception(f'Failed to insert model to DBץ Model folder is at: {model_folder}')
+
         return model_folder
 
     @staticmethod
@@ -202,9 +199,9 @@ class VqaModelTrainer(object):
 
 
 def main():
+    # from classes.vqa_model_predictor import DefaultVqaModelPredictor
     from keras import backend as keras_backend
-    from classes.vqa_model_predictor import DefaultVqaModelPredictor
-    from common.settings import data_access
+    from common.settings import data_access as common_data_access
     keras_backend.clear_session()
 
 
@@ -217,8 +214,8 @@ def main():
     # model = model_folder.load_model()
 
     batch_size = 75
-    mt = VqaModelTrainer(model_folder, augmentations=20, batch_size=batch_size,data_access=data_access,
-                         question_category='Abnormality')
+    data_access = SpecificDataAccess.factory(common_data_access, question_category='Abnormality')
+    mt = VqaModelTrainer(model_folder, augmentations=20, batch_size=batch_size,data_access=data_access)
     history = mt.train()
     with VerboseTimer("Saving trained Model"):
         model_folder = VqaModelTrainer.save(mt.model, history, notes='Abnormality model\n20 augmentations\nbased on model 5')
