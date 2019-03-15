@@ -5,32 +5,32 @@ import pandas as pd
 import keras
 from common.exceptions import InvalidArgumentException
 from common.functions import get_features, sentences_to_hot_vector
-from common.settings import data_access
-
 import logging
+
+from data_access.api import DataAccess
 
 logger = logging.getLogger(__name__)
 
 
 class DataGenerator(keras.utils.Sequence):
-    'Generates data for Keras'
+    """Generates data for Keras"""
 
-    def __init__(self, prediction_vector,
+    def __init__(self, data_access: DataAccess, prediction_vector: iter,
                  batch_size: int = 32,
-                 n_channels: object = 1,
-                 shuffle: object = True,
+                 n_channels: int = 1,
+                 shuffle: bool = True,
                  augmentations=10) -> None:
-        'Initialization'
+        """Initialization"""
 
         self.shuffle = shuffle
         self.prediction_vector = self.__get_prediction_vector(prediction_vector)
 
-        self.orig_data = data_access.load_processed_data(group='train')
+        orig_data = data_access.load_processed_data()
 
         df_augmentations = data_access.load_augmentation_data(augmentations=augmentations).sort_values(
             'augmentation').reset_index(drop=True)
 
-        data = self.orig_data.set_index('path')
+        data = orig_data.set_index('path')
         augs = df_augmentations.set_index('original_path')
         joined = data.join(augs, how='left').reset_index(drop=True)
         self.data = joined.sort_values(by='augmentation')
@@ -38,9 +38,11 @@ class DataGenerator(keras.utils.Sequence):
         self.batch_size = batch_size
         self.n_channels = n_channels
 
+        self.indexes = np.arange(0)
         self.on_epoch_end()
 
-    def __get_prediction_vector(self, prediction_vector):
+    @staticmethod
+    def __get_prediction_vector(prediction_vector):
         ret = prediction_vector
         if isinstance(prediction_vector, pd.DataFrame):
             if len(prediction_vector.columns) > 1:
@@ -58,11 +60,11 @@ class DataGenerator(keras.utils.Sequence):
         return ret
 
     def __len__(self):
-        'Denotes the number of batches per epoch'
+        """Denotes the number of batches per epoch"""
         return int(np.floor(len(self.data) / self.batch_size))
 
     def __getitem__(self, index):
-        'Generate one batch of data'
+        """Generate one batch of data"""
         # Generate indexes of the batch
         try:
             indexes = self.indexes[index * self.batch_size:(index + 1) * self.batch_size]
@@ -74,10 +76,14 @@ class DataGenerator(keras.utils.Sequence):
             if self.shuffle:
                 data = data.sample(frac=1)  # .reset_index(drop=True)
 
-            X, y = self.__data_generation(data)
+            X, y = self._generate_data(data, self.prediction_vector)
         except Exception as ex:
             str(ex)
             raise
+        return X, y
+
+    def get_full_data(self):
+        X, y = self._generate_data(self.data, self.prediction_vector)
         return X, y
 
     @lru_cache(2)
@@ -87,20 +93,20 @@ class DataGenerator(keras.utils.Sequence):
         return df
 
     def on_epoch_end(self):
-        'Updates indexes after each epoch'
+        """Updates indexes after each epoch"""
         self.indexes = np.arange(len(self.data))
 
-    def __data_generation(self, df: pd.DataFrame) -> (iter, iter):
-        'Generates data containing batch_size samples'  # X : (n_samples, *dim, n_channels)
+    @staticmethod
+    def _generate_data(df: pd.DataFrame, prediction_vector: iter) -> (iter, iter):
+        """Generates data containing batch_size samples"""  # X : (n_samples, *dim, n_channels)
         # Initialization
         # X = np.empty((self.batch_size, *self.dim, self.n_channels))
         # y = np.empty((self.batch_size), dtype=int)
-        item_count = len(df)
         try:
             # with VerboseTimer(f'Getting {item_count} train features'):
             features = get_features(df)
             # with VerboseTimer(f'Getting {item_count} train labels'):
-            labels = sentences_to_hot_vector(labels=df.processed_answer, classes=self.prediction_vector)
+            labels = sentences_to_hot_vector(labels=df.processed_answer, classes=prediction_vector)
 
         except Exception as ex:
             logger.warning(f'Failed to get features:\n:{ex}')
@@ -112,9 +118,10 @@ class DataGenerator(keras.utils.Sequence):
 
 
 def main():
+    from common.settings import data_access
     meta_dict = data_access.load_meta()
     pred_vec = meta_dict['words']
-    d_gen = DataGenerator(pred_vec)
+    d_gen = DataGenerator(data_access=data_access, prediction_vector=pred_vec)
     str()
     res = []
     for i in range(10):
