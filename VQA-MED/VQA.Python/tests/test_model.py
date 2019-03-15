@@ -46,10 +46,10 @@ def test_model_creation():
 @pytest.mark.filterwarnings('ignore:RuntimeWarning')
 def test_model_training(data_access):
     # Arrange
-    batch_size = 75
+    batch_size = 5
     model_folder = ModelFolder(conftest.model_folder)
 
-    mt = VqaModelTrainer(model_folder, use_augmentation=False, batch_size=batch_size, data_access=data_access)
+    mt = VqaModelTrainer(model_folder, augmentations=1, batch_size=batch_size, data_access=data_access)
 
     # Act
     mt.train()
@@ -67,11 +67,13 @@ def test_model_predicting(data_frame):
 
 
 if __name__ == '__main__':
+    # from common import settings
     conftest.pytest_runtest_setup(None)
     # from keras import backend as keras_backend
     # keras_backend.clear_session()
     # test_model_creation()
     df = data_frame()
+    test_model_training(conftest.data_access)
     # test_model_training(df)
     test_model_predicting(df)
 
