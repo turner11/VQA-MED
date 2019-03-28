@@ -72,8 +72,8 @@ if __name__ == '__main__':
     # from keras import backend as keras_backend
     # keras_backend.clear_session()
     # test_model_creation()
-    df = data_frame()
-    test_model_training(conftest.data_access)
+    df = conftest.data_access.load_processed_data()
+    # test_model_training(conftest.data_access)
     # test_model_training(df)
     test_model_predicting(df)
 
