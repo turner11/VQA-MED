@@ -29,7 +29,7 @@ import vqa_logger
 
 logger = logging.getLogger(__name__)
 
-CLASS_NAME = 'Abnormality'
+CLASS_NAME = 'Modality'#'Organ'#'Plane'#'Abnormality'
 
 
 def get_classifier_data(df_arg: pd.DataFrame) -> (pd.DataFrame, dict):
@@ -80,8 +80,8 @@ def main(data_access: DataAccess) -> None:
 
     pbar = tqdm(combs)
     for hidden_layer in pbar:
-        max_f1 = max(cinfo.f1 for cinfo in classifer_infos) if classifer_infos else None
-        pbar.set_description(f'working on {hidden_layer}. max acc: {max_f1:.3f}')
+        max_f1 = max(cinfo.f1 for cinfo in classifer_infos) if classifer_infos else 0
+        pbar.set_description(f'working on {hidden_layer}. max acc: {(max_f1):.3f}')
         try:
             solver = 'adam'  # 'lbfgs'
             clf = MLPClassifier(solver=solver, alpha=1e-5, hidden_layer_sizes=hidden_layer, random_state=1)
@@ -94,10 +94,10 @@ def main(data_access: DataAccess) -> None:
             classifer_infos.append(curr_res)
 
         except Exception as ex:
-            errors.append(f'{ex}:\n{traceback.format_exc()}')
+            logger.exception(f'Failed while creating model')
             raise
     if errors:
-        print(errors)
+        logger.error(errors)
 
     classifer_infos = sorted(classifer_infos, key=lambda info: info.precision, reverse=True)
     # figures = [info.get_figure() for info in classifer_infos]
@@ -111,13 +111,13 @@ def main(data_access: DataAccess) -> None:
     # print(f'saved all classifiers to: {path }')
 
     chosen = classifer_infos[1]
-    print(f'best precision was: {chosen.scores_test["precision"][-1]}')
+    logger.debug(f'best precision was: {chosen.scores_test["precision"][-1]}')
 
     clf = chosen.classifier
     fig = chosen.get_figure(title=f'chosen classifier: {clf.hidden_layer_sizes}', plot=True)
 
     save_path = save_classifier(chosen, fig)
-    print(f'saved chosen classifier to: {save_path}')
+    logger.info(f'saved chosen classifier to: {save_path}')
 
     # plot_classifier_data(clf)
 
@@ -127,7 +127,7 @@ def main(data_access: DataAccess) -> None:
     z = list(zip(predicted, y))
     total = len(z)
     ok = len([tpl for tpl in z if tpl[0] == tpl[1]])
-    print(1.0 * ok / total)
+    logger.debug(f'quick evaluation: {1.0 * ok / total}')
 
     df_res = pd.DataFrame({'y_test': y, 'prediction': predicted}).reset_index(drop=True)
     df_res['question'] = df.reset_index().question
@@ -137,8 +137,8 @@ def main(data_access: DataAccess) -> None:
             row: f'{"SUCCESS" if row.is_correct else "FAIL"}. {row.question} => {"SUCCESS" if row.is_correct else "FAIL"} (Predicted: {row.y_test}) Answer: {row.prediction}',
         axis=1)
 
-    abnormality_class = classes[CLASS_NAME]
-    df_small = df_res[(df_res.prediction == abnormality_class) | (df_res.y_test == abnormality_class)]
+    the_class = classes[CLASS_NAME]
+    df_small = df_res[(df_res.prediction == the_class) | (df_res.y_test == the_class)]
 
     print(df_small.label.values)
 
@@ -204,7 +204,7 @@ def save_classifier(clf_info: ClassifierInfo, fig: Figure = None) -> str:
     now = time.time()
     ts = datetime.datetime.fromtimestamp(now).strftime('%Y%m%d_%H%M_%S')
     clf = clf_info.classifier
-    folder = Path(vqa_models_folder) / f'question_classifier_{ts}'
+    folder = Path(vqa_models_folder) / f'question_classifier_{CLASS_NAME.lower()}_{ts}'
     folder.mkdir()
 
     path = folder / 'question_classifier.pickle'
@@ -226,8 +226,8 @@ def save_classifier(clf_info: ClassifierInfo, fig: Figure = None) -> str:
 
 
 def get_hidden_layers_candidates() -> list:
-    combs_2 = list(itertools.combinations([5, 4, 3, 2], 2))
-    combs_3 = list(itertools.combinations([5, 4, 3, 2], 3))
+    combs_2 = list(itertools.combinations(list(range(2,11)), 2))
+    combs_3 = list(itertools.combinations(list(range(2,6)), 3))
     combs_4 = list(itertools.combinations([6, 5, 4, 3, 2], 4))
     combs_5 = list(itertools.combinations(list(range(3, 11)), 5))
 
@@ -251,8 +251,8 @@ def get_model_inputs(df: pd.DataFrame) -> (np.array, np.array, list, list):
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.32, random_state=42)
     # In[8]:
-    print(f'Train Length X, y: {len(X_train), len(y_train)}')
-    print(f'Test Length X, y: {len(X_test), len(y_test)}')
+    logger.debug(f'Train Length X, y: {len(X_train), len(y_train)}')
+    logger.debug(f'Test Length X, y: {len(X_test), len(y_test)}')
 
     X_test, y_test = _format_inputs(X_test, y_test)
     X_train, y_train = _format_inputs(X_train, y_train)
