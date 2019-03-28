@@ -33,6 +33,57 @@ class ModelScore(Base):
     def __repr__(self):
         return f'{self.__class__.__name__}(model_id={self.model_id}, bleu={self.bleu}, wbss={self.wbss})'
 
+class QuestionCatgory(Base):
+    """"""
+    __tablename__ = 'question_categories'
+
+    id = Column('id', Integer, primary_key=True)
+    name = Column('name', String(50), primary_key=True)
+
+    def __init__(self, name):
+        """"""
+        super().__init__()
+        self.name = name
+
+
+class EvaluationType(Base):
+    """"""
+    __tablename__ = 'evaluation_types'
+
+    id = Column('id', Integer, primary_key=True)
+    name = Column('name', String(50))
+
+    def __init__(self, name):
+        """"""
+        super().__init__()
+        self.name = name
+
+
+class ModelPartialScore(Base):
+    __tablename__ = 'partial_scores'
+    # __table_args__ = (
+    #     PrimaryKeyConstraint('model_id'),
+    # )
+
+    # id = Column('id', primary_key=True)
+    model_id = Column('model_id', ForeignKey('models.id'), primary_key=True)
+    evaluation_type = Column('evaluation_type', ForeignKey('evaluation_types.id'), primary_key=True)
+    question_category_id = Column('question_category_id', ForeignKey('question_categories.id'), primary_key=True)
+    score = Column('score', Float)
+
+
+
+    def __init__(self, model_id, evaluation_type, question_category_id,score):
+        """"""
+        self.model_id = model_id
+        self.evaluation_type = evaluation_type
+        self.question_category_id = question_category_id
+        self.score = score
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}(evaluation_type={self.evaluation_type}, question_category_id={self.question_category_id},' \
+            f' score={self.score})'
+
 
 class Model(Base):
     __tablename__ = 'models'
@@ -209,6 +260,10 @@ def execute_sql_from_file(file_name):
 
 
 def main():
+    # create_db()
+    return
+    # ps = ModelPartialScore(1,1,4,0.5)
+    # insert_dal(ps)
     return
     # create_db()
     # return

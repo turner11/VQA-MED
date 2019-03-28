@@ -1,3 +1,4 @@
+import itertools
 from pathlib import Path
 import pandas as pd
 
@@ -14,10 +15,23 @@ class DataLocations(object):
         super().__init__()
         self.tag = tag
         self._base_folder = base_folder
-        self.images_folder = str(next(folder for folder in self.folder.iterdir() if 'images' in folder.name))
-        self.categories_files = list(str(f) for f in Path(self.category_folder).iterdir())
+        self.images_folder = str(next(folder for folder in self.folder.iterdir() if 'images' in folder.name.lower()))
 
-        self._all_qa_file_name = next(Path(self._base_folder).glob('All_QA_Pairs_*.txt'), Path('FAILED'))
+        category_path = Path(self.category_folder)
+        if category_path.exists():
+            categories_files = list(str(f) for f in category_path.iterdir())
+        else:
+            # For test set...
+            categories_files = []
+
+        self._all_qa_file_name = next(Path(self._base_folder).glob('All_QA_Pairs_*.txt|*Test_Questions.txt'), Path('FAILED'))
+
+        base_path = Path(self._base_folder)
+        _qa_file_names_patterns = ['All_QA_Pairs_*.txt','*Test_Questions.txt']
+        candidates = itertools.chain.from_iterable(base_path.glob(pattern) for pattern in _qa_file_names_patterns)
+        self._all_qa_file_name = next(candidates, Path('FAILED'))
+
+        self.categories_files  = categories_files
 
         assert self.folder.exists()
         assert self._all_qa_file_name.exists()

@@ -1,6 +1,7 @@
 import logging
 import os
 import shutil
+from functools import lru_cache
 
 import pandas as pd
 import pyarrow as pa
@@ -97,7 +98,8 @@ class DataAccess(object):
     def _load_processed_data(self, filters: list = None, columns: list = None) -> pd.DataFrame:
         full_path = str(self.processed_data_location)
         logger.debug(f'loading processed data from:\n{full_path}')
-        df_data = self._load_parquet(full_path, columns, filters=filters)
+        affective_columns = tuple(columns or {}) if columns is not None else None
+        df_data = self._load_parquet(full_path, affective_columns, filters=filters)
         return df_data
 
     def save_augmentation_data(self, df_augmentations):
@@ -141,6 +143,7 @@ class DataAccess(object):
                                    )
 
     @staticmethod
+    @lru_cache(maxsize=5)
     def _load_parquet(path, columns=None, filters=None, convert_to_pandas=True):
         logger.debug(f'loading parquet from:\n{path}')
 
@@ -185,14 +188,14 @@ class DataAccess(object):
 
 
 class SpecificDataAccess(DataAccess):
-    def __init__(self, folder: Union[str, Path], group: str, question_category: str = None) -> None:
+    def __init__(self, folder: Union[str, Path], group: str = None, question_category: str = None) -> None:
         super().__init__(folder)
         self.group = group
         self.question_category = question_category
 
     def load_processed_data(self, group: str = None, columns: list = None) -> pd.DataFrame:
-        if group is not None:
-            msg = f'For {self.__class__.__name__}, group cannot be specified. It should be specified via ctor'
+        if group is not None and self.group is not None:
+            msg = f'For {self.__class__.__name__}, group cannot be differ from instance group. {group} != {self.group}'
             raise InvalidArgumentException(group, msg)
         df_data = super().load_processed_data(self.group, columns)
 

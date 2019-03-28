@@ -73,6 +73,7 @@ class ModelFolder(ModelFolderStructure):
         super().__init__(folder)
         self.additional_info = File.load_json(str(self.additional_info_path))
         self.prediction_data_name = self.additional_info['prediction_data']
+        self.question_category = self.additional_info.get('question_category')
 
         assert self.folder.exists()
 
@@ -131,15 +132,22 @@ class ModelFolder(ModelFolderStructure):
     def prediction_vector(self):
         meta = DataAccess.load_meta_from_location(self.meta_data_path)
         vector = meta[self.prediction_data_name]
-        assert len(vector.columns) == 1, 'Expected to get a single vector for prediction'
-        ret = vector[vector.columns[0]].drop_duplicates().reset_index(drop=True)
+        col_question_category = 'question_category'
+        non_category_columns = [c for c in vector.columns if c != col_question_category ]
+
+        assert len(non_category_columns) == 1, 'Expected to get a single vector for prediction'
+
+        if self.question_category and col_question_category in vector.columns:
+            vector = vector[vector[col_question_category] == self.question_category]
+
+        ret = vector[non_category_columns[0]].drop_duplicates().reset_index(drop=True)
         return ret
 
     @property
     def history(self):
         return File.load_pickle(self.history_path)
 
-    def load_model(self) -> object:#keras.engine.training.Model:
+    def load_model(self) -> Model:#object:#keras.engine.training.Model:
         with VerboseTimer("Loading Model"):
             model = keras_load_model(str(self.model_path),
                                      custom_objects={'f1_score': f1_score,

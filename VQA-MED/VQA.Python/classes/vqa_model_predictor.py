@@ -1,16 +1,22 @@
-from pathlib import Path
-from typing import Union
-from keras import Model as keras_model
+import logging
 import pandas as pd
 import numpy as np
+from collections import defaultdict
 import itertools
-from common.exceptions import InvalidArgumentException, NoDataException
-from common.settings import data_access
+from pathlib import Path
+from typing import Union
+
+import tqdm
+from keras import Model as keras_model
+
+from common.constatns import abnormality_classifier_location, abnormality_vqa_model_location
+from common.exceptions import InvalidArgumentException  # , NoDataException
+from common.os_utils import File
+from common.settings import data_access as data_acces_api
 from data_access.model_folder import ModelFolder
 from common.DAL import get_models_data_frame, get_model_by_id, Model as ModelDal
 from common.functions import get_features
 from common.utils import VerboseTimer
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -23,17 +29,23 @@ class VqaModelPredictor(object):
 
     def __init__(self, model: Union[str, int, ModelFolder, keras_model, None]):
         """"""
-        super(VqaModelPredictor, self).__init__()
+        super().__init__()
         self.model, model_idx_in_db, model_folder = self.get_model(model)
+        assert not model_folder.question_category , f'Expected main model to be with no question category, but got "{model_folder.question_category}"'
+
         self.model_idx_in_db = model_idx_in_db
 
         self.model_folder = model_folder
+        self.model_by_question_category = defaultdict()
+
+        abnormality_classifier = File.load_pickle(abnormality_classifier_location)
+        self.model_by_question_category['Abnormality'] = (abnormality_classifier, abnormality_vqa_model_location)
 
     def __repr__(self):
-        return super(VqaModelPredictor, self).__repr__()
+        return super().__repr__()
 
     @staticmethod
-    def get_model(model: Union[int, keras_model,ModelFolder, str, None]) -> (keras_model, int, ModelFolder):
+    def get_model(model: Union[int, keras_model, ModelFolder, str, None]) -> (keras_model, int, ModelFolder):
 
         df_models = None
         model_id = -1
@@ -61,7 +73,7 @@ class VqaModelPredictor(object):
                 model_location = model
 
         elif isinstance(model, ModelFolder):
-            model_location = str(model)
+            model_location = str(model.folder)
         else:
             raise InvalidArgumentException('model', arument=model)
 
@@ -77,7 +89,36 @@ class VqaModelPredictor(object):
     def predict(self, df_data: pd.DataFrame, percentile=99.8) -> pd.DataFrame:
         # predict
         prediction_vector = self.model_folder.prediction_vector
-        df_predictions = self._predict_keras(df_data, self.model, words_decoder=prediction_vector,percentile=percentile)
+        df_predictions = \
+            self._predict_keras(df_data, self.model, words_decoder=prediction_vector, percentile=percentile)
+
+        for category, (classifier, model_folder_location) in self.model_by_question_category.items():
+            specific_model_folder = ModelFolder(model_folder_location)
+            assert specific_model_folder.question_category is not None, 'expected specific model to have speciality'
+
+            specific_vqa_model = specific_model_folder.load_model()
+            specific_model_predictions_vector = specific_model_folder.prediction_vector
+
+            is_expecting_smaller_prediction_vector = self.model_folder.question_category is None
+            if is_expecting_smaller_prediction_vector:
+                assert len(specific_model_predictions_vector) < len(prediction_vector)
+
+            logger.debug(f'Classifying: "{category}"')
+            x = np.array([np.array(xi) for xi in df_data.question_embedding])
+            relevant_items = classifier.predict(x)
+            relevant_idxs  = relevant_items == 1
+            df_relevant = df_data[relevant_items == 1]
+            df_specific_predictions = self._predict_keras(df_relevant,
+                                                          specific_vqa_model,
+                                                          words_decoder=specific_model_predictions_vector,
+                                                          percentile=percentile)
+            df_predictions.loc[relevant_idxs,'prediction'] = df_specific_predictions.prediction
+                # df_predictions.loc[relevant_idxs,'prediction']+ '; ' + df_specific_predictions.prediction
+
+            df_predictions.loc[relevant_idxs, 'probabilities'] = \
+                df_predictions.loc[relevant_idxs, 'probabilities'] + df_specific_predictions.probabilities
+
+            str()
 
         # Those are the mandatory columns
         sort_columns = ['image_name', 'question', 'answer', 'prediction', 'probabilities']
@@ -110,7 +151,9 @@ class VqaModelPredictor(object):
         df_data_light = pd.DataFrame(df_dict).reset_index()
 
         results = []
-        for i, (curr_prediction, curr_probabilities) in enumerate(zip(predictions, probabilities)):
+        pbar = tqdm.tqdm(enumerate(zip(predictions, probabilities)), total=len(predictions))
+        for i, (curr_prediction, curr_probabilities) in pbar:
+            pbar.set_description(f'Prediction: {str(curr_prediction)[:20]}; probabilities: {str(curr_probabilities)[:20]}')
             prediction_df = pd.DataFrame({'word_idx': curr_prediction,
                                           'prediction': list(words_decoder.iloc[curr_prediction].values),
                                           'probabilities': curr_probabilities}
@@ -141,35 +184,31 @@ class VqaModelPredictor(object):
 class DefaultVqaModelPredictor(VqaModelPredictor):
     """"""
 
-    def __init__(self, model: Union[str, int, ModelFolder, keras_model, None], df_test=None, df_validation=None):
+    def __init__(self, model: Union[str, int, ModelFolder, keras_model, None], data_access=None):
         """"""
-        super(DefaultVqaModelPredictor, self).__init__(model)
-        df_test, df_validation = self.get_data(df_test, df_validation)
+        super().__init__(model)
+
+        self.data_access = data_access or data_acces_api
+        df_test, df_validation = self.get_data(self.data_access)
         self.df_validation = df_validation
         self.df_test = df_test
 
     @staticmethod
-    def get_data(df_test=None, df_validation=None):
-        if df_test is None:
-            try:
-                df_test = data_access.load_processed_data(group='test')
-            except NoDataException as ex:
-                logger.warning('No data found for test set')
-                df_test = None
-        if df_validation is None:
-            df_validation = data_access.load_processed_data(group='validation')
-
+    def get_data(data_access):
+        df_test = data_access.load_processed_data(group='test')
+        df_validation = data_access.load_processed_data(group='validation')
         return df_test, df_validation
 
 
 def main():
+    pass
+    # from evaluate.VqaMedEvaluatorBase import VqaMedEvaluatorBase
     # mp = VqaModelPredictor(model=None)
     # validation_prediction = mp.predict(mp.df_validation)
     # predictions = validation_prediction.prediction.values
     # ground_truth = validation_prediction.answer.values
     # results = VqaMedEvaluatorBase.get_all_evaluation(predictions=predictions, ground_truth=ground_truth)
     # print(f'Got results of {results}')
-    pass
 
 
 if __name__ == '__main__':

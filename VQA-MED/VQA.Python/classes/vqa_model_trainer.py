@@ -107,6 +107,7 @@ class VqaModelTrainer(object):
             tensor_board_callback = None  # K_callbacks.TensorBoard(log_dir=tensor_log_dir)
             callbacks = [stop_callback, acc_early_stop, tensor_board_callback]
             callbacks = [c for c in callbacks if c is not None]
+            callbacks = []
 
 
             with VerboseTimer("Training Model"):
@@ -207,20 +208,22 @@ def main():
 
 
     best_model_id = 5
-    best_model_location = 'C:\\Users\\Public\\Documents\\Data\\2019\\models\\20190223_2239_45\\'
+    best_model_location = 'C:\\Users\\Public\\Documents\\Data\\2019\\models\\20190315_1614_49\\'
     model_folder = ModelFolder(best_model_location)
 
     # model_folder_path = 'C:\\Users\\Public\\Documents\\Data\\2019\\models\\20190219_0120_04'
     # model_folder = ModelFolder(model_folder_path)
     # model = model_folder.load_model()
 
-    batch_size = 75
-    epochs = 3
-    data_access = SpecificDataAccess.factory(common_data_access, question_category='Abnormality')
-    mt = VqaModelTrainer(model_folder, augmentations=20, batch_size=batch_size, epochs=epochs, data_access=data_access)
+    batch_size = 64
+    epochs = 60
+    augmentations = 20
+    data_access = SpecificDataAccess.factory(common_data_access, question_category= model_folder.question_category)
+    mt = VqaModelTrainer(model_folder, augmentations=augmentations, batch_size=batch_size, epochs=epochs, data_access=data_access)
     history = mt.train()
+
     with VerboseTimer("Saving trained Model"):
-        model_folder = VqaModelTrainer.save(mt.model, history, notes='Abnormality model\n20 augmentations\nbased on model 5')
+        model_folder = VqaModelTrainer.save(mt.model, model_folder, history=history, notes='Abnormality model\n20 augmentations\nbased on model 5')
 
     str()
 

@@ -31,16 +31,21 @@ class VqaModelBuilder(object):
     def __init__(self, loss_function: str, output_activation_function: str,
                  lstm_units: int = LSTM_UNITS,
                  post_concat_dense_units: int = POST_CONCAT_DENSE_UNITS,
-                 optimizer: str = OPTIMIZER, categorical_data_frame_name: str = 'words'
-                 ) -> None:
+                 optimizer: str = OPTIMIZER,
+                 prediction_vector_name: str = 'words',
+                 question_category: str = '') -> None:
         """"""
         super(VqaModelBuilder, self).__init__()
         self.loss_function = loss_function
         self.output_activation_function = output_activation_function
 
         self.meta_dicts = data_access.load_meta()
-        self.categorical_data_frame_name = categorical_data_frame_name
-        self.categorical_data_frame = self.meta_dicts[self.categorical_data_frame_name]
+        self.prediction_vector_name = prediction_vector_name
+        self.question_category = question_category
+
+        self.prediction_vector = self.meta_dicts[self.prediction_vector_name]
+        if question_category:
+            self.prediction_vector = self.prediction_vector[self.prediction_vector.question_category == question_category]
 
         self.lstm_units = lstm_units
         self.post_concat_dense_units = post_concat_dense_units
@@ -93,7 +98,7 @@ class VqaModelBuilder(object):
     def get_vqa_model(self):
         metrics = [f1_score, recall_score, precision_score, 'accuracy']
 
-        out_put_vals = self.categorical_data_frame
+        out_put_vals = self.prediction_vector
         model_output_num_units = len(out_put_vals)
 
         image_model, lstm_model, fc_model = None, None, None
@@ -137,8 +142,8 @@ class VqaModelBuilder(object):
         return fc_model
 
     @staticmethod
-    def save_model(model: Model, prediction_df_name: str) -> ModelFolder:
-        additional_info = {'prediction_data': prediction_df_name}
+    def save_model(model: Model, prediction_df_name: str, question_category: str = None) -> ModelFolder:
+        additional_info = {'prediction_data': prediction_df_name, 'question_category':question_category}
         model_folder: ModelFolder = save_model(model, vqa_models_folder, additional_info, data_access.fn_meta)
         # Copy meta data to local folder
 
@@ -160,9 +165,31 @@ def main():
     # loss, activation = 'categorical_crossentropy', 'softmax'
 
     # loss, activation = 'binary_crossentropy', 'sigmoid'
-    loss, activation = 'categorical_crossentropy', 'sigmoid'
-    mb = VqaModelBuilder(loss, activation)
+    # loss, activation = 'categorical_crossentropy', 'sigmoid'
+
+    post_concat_dense_units = 8
+    optimizer ='RMSprop'
+    loss = 'cosine_proximity'
+    activation = 'sigmoid'
+    prediction_vector_name = 'answers'
+    lstm_units = 0
+    batch_size = 64
+    question_category = 'Abnormality'
+
+
+
+
+    mb = VqaModelBuilder(loss, activation,
+                         lstm_units=lstm_units,
+                         optimizer=optimizer,
+                         post_concat_dense_units=post_concat_dense_units,
+                         prediction_vector_name=prediction_vector_name,
+                         question_category=question_category)
     model = mb.get_vqa_model()
+
+    model_folder = VqaModelBuilder.save_model(model, mb.prediction_vector_name, question_category)
+
+    print(f'saved at {model_folder}')
 
     top_params = VqaModelBuilder.get_trainable_params_distribution(model)
     str(top_params)
