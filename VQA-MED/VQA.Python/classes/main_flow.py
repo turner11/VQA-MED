@@ -5,7 +5,7 @@ from pathlib import Path
 
 from tqdm import tqdm
 from common import DAL
-from common.DAL import ModelScore
+from common.DAL import ModelScore, ModelPartialScore
 from common.utils import VerboseTimer
 from data_access.model_folder import ModelFolder
 
@@ -16,9 +16,9 @@ logger = logging.getLogger(__name__)
 
 
 def debug():
-    # from exported_notebooks import aaa
-    # aaa.do()
-    # return
+    from exported_notebooks import aaa
+    aaa.do()
+    return
     # from exported_notebooks import concise_train
     # concise_train.do()
     # return
@@ -38,11 +38,67 @@ def remove_folders():
         shutil.rmtree(str(p))
 
 
+def insert_partial_scores():
+    from common.settings import data_access as data_access_api
+    from data_access.api import SpecificDataAccess
+    from classes.vqa_model_predictor import DefaultVqaModelPredictor
+    from evaluate.VqaMedEvaluatorBase import VqaMedEvaluatorBase
+    from keras import backend as keras_backend
+
+
+    all_models = DAL.get_models()
+    for model in all_models:
+        model_id = model.id
+        if model_id < 67:
+            continue
+        model_folder_location = Path(model.model_location).parent
+
+        if not model_folder_location.is_dir():
+            continue
+
+        keras_backend.clear_session()
+        model_folder = ModelFolder(model_folder_location)
+        categories = {1:'Modality', 4:'Abnormality'}#, 2:'Plane', 3:'Organ'}
+        evaluations = {'wbss':1 , 'bleu':2}
+
+        for category_id, question_category in categories.items():
+            data_access = SpecificDataAccess(data_access_api.folder, question_category=question_category, group=None)
+
+
+            try:
+                mp = DefaultVqaModelPredictor(model_folder, data_access=data_access)
+
+                df_to_predict = mp.df_validation
+                df_predictions = mp.predict(df_to_predict)
+            except:
+                logger.exception(f'Failed to predict (model {model_id})')
+                continue
+
+            predictions = df_predictions.prediction.values
+            ground_truth = df_predictions.answer.values
+            results = VqaMedEvaluatorBase.get_all_evaluation(predictions=predictions, ground_truth=ground_truth)
+
+            logger.debug(f'For {question_category} (model id: {model_id}), Got results of\n{results}')
+
+            for evaluation_name, score in results.items():
+                evaluation_id = evaluations[evaluation_name]
+                try:
+                    ps = ModelPartialScore(model_id, evaluation_id, category_id, score )
+                    DAL.insert_dal(ps)
+                except:
+                    logger.exception(f'Failed to insert partial score to db (model: {model_id})')
+            # for evaluation_id, evaluation_type in evaluations.items():d
+
+
+
+
 def main():
     # remove_folders()
     #
     # return
     debug()
+    return
+    insert_partial_scores()
     return
     copy_specs_to_model_folder()
     return
