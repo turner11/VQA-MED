@@ -25,10 +25,11 @@ class VerboseTimer(Timer):
         """"""
         super().__init__()
         self.title = title
+        logger.debug(f"Starting '{self.title}'")
 
     def __exit__(self, *args):
         super().__exit__()
-        logger.debug("{0}: {1}".format(self.title, str(self)))
+        logger.debug(f"{self.title}: {str(self)}")
 
 
 def timeit(func):

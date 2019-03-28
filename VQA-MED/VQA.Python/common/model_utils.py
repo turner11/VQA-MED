@@ -55,7 +55,7 @@ class EarlyStoppingByAccuracy(Callback):
         logs = logs if logs is not None else {}
         current = logs.get(self.monitor)
         if current is None:
-            warnings.warn("Early stopping requires %s available!" % self.monitor, RuntimeWarning)
+            warnings.warn(f"Early stopping requires {self.monitor} available!", RuntimeWarning)
 
         if current is None or self.value is None:
             pass
