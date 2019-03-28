@@ -1,13 +1,20 @@
 import math
 import os
 import logging
+from collections import OrderedDict
+import string
+
 import numpy as np
 from functools import partial
 from nltk.corpus import stopwords
 import dask.dataframe as dd
+
+
+from common.os_utils import File
 from common.utils import VerboseTimer
-from common.settings import input_length, get_nlp
-from common.settings import embedding_dim
+from common.settings import input_length, get_nlp, embedding_dim
+from common.constatns import questions_classifiers
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -22,25 +29,38 @@ def pre_process_raw_data(df):
         existing_files = [os.path.normpath(os.path.join(folder, fn))
                           for folder, fn_arr in files_by_folder.items() for fn in fn_arr]
         df.path = df.path.apply(lambda path: os.path.normpath(path))
-        df = df.loc[df['path'].isin(existing_files)]
+
+        existing_idxs = df['path'].isin(existing_files)
+        assert existing_idxs.all()
+        # df = df.loc[df['path'].isin(existing_idxs)]
+
 
         # Getting text features. This is the heavy task...
         df = df.reset_index(drop=True)
+        def process_text(txt):
+            exclude = set(string.punctuation)
+            no_punctuation = ''.join(ch.lower() if ch not in exclude else ' ' for ch in txt)
+            no_single_chars = ' '.join(w for w in no_punctuation.split() if len(w) > 1)
+            no_multi_space = ' '.join(no_single_chars.split())
+            # no_stop_words = ' '.join([w for w in no_multi_space.split() if w not in english_stopwords])
+            return no_multi_space
 
-        stops = set(stopwords.words("english"))
-        remove_stops = lambda x: ' '.join([word for word in x.split() if word not in stops])
+
         logger.info('Answer: removing stop words and tokenizing')
 
         for col in ['processed_answer', 'answer']:
             if col not in df.columns:  # e.g. in test set...
                 df[col] = ''
 
+        df.answer.fillna('', inplace=True)
+        df.question.fillna('', inplace=True)
+
         with VerboseTimer("Answer Tokenizing"):
-            df['processed_answer'] = df['answer'].apply(remove_stops)
+            df['processed_answer'] = df['answer'].apply(process_text)
 
         logger.info('Question: removing stop words and tokenizing')
         with VerboseTimer("Question Tokenizing"):
-            df['processed_question'] = df['question'].apply(remove_stops)
+            df['processed_question'] = df['question'].apply(process_text)
 
         ddata = dd.from_pandas(df, npartitions=8)
 
@@ -58,10 +78,44 @@ def pre_process_raw_data(df):
         with VerboseTimer("Question Embedding"):
             df['question_embedding'] = paralelized_get_features(column='processed_question')
 
-    df.answer.fillna('', inplace=True)
-    df.question.fillna('', inplace=True)
+    __add_category_prediction(df)
+
     logger.debug('Done')
     return df
+
+
+def __add_category_prediction(df):
+    df_with_category = df[~pd.isnull(df.question_category)]
+    category_by_question = {row.processed_question: row.question_category
+                            for i, row in df_with_category.iterrows()}
+    df.loc[:, 'question_category'] = df.processed_question.apply(lambda pq: category_by_question.get(pq))
+    df_no_category = df[pd.isnull(df.question_category)]
+
+    questions_to_predict = OrderedDict({i: row.processed_question for i, row in df_no_category.iterrows()})
+
+    idxs_predict = list(questions_to_predict.keys())
+    x = np.array([np.array(xi) for xi in df.iloc[idxs_predict].question_embedding])
+    predictions = {}
+    with VerboseTimer("Predicting question category"):
+        for category, classifier_location in questions_classifiers.items():
+            with VerboseTimer(f"Predicting for '{category}'"):
+                classifier = File.load_pickle(classifier_location)
+                prediction_result = classifier.predict_proba(x)
+                curr_predictions = {idx: np.argmax(probs) for idx, probs in zip(idxs_predict, prediction_result)}
+                probabilities = {idx: probs[prediction] for (idx, prediction), probs in
+                                 zip(curr_predictions.items(), prediction_result)}
+
+                for idx in idxs_predict:
+                    curr_pred = curr_predictions[idx]
+                    if curr_pred != 1:
+                        continue
+                    highest_prob = predictions.get(idx, -1)
+                    curr_prob = probabilities[idx]
+                    if curr_prob > highest_prob:
+                        predictions[idx] = category
+    predictions_by_question = {row.processed_question: predictions[i] for i, row in df.iloc[idxs_predict].iterrows()}
+    df.loc[idxs_predict, 'question_category'] = df.iloc[idxs_predict].processed_question.apply(
+        lambda pq: predictions_by_question[pq])
 
 
 def _apply_heavy_function(dask_df, apply_func, column, scheduler='processes'):
