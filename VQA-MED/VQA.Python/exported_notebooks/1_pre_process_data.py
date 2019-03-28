@@ -145,13 +145,13 @@ image_name_question_processed = pre_process_raw_data(image_name_question)
 # In[16]:
 
 
-image_name_question_processed.head()
+image_name_question_processed.sample(5)
 
 
 # In[17]:
 
 
-image_name_question[image_name_question.image_name == 'synpic52143.jpg'].head()
+image_name_question_processed[image_name_question_processed.image_name == 'synpic52143.jpg'].head()
 
 
 # #### Saving the data, so later on we don't need to compute it again
