@@ -5,7 +5,7 @@ import pandas as pd
 import itertools
 from tqdm import tqdm
 from common.settings import validation_data, train_data
-from pre_processing.known_find_and_replace_items import imaging_devices, diagnosis, locations
+from pre_processing.known_find_and_replace_items import diagnosis
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +17,8 @@ def _add_questions_categories(df):
     new_df = pd.merge(left=df, right=all_data
                        , left_on=['image_name', 'question'], right_on=['image_name', 'question']
                        , how='left')
+
+
     return new_df
 
 
