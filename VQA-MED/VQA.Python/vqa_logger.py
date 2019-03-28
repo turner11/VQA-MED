@@ -12,7 +12,7 @@ from common.os_utils import File
 
 __is_initialized = False
 
-
+specific_logs = ['matplotlib']
 def init_log():
     global __is_initialized
     if __is_initialized:
@@ -59,6 +59,12 @@ def init_log():
 
 
     root_logger.addHandler(file_handler)
+
+
+    for logger_name in specific_logs:
+        logging.getLogger(logger_name).setLevel(logging.WARN)
+
+
     str()
     # root_logger.addHandler(std_out)
     # print (str(root_logger.handlers))
