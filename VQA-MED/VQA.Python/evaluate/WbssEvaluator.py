@@ -80,7 +80,6 @@ class WbssEvaluator(VqaMedEvaluatorBase):
         return vector
 
     def _wups_score(self, word1, word2):
-        score = 0.0
         score = self._wup_measure(word1, word2)
         return score
 

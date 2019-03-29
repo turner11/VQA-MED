@@ -1,6 +1,7 @@
 import itertools
 import logging
 import os, sys
+from collections import OrderedDict, namedtuple
 from pathlib import Path
 
 from tqdm import tqdm
@@ -49,7 +50,7 @@ def insert_partial_scores():
     all_models = DAL.get_models()
     for model in all_models:
         model_id = model.id
-        if model_id < 67:
+        if model_id < 68:
             continue
         model_folder_location = Path(model.model_location).parent
 
@@ -58,7 +59,9 @@ def insert_partial_scores():
 
         keras_backend.clear_session()
         model_folder = ModelFolder(model_folder_location)
-        categories = {1:'Modality', 4:'Abnormality'}#, 2:'Plane', 3:'Organ'}
+        categories = OrderedDict(
+            {2:'Plane', 3:'Organ', 1:'Modality', 4:'Abnormality'}
+        )
         evaluations = {'wbss':1 , 'bleu':2}
 
         for category_id, question_category in categories.items():
@@ -90,14 +93,114 @@ def insert_partial_scores():
             # for evaluation_id, evaluation_type in evaluations.items():d
 
 
+def evaluate_models(models):
+    from keras import backend as keras_backend
+    from data_access.api import SpecificDataAccess
+    from classes.vqa_model_predictor import DefaultVqaModelPredictor
+    from common.settings import data_access as data_access_api
+    from evaluate.VqaMedEvaluatorBase import VqaMedEvaluatorBase
+
+    ModelResults = namedtuple('ModelResults', ['model_id', 'category', 'evaluation', 'score', 'notes'])
+
+    model_results = []
+    pbar = tqdm(models)
+    for model_id in pbar:
+        pbar.set_description(f'working on model {model_id }')
+        model_dal = DAL.get_model_by_id(model_id)
+
+
+        assert model_id == model_dal.id
+        model_folder_location = Path(model_dal.model_location).parent
+        assert  model_folder_location.is_dir()
+
+        keras_backend.clear_session()
+        model_folder = ModelFolder(model_folder_location)
+        categories = OrderedDict({2: 'Plane', 3: 'Organ', 1: 'Modality', 4: 'Abnormality'})
+        evaluations = {'wbss': 1, 'bleu': 2}
+
+        for category_id, question_category in categories.items():
+
+            data_access = SpecificDataAccess(data_access_api.folder, question_category=question_category,
+                                             group=None)
+
+            try:
+                mp = DefaultVqaModelPredictor(model_folder, data_access=data_access)
+
+                df_to_predict = mp.df_validation
+                df_predictions = mp.predict(df_to_predict)
+            except:
+                logger.exception(f'Failed to predict (model {model_id})')
+                continue
+            predictions = df_predictions.prediction.values
+            ground_truth = df_predictions.answer.values
+            with VerboseTimer(f"Evaluation for model {model_id}, category: {question_category}"):
+                results = VqaMedEvaluatorBase.get_all_evaluation(predictions=predictions, ground_truth=ground_truth)
+
+            logger.debug(f'For {question_category} (model id: {model_id}), Got results of\n{results}')
+
+
+
+            for evaluation_name, score in results.items():
+                evaluation_id = evaluations[evaluation_name]
+
+                mr = ModelResults(model_id,question_category, evaluation_name, score, model_dal.notes)
+                model_results.append(mr)
+
+            # for evaluation_id, evaluation_type in evaluations.items():d
+    import pandas as pd
+    df = pd.DataFrame(model_results)
+
+    location_by_id = {mid:Path(DAL.get_model_by_id(mid).model_location) for mid in df.model_id.values}
+    category_by_id  = {mid: ModelFolder(model_location.parent).question_category for mid, model_location in location_by_id.items() if model_location.exists()}
+    full_categories = {mid: category_by_id .get(mid, 'NO FOLDER') for mid in category_by_id.keys()}
+
+
+
+    df = df.sort_values(by=['category', 'score'], ascending=(True, False))
+    df['model_category'] = df.model_id.apply(lambda mid: full_categories.get(mid, 'Failed'))
+    df = df[sorted(df.columns, key=lambda c: c =='notes')]
+    str(df)
+
+    pp = 'D:\\Users\\avitu\\Downloads\\evaluations.h5'
+    with pd.HDFStore(pp) as store:
+        store['data'] = df
+
+
+def evaluate_contender():
+    from classes.vqa_model_predictor import DefaultVqaModelPredictor
+    from evaluate.VqaMedEvaluatorBase import VqaMedEvaluatorBase
+
+
+    mp = DefaultVqaModelPredictor.get_contender()
+
+    df_to_predict = mp.df_validation
+    with VerboseTimer(f"Predictions for VQA contender"):
+        df_predictions = mp.predict(df_to_predict)
+
+    predictions = df_predictions.prediction.values
+    ground_truth = df_predictions.answer.values
+    with VerboseTimer(f"Evaluation for VQA contender"):
+        results = VqaMedEvaluatorBase.get_all_evaluation(predictions=predictions, ground_truth=ground_truth)
+
+    # folder = Path('D:\\Users\\avitu\\Downloads')
+    # import pandas as pd
+    # dd = pd.DataFrame({'predictions':predictions, 'ground_truth':ground_truth})
+    # with pd.HDFStore(str(folder/'preds.h5')) as store:
+    #     store['data'] = dd
+    #
+    logger.info(f"Evaluation for VQA contender: {results}")
 
 
 def main():
+    evaluate_contender()
+    return
+    evaluate_models(models=[68,69,70,71,72,66,67,21,27,39,33,41,13,6,3,15,55,72,46,50,26,32])
+    return
     # remove_folders()
     #
     # return
-    debug()
-    return
+    # debug()
+    # return
     insert_partial_scores()
     return
     copy_specs_to_model_folder()

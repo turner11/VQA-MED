@@ -1,12 +1,14 @@
-import inspect
-import itertools
 import os
+import inspect
 import textwrap
+from multiprocessing.pool import Pool, ThreadPool
 from pathlib import Path
 
 import pandas as pd
 import numpy as np
 import cv2
+import tqdm
+
 from common.settings import image_size
 
 import logging
@@ -124,8 +126,17 @@ def get_features(df: pd.DataFrame):
 
     question_features = np.reshape(list(series_reshaped.values), set_shape)
 
-    image_by_path = {im_path:np.array(get_image(im_path)) for im_path in df.path.drop_duplicates()}
-    image_features = np.asarray([ image_by_path[im_path] for im_path in df['path']])
+    pool = ThreadPool(processes=7)
+    unique_image_paths = df.path.drop_duplicates()
+    logger.debug('Getting image features')
+    worker_generator = pool.imap(lambda im_path: np.array(get_image(im_path)), unique_image_paths)
+    images = list(tqdm.tqdm(worker_generator , total=len(unique_image_paths)))
+
+    # images = pool.map(lambda im_path: np.array(get_image(im_path)), unique_image_paths)
+    image_by_path = {im_path:img for im_path, img in zip(unique_image_paths, images)}
+
+    # image_by_path = {im_path:np.array(get_image(im_path)) for im_path in df.path.drop_duplicates()}
+    image_features = np.asarray([image_by_path[im_path] for im_path in df['path']])
 
     # image_features = np.asarray([np.array(get_image(im_path)) for im_path in df['path']])
     features = [question_features, image_features]

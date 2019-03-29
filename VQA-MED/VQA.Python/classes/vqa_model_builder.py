@@ -6,6 +6,7 @@ from keras.applications.vgg19 import VGG19
 from keras import Model, Input  # ,models, callbacks
 from keras.layers import Dense, LSTM, BatchNormalization, Activation  # GlobalAveragePooling2D, Merge, Embedding
 
+from data_access.api import DataAccess
 from data_access.model_folder import ModelFolder
 from common.settings import embedded_sentence_length, data_access
 from common.model_utils import save_model, get_trainable_params_distribution
@@ -40,12 +41,12 @@ class VqaModelBuilder(object):
         self.output_activation_function = output_activation_function
 
         self.meta_dicts = data_access.load_meta()
+
         self.prediction_vector_name = prediction_vector_name
         self.question_category = question_category
-
-        self.prediction_vector = self.meta_dicts[self.prediction_vector_name]
-        if question_category:
-            self.prediction_vector = self.prediction_vector[self.prediction_vector.question_category == question_category]
+        self.prediction_vector = DataAccess.get_prediction_data(self.meta_dicts,
+                                                                self.prediction_vector_name,
+                                                                self.question_category)
 
         self.lstm_units = lstm_units
         self.post_concat_dense_units = post_concat_dense_units
@@ -143,7 +144,7 @@ class VqaModelBuilder(object):
 
     @staticmethod
     def save_model(model: Model, prediction_df_name: str, question_category: str = None) -> ModelFolder:
-        additional_info = {'prediction_data': prediction_df_name, 'question_category':question_category}
+        additional_info = {'prediction_data': prediction_df_name, 'question_category': question_category}
         model_folder: ModelFolder = save_model(model, vqa_models_folder, additional_info, data_access.fn_meta)
         # Copy meta data to local folder
 
@@ -168,16 +169,12 @@ def main():
     # loss, activation = 'categorical_crossentropy', 'sigmoid'
 
     post_concat_dense_units = 8
-    optimizer ='RMSprop'
+    optimizer = 'RMSprop'
     loss = 'cosine_proximity'
     activation = 'sigmoid'
     prediction_vector_name = 'answers'
     lstm_units = 0
-    batch_size = 64
     question_category = 'Abnormality'
-
-
-
 
     mb = VqaModelBuilder(loss, activation,
                          lstm_units=lstm_units,
@@ -189,7 +186,7 @@ def main():
 
     model_folder = VqaModelBuilder.save_model(model, mb.prediction_vector_name, question_category)
 
-    print(f'saved at {model_folder}')
+    logger.info(f'saved at {model_folder}')
 
     top_params = VqaModelBuilder.get_trainable_params_distribution(model)
     str(top_params)

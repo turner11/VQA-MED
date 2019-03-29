@@ -62,7 +62,7 @@ class ModelFolderStructure(object):
         return self.folder / self.ADDITIONAL_INFO_FILE_NAME
 
     def __repr__(self):
-        return f'{self.__class__.__name__}(folder={str(self.folder)})'
+        return f'{self.__class__.__name__}(folder="{str(self.folder)}")'
 
 
 class ModelFolder(ModelFolderStructure):
@@ -131,23 +131,15 @@ class ModelFolder(ModelFolderStructure):
     @property
     def prediction_vector(self):
         meta = DataAccess.load_meta_from_location(self.meta_data_path)
-        vector = meta[self.prediction_data_name]
-        col_question_category = 'question_category'
-        non_category_columns = [c for c in vector.columns if c != col_question_category ]
-
-        assert len(non_category_columns) == 1, 'Expected to get a single vector for prediction'
-
-        if self.question_category and col_question_category in vector.columns:
-            vector = vector[vector[col_question_category] == self.question_category]
-
-        ret = vector[non_category_columns[0]].drop_duplicates().reset_index(drop=True)
+        prediction_data_name = self.prediction_data_name
+        ret = DataAccess.get_prediction_data(meta, prediction_data_name, self.question_category)
         return ret
 
     @property
     def history(self):
         return File.load_pickle(self.history_path)
 
-    def load_model(self) -> Model:#object:#keras.engine.training.Model:
+    def load_model(self) -> Model:  # object:#keras.engine.training.Model:
         with VerboseTimer("Loading Model"):
             model = keras_load_model(str(self.model_path),
                                      custom_objects={'f1_score': f1_score,

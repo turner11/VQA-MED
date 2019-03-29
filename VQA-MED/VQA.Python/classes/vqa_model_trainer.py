@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 class VqaModelTrainer(object):
     """"""
 
-
     @property
     def model(self):
         return self._model
@@ -29,7 +28,7 @@ class VqaModelTrainer(object):
 
     @property
     def epochs(self):
-        return self._epochs #1  # 20 if self.use_augmentation else 1
+        return self._epochs  # 1  # 20 if self.use_augmentation else 1
 
     def __init__(self, model_folder: ModelFolder, augmentations: int, batch_size: int,
                  data_access: DataAccess, epochs: int = 1, question_category: str = None) -> None:
@@ -45,7 +44,6 @@ class VqaModelTrainer(object):
         self._model = model_folder.load_model()
         self.model_location = str(model_folder.model_path)
         self.question_category = question_category
-
 
         # # ---- Getting Data ----
         # data_train: DataFrame = data_access.load_processed_data(group='train').reset_index()
@@ -65,7 +63,7 @@ class VqaModelTrainer(object):
             f'batch_size={self.batch_size},data_access={self.data_access}, question_category={self.question_category})'
 
     def __str__(self) -> str:
-        return f'VqaModelTrainer{"" if self.question_category is not None else ": "+str(self.question_category)}'
+        return f'VqaModelTrainer{"" if self.question_category is not None else ": " + str(self.question_category)}'
 
     def print_shape_sanity(self, features_t, labels_t, features_val, labels_val):
         logger.debug('===========================================================================')
@@ -84,14 +82,13 @@ class VqaModelTrainer(object):
 
         prediction_vector = self.model_folder.prediction_vector
 
-
         dg = DataGenerator(data_access_train, prediction_vector=prediction_vector,
                            batch_size=self.batch_size,
                            augmentations=self.augmentations,
                            )
 
         data_val = data_access_val.load_processed_data()
-        features_val, labels_val = DataGenerator._generate_data(data_val , prediction_vector)
+        features_val, labels_val = DataGenerator._generate_data(data_val, prediction_vector)
         validation_input = (features_val, labels_val)
 
         model = self.model
@@ -109,7 +106,6 @@ class VqaModelTrainer(object):
             callbacks = [c for c in callbacks if c is not None]
             callbacks = []
 
-
             with VerboseTimer("Training Model"):
                 features_t, labels_t = dg[0]
                 self.print_shape_sanity(features_t, labels_t, features_val, labels_val)
@@ -124,7 +120,7 @@ class VqaModelTrainer(object):
         #             sess.close()
 
         except Exception as ex:
-            logger.error("Got an error training model: {0}".format(ex))
+            logger.exception('Got an error training model')
             raise
         return history
 
@@ -206,7 +202,6 @@ def main():
     from common.settings import data_access as common_data_access
     keras_backend.clear_session()
 
-
     best_model_id = 5
     best_model_location = 'C:\\Users\\Public\\Documents\\Data\\2019\\models\\20190315_1614_49\\'
     model_folder = ModelFolder(best_model_location)
@@ -216,17 +211,20 @@ def main():
     # model = model_folder.load_model()
 
     batch_size = 64
-    epochs = 60
+    epochs = 10
     augmentations = 20
-    data_access = SpecificDataAccess.factory(common_data_access, question_category= model_folder.question_category)
-    mt = VqaModelTrainer(model_folder, augmentations=augmentations, batch_size=batch_size, epochs=epochs, data_access=data_access)
+    question_category = 'Abnormality'
+
+    data_access = SpecificDataAccess.factory(common_data_access, question_category=model_folder.question_category)
+    mt = VqaModelTrainer(model_folder, augmentations=augmentations, batch_size=batch_size, epochs=epochs,
+                         data_access=data_access)
     history = mt.train()
 
     with VerboseTimer("Saving trained Model"):
-        model_folder = VqaModelTrainer.save(mt.model, model_folder, history=history, notes='Abnormality model\n20 augmentations\nbased on model 5')
+        model_folder = VqaModelTrainer.save(mt.model, model_folder, history=history,
+                                            notes='Abnormality model\n20 augmentations\nbased on model 5')
 
     str()
-
 
 
 if __name__ == '__main__':

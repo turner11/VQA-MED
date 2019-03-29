@@ -99,7 +99,8 @@ class DataAccess(object):
         full_path = str(self.processed_data_location)
         logger.debug(f'loading processed data from:\n{full_path}')
         affective_columns = tuple(columns or {}) if columns is not None else None
-        df_data = self._load_parquet(full_path, affective_columns, filters=filters)
+        affective_filters = tuple(filters or {}) if filters is not None else None
+        df_data = self._load_parquet(full_path, affective_columns, filters=affective_filters)
         return df_data
 
     def save_augmentation_data(self, df_augmentations):
@@ -117,7 +118,7 @@ class DataAccess(object):
             augmentations = max(augmentations, 1)
 
         if augmentations is not None:
-            filters = [('augmentation', '<', int(augmentations)), ]
+            filters = (('augmentation', '<', int(augmentations)), )
         else:
             filters = None
 
@@ -187,6 +188,23 @@ class DataAccess(object):
         return ret
 
 
+    @classmethod
+    def get_prediction_data(cls, meta_data, prediction_data_name, question_category):
+        vector = meta_data[prediction_data_name]
+        col_question_category = 'question_category'
+        non_category_columns = [c for c in vector.columns if c != col_question_category]
+
+        assert len(non_category_columns) == 1, 'Expected to get a single vector for prediction'
+
+        if question_category and col_question_category in vector.columns:
+            categories = vector[col_question_category]
+            idxs = categories.str.contains(question_category)  # Categories are space delimited strings
+            vector = vector[idxs]
+
+        ret = vector[non_category_columns[0]].drop_duplicates().reset_index(drop=True)
+        return ret
+
+
 class SpecificDataAccess(DataAccess):
     def __init__(self, folder: Union[str, Path], group: str = None, question_category: str = None) -> None:
         super().__init__(folder)
@@ -197,7 +215,9 @@ class SpecificDataAccess(DataAccess):
         if group is not None and self.group is not None:
             msg = f'For {self.__class__.__name__}, group cannot be differ from instance group. {group} != {self.group}'
             raise InvalidArgumentException(group, msg)
-        df_data = super().load_processed_data(self.group, columns)
+
+        affective_group = group or self.group
+        df_data = super().load_processed_data(affective_group, columns)
 
         if self.question_category:
             df_data = df_data[df_data.question_category == self.question_category]
