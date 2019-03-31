@@ -62,7 +62,8 @@ class ModelFolderStructure(object):
         return self.folder / self.ADDITIONAL_INFO_FILE_NAME
 
     def __repr__(self):
-        return f'{self.__class__.__name__}(folder="{str(self.folder)}")'
+        folder_str = str(self.folder).replace('\\', '\\\\')
+        return f'{self.__class__.__name__}(folder="{folder_str}")'
 
 
 class ModelFolder(ModelFolderStructure):
