@@ -91,31 +91,32 @@ def __add_category_prediction(df):
     df.loc[:, 'question_category'] = df.processed_question.apply(lambda pq: category_by_question.get(pq))
     df_no_category = df[pd.isnull(df.question_category)]
 
-    questions_to_predict = OrderedDict({i: row.processed_question for i, row in df_no_category.iterrows()})
+    if len(df_no_category) > 0:
+        questions_to_predict = OrderedDict({i: row.processed_question for i, row in df_no_category.iterrows()})
 
-    idxs_predict = list(questions_to_predict.keys())
-    x = np.array([np.array(xi) for xi in df.iloc[idxs_predict].question_embedding])
-    predictions = {}
-    with VerboseTimer("Predicting question category"):
-        for category, classifier_location in questions_classifiers.items():
-            with VerboseTimer(f"Predicting for '{category}'"):
-                classifier = File.load_pickle(classifier_location)
-                prediction_result = classifier.predict_proba(x)
-                curr_predictions = {idx: np.argmax(probs) for idx, probs in zip(idxs_predict, prediction_result)}
-                probabilities = {idx: probs[prediction] for (idx, prediction), probs in
-                                 zip(curr_predictions.items(), prediction_result)}
+        idxs_predict = list(questions_to_predict.keys())
+        x = np.array([np.array(xi) for xi in df.iloc[idxs_predict].question_embedding])
+        predictions = {}
+        with VerboseTimer("Predicting question category"):
+            for category, classifier_location in questions_classifiers.items():
+                with VerboseTimer(f"Predicting for '{category}'"):
+                    classifier = File.load_pickle(classifier_location)
+                    prediction_result = classifier.predict_proba(x)
+                    curr_predictions = {idx: np.argmax(probs) for idx, probs in zip(idxs_predict, prediction_result)}
+                    probabilities = {idx: probs[prediction] for (idx, prediction), probs in
+                                     zip(curr_predictions.items(), prediction_result)}
 
-                for idx in idxs_predict:
-                    curr_pred = curr_predictions[idx]
-                    if curr_pred != 1:
-                        continue
-                    highest_prob = predictions.get(idx, -1)
-                    curr_prob = probabilities[idx]
-                    if curr_prob > highest_prob:
-                        predictions[idx] = category
-    predictions_by_question = {row.processed_question: predictions[i] for i, row in df.iloc[idxs_predict].iterrows()}
-    df.loc[idxs_predict, 'question_category'] = df.iloc[idxs_predict].processed_question.apply(
-        lambda pq: predictions_by_question[pq])
+                    for idx in idxs_predict:
+                        curr_pred = curr_predictions[idx]
+                        if curr_pred != 1:
+                            continue
+                        highest_prob = predictions.get(idx, -1)
+                        curr_prob = probabilities[idx]
+                        if curr_prob > highest_prob:
+                            predictions[idx] = category
+        predictions_by_question = {row.processed_question: predictions[i] for i, row in df.iloc[idxs_predict].iterrows()}
+        df.loc[idxs_predict, 'question_category'] = df.iloc[idxs_predict].processed_question.apply(
+            lambda pq: predictions_by_question[pq])
 
 
 def _apply_heavy_function(dask_df, apply_func, column, scheduler='processes'):

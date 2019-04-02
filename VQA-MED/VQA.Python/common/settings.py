@@ -27,10 +27,11 @@ vectors = ['en_core_web_lg', 'en_core_web_md', 'en_core_web_sm']  # 'en_vectors_
 nlp_vector = vectors[0]
 
 
+@lru_cache(1)
 def set_nlp_vector(idx):
     global nlp_vector
     if nlp is not None:
-        raise Exception('Changing the vector will have no affect once NLP was set')
+        logger.warning('Changing the vector will have no affect once NLP was set')
     nlp_vector = vectors[idx]
     logger.debug(f'Embedding vector set to: {nlp_vector}')
 

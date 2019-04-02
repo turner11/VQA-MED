@@ -19,38 +19,38 @@ logger = logging.getLogger(__name__)
 
 normalized_csv = \
     '''
-,image_name,question,answer,group,path
-0,test_image,question 0 what does abcts showed on sitting?,answer magnetic resonance imaging 0,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-1,test_image,question 1?,answer magnetic resonance angiography 1,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-2,test_image,question 2?,answer ct 2,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-3,test_image,question 3?,answer ct scan 3,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-4,test_image,question 4?,answer mri scan 4,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-5,test_image,question 5?,answer reveal 5,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-6,test_image,question 6?,answer 6,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-7,test_image,question 7?,answer 7,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-8,test_image,question 8?,answer 8,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-9,test_image,question 9?,answer 9,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-10,test_image,question 10?,answer 10,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-11,test_image,question 11?,answer 11,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-12,test_image,question 12?,answer 12,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-13,test_image,question 13?,answer 13,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-14,test_image,question 14?,answer 14,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-15,test_image,question 15?,answer 15,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-16,test_image,question 16?,answer 16,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-17,test_image,question 17?,answer 17,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-18,test_image,question 18?,answer 18,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-19,test_image,question 19?,answer 19,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-20,test_image,question 20?,answer 20,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-21,test_image,question 21?,answer 21,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-22,test_image,question 22?,answer 22,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-23,test_image,question 23?,answer 23,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-24,test_image,question 24?,answer 24,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-25,test_image,question 25?,answer 25,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-26,test_image,question 26?,answer 26,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-27,test_image,question 27?,answer 27,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-28,test_image,question 28?,answer 28,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-29,test_image,question 29?,answer 29,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
-30,test_image,question 29?,,test,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+,image_name,question,answer,group,question_category,path
+0,test_image,question 0 what does abcts showed on sitting?,answer magnetic resonance imaging 0,test,Abnormality,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+1,test_image,question 1?,answer magnetic resonance angiography 1,test,Abnormality,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+2,test_image,question 2?,answer ct 2,test,Abnormality,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+3,test_image,question 3?,answer ct scan 3,test,Abnormality,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+4,test_image,question 4?,answer mri scan 4,test,Abnormality,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+5,test_image,question 5?,answer reveal 5,test,Abnormality,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+6,test_image,question 6?,answer 6,test,Abnormality,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+7,test_image,question 7?,answer 7,test,Abnormality,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+8,test_image,question 8?,answer 8,test,Modality,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+9,test_image,question 9?,answer 9,test,Modality,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+10,test_image,question 10?,answer 10,test,Modality,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+11,test_image,question 11?,answer 11,test,Modality,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+12,test_image,question 12?,answer 12,test,Modality,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+13,test_image,question 13?,answer 13,test,Modality,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+14,test_image,question 14?,answer 14,test,Modality,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+15,test_image,question 15?,answer 15,test,Modality,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+16,test_image,question 16?,answer 16,test,Plain,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+17,test_image,question 17?,answer 17,test,Plain,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+18,test_image,question 18?,answer 18,test,Plain,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+19,test_image,question 19?,answer 19,test,Plain,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+20,test_image,question 20?,answer 20,test,Plain,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+21,test_image,question 21?,answer 21,test,Plain,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+22,test_image,question 22?,answer 22,test,Plain,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+23,test_image,question 23?,answer 23,test,Plain,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+24,test_image,question 24?,answer 24,test,Organ,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+25,test_image,question 25?,answer 25,test,Organ,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+26,test_image,question 26?,answer 26,test,Organ,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+27,test_image,question 27?,answer 27,test,Organ,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+28,test_image,question 28?,answer 28,test,Organ,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+29,test_image,question 29?,answer 29,test,Organ,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
+30,test_image,question 29?,,test,Organ,C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\tests\\test_images\\test_image.jpg
 
 '''
 
@@ -170,6 +170,26 @@ def test_data_augmentation():
 
 
 def main():
+    def a():
+        # Note: it is normalized in the sense it was passed by normalize_data_strucrture function
+        stream = StringIO(normalized_csv)
+        normalized_data = pd.read_csv(stream)
+        normalized_data.fillna('', inplace=True)
+
+        return normalized_data
+
+    def b():
+        normalized_data = a()
+        global _df_processed
+        if _df_processed is None:
+            set_nlp_vector(-1)  # smallest one...
+            normalized_data['processed_answer'] = normalized_data.answer
+            normalized_data['processed_question'] = normalized_data.question
+            df = pre_process_raw_data(normalized_data)
+            _df_processed = df
+        return _df_processed
+    b()
+    return
     nd = normalized_data()
     p = df_processed(nd)
     # df_norm = normalized_data()

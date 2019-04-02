@@ -108,7 +108,7 @@ class VqaModelPredictor(object):
         general_prediction_vector = self.model_folder.prediction_vector
         predictions = {}
         for category, args in self.model_by_question_category.items():
-            if args is None:
+            if args is None or not all(args):
                 logger.info(f'Category "{category}" had no specialized classifier. using general model...')
                 vqa_model = self.model
                 prediction_vector = general_prediction_vector

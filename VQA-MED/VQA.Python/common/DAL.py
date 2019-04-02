@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Iterable
+from typing import Iterable, List, Any
 
 from sqlalchemy import Column, Integer, String, Float, create_engine, ForeignKey, PrimaryKeyConstraint
 from sqlalchemy.ext.declarative import declarative_base
@@ -204,7 +204,7 @@ def get_session():
     return session
 
 
-def get_items(dal_type):
+def get_items(dal_type: Base) -> [Base]:
     session = get_session()
     res_q = session.query(dal_type)
     models = list(res_q)
@@ -214,6 +214,7 @@ def get_items(dal_type):
 
 get_models = partial(get_items, Model)
 get_scores = partial(get_items, ModelScore)
+get_partial_scores = partial(get_items, ModelPartialScore)
 
 
 def get_model(predicate: callable) -> Model:
