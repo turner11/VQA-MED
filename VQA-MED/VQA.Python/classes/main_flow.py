@@ -190,47 +190,6 @@ def evaluate_contender():
     #
     logger.info(f"Evaluation for VQA contender: {results}")
 
-
-def main():
-    evaluate_contender()
-    return
-    evaluate_models(models=[68,69,70,71,72,66,67,21,27,39,33,41,13,6,3,15,55,72,46,50,26,32])
-    return
-    # remove_folders()
-    #
-    # return
-    # debug()
-    # return
-    insert_partial_scores()
-    return
-    copy_specs_to_model_folder()
-    return
-    ev = predict_test(85)
-    print(ev)
-    return
-    evaluate_model(162)
-    return
-    train_model(model_id=85, optimizer='Adam', post_concat_dense_units=16)
-
-
-def predict_test(model_id):
-    # 162: 	WBSS: 0.143	BLEU 0.146
-
-    from classes.vqa_model_predictor import DefaultVqaModelPredictor
-    mp = DefaultVqaModelPredictor(model=model_id)
-    validation_prediction = mp.predict(mp.df_test)
-    predictions = validation_prediction.prediction.values
-
-    strs = []
-    for i, row in mp.df_test.iterrows():
-        image = row["path"].rsplit('\\')[-1].rsplit('.', 1)[0]
-        s = f'{i + 1}\t{image}\t{predictions[i]}'
-        strs.append(s)
-
-    res = '\n'.join(strs)
-    return res
-
-
 def evaluate_missing_models():
     from classes.vqa_model_predictor import DefaultVqaModelPredictor
     from evaluate.VqaMedEvaluatorBase import VqaMedEvaluatorBase
@@ -261,7 +220,6 @@ def evaluate_missing_models():
                 DAL.insert_dal(ms)
         except Exception as ex:
             logger.error(f'Failed to evaluate model:{model.id}:\n{ex}')
-
 
 def train_model(model_id, optimizer, post_concat_dense_units=16):
     # Doing all of this here in order to not import tensor flow for other functions
@@ -444,6 +402,25 @@ def train_all():
             tb.print_exc()
             tb.print_stack()
 
+def main():
+    insert_partial_scores()
+    return
+    evaluate_contender()
+    return
+    evaluate_models(models=[68,69,70,71,72,66,67,21,27,39,33,41,13,6,3,15,55,72,46,50,26,32])
+    return
+    # remove_folders()
+    #
+    # return
+    # debug()
+    # return
+    copy_specs_to_model_folder()
+
+    print(ev)
+    return
+    evaluate_model(162)
+    return
+    train_model(model_id=85, optimizer='Adam', post_concat_dense_units=16)
 
 if __name__ == '__main__':
     # from evaluate.VqaMedEvaluatorBase import VqaMedEvaluatorBase
