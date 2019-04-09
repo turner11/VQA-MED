@@ -170,26 +170,6 @@ def test_data_augmentation():
 
 
 def main():
-    def a():
-        # Note: it is normalized in the sense it was passed by normalize_data_strucrture function
-        stream = StringIO(normalized_csv)
-        normalized_data = pd.read_csv(stream)
-        normalized_data.fillna('', inplace=True)
-
-        return normalized_data
-
-    def b():
-        normalized_data = a()
-        global _df_processed
-        if _df_processed is None:
-            set_nlp_vector(-1)  # smallest one...
-            normalized_data['processed_answer'] = normalized_data.answer
-            normalized_data['processed_question'] = normalized_data.question
-            df = pre_process_raw_data(normalized_data)
-            _df_processed = df
-        return _df_processed
-    b()
-    return
     nd = normalized_data()
     p = df_processed(nd)
     # df_norm = normalized_data()
