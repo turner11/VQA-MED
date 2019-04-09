@@ -224,9 +224,12 @@ class DefaultVqaModelPredictor(VqaModelPredictor):
 
     @staticmethod
     def get_contender():
+        main_model = 5
         specialized_classifiers = {'Abnormality': 72, 'Modality': 69, 'Organ': 70, 'Plane': 71}
+        main_model = 78
+        specialized_classifiers = {'Abnormality': main_model , 'Modality': 69, 'Organ': 70, 'Plane': 71}
         with VerboseTimer(f"Loading  VQA contender"):
-            vqa_contender = DefaultVqaModelPredictor(model=5, specialized_classifiers=specialized_classifiers)
+            vqa_contender = DefaultVqaModelPredictor(model=main_model, specialized_classifiers=specialized_classifiers)
         return vqa_contender
 
 

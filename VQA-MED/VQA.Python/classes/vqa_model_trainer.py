@@ -12,6 +12,9 @@ from common.model_utils import save_model, EarlyStoppingByAccuracy
 from common.os_utils import File
 import numpy as np
 
+
+from pre_processing.known_find_and_replace_items import diagnosis
+
 logger = logging.getLogger(__name__)
 
 
@@ -31,7 +34,8 @@ class VqaModelTrainer(object):
         return self._epochs  # 1  # 20 if self.use_augmentation else 1
 
     def __init__(self, model_folder: ModelFolder, augmentations: int, batch_size: int,
-                 data_access: DataAccess, epochs: int = 1, question_category: str = None) -> None:
+                 data_access: DataAccess, epochs: int = 1, question_category: str = None,
+                 diagnosis_class_weight=50) -> None:
         super().__init__()
 
         self._epochs = epochs
@@ -44,6 +48,7 @@ class VqaModelTrainer(object):
         self._model = model_folder.load_model()
         self.model_location = str(model_folder.model_path)
         self.question_category = question_category
+        self.diagnosis_class_weight = diagnosis_class_weight
 
         # # ---- Getting Data ----
         # data_train: DataFrame = data_access.load_processed_data(group='train').reset_index()
@@ -110,12 +115,20 @@ class VqaModelTrainer(object):
                 features_t, labels_t = dg[0]
                 self.print_shape_sanity(features_t, labels_t, features_val, labels_val)
 
+                diagnosis_class_weight = self.diagnosis_class_weight
+                class_weight = {i: 1 if label not in diagnosis else diagnosis_class_weight
+                                for i, label
+                                in enumerate(prediction_vector.values)}
+
+
+
                 history = model.fit_generator(generator=dg,
                                               validation_data=validation_input,
                                               epochs=self.epochs,
                                               callbacks=callbacks,
                                               use_multiprocessing=True,
-                                              workers=3)
+                                              workers=3,
+                                              class_weight=class_weight)
 
         #             sess.close()
 
