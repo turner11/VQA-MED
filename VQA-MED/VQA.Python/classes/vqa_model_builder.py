@@ -5,6 +5,7 @@ from keras.applications.vgg19 import VGG19
 # from keras.applications.resnet50 import ResNet50
 from keras import Model, Input  # ,models, callbacks
 from keras.layers import Dense, LSTM, BatchNormalization, Activation  # GlobalAveragePooling2D, Merge, Embedding
+from typing import Union, List
 
 from data_access.api import DataAccess
 from data_access.model_folder import ModelFolder
@@ -31,7 +32,7 @@ class VqaModelBuilder(object):
 
     def __init__(self, loss_function: str, output_activation_function: str,
                  lstm_units: int = LSTM_UNITS,
-                 post_concat_dense_units: int = POST_CONCAT_DENSE_UNITS,
+                 post_concat_dense_units: Union[int, List[int]] = POST_CONCAT_DENSE_UNITS,
                  optimizer: str = OPTIMIZER,
                  prediction_vector_name: str = 'words',
                  question_category: str = '') -> None:
@@ -49,7 +50,12 @@ class VqaModelBuilder(object):
                                                                 self.question_category)
 
         self.lstm_units = lstm_units
-        self.post_concat_dense_units = post_concat_dense_units
+        if isinstance(post_concat_dense_units, int):
+            post_concat_arr = (post_concat_dense_units,)
+        else:
+            post_concat_arr = post_concat_dense_units
+
+        self.post_concat_dense_units = post_concat_arr
         self.optimizer = optimizer
 
     @staticmethod
@@ -118,7 +124,10 @@ class VqaModelBuilder(object):
             # keras_layers.average, keras_layers.co, keras_layers.dot, keras_layers.maximum
             fc_tensors = keras_layers.concatenate([image_model, lstm_model])
             #         fc_tensors = BatchNormalization()(fc_tensors)
-            fc_tensors = Dense(units=self.post_concat_dense_units)(fc_tensors)
+
+            for i, dense_layer_units in enumerate(self.post_concat_dense_units):
+                fc_tensors = Dense(units=dense_layer_units, name=f'post_concat_dense{i+1}')(fc_tensors)
+
             fc_tensors = BatchNormalization()(fc_tensors)
             fc_tensors = Activation(DENSE_ACTIVATION)(fc_tensors)
 
