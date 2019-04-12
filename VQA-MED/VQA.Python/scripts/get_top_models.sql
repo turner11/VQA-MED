@@ -5,7 +5,7 @@ SELECT models.id as model_id
 		,s.Evaluation
 		,s.model_location
 		,s.notes
-FROM models 
+FROM models
 LEFT JOIN v_scores as s ON models.id = s.model_id
 WHERE 1=1
 	--AND category = 'Abnormality'
@@ -15,8 +15,8 @@ WHERE 1=1
 	AND model_id <> 47
 
 
-GROUP BY category, Evaluation	
-	
+GROUP BY category, Evaluation
+
 --ORDER BY s.score IS NOT NULL
 --ORDER BY s.model_id DESC
 
