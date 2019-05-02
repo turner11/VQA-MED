@@ -1,5 +1,9 @@
 import os
+import numpy as np
+from sklearn.utils import class_weight as sklearn_class_weight
 from keras.callbacks import History
+from typing import Union
+
 from classes.DataGenerator import DataGenerator
 import logging
 from data_access.api import DataAccess, SpecificDataAccess
@@ -10,7 +14,7 @@ from common.constatns import vqa_models_folder  # train_data, validation_data,
 from common.utils import VerboseTimer
 from common.model_utils import save_model, EarlyStoppingByAccuracy
 from common.os_utils import File
-import numpy as np
+
 
 
 from pre_processing.known_find_and_replace_items import diagnosis
@@ -35,7 +39,7 @@ class VqaModelTrainer(object):
 
     def __init__(self, model_folder: ModelFolder, augmentations: int, batch_size: int,
                  data_access: DataAccess, epochs: int = 1, question_category: str = None,
-                 diagnosis_class_weight=50) -> None:
+                 use_class_weight: bool = True) -> None:
         super().__init__()
 
         self._epochs = epochs
@@ -48,7 +52,9 @@ class VqaModelTrainer(object):
         self._model = model_folder.load_model()
         self.model_location = str(model_folder.model_path)
         self.question_category = question_category
-        self.diagnosis_class_weight = diagnosis_class_weight
+
+        # self.class_weight = self.get_diagnosis_class_weight()
+        self.use_class_weight = use_class_weight
 
         # # ---- Getting Data ----
         # data_train: DataFrame = data_access.load_processed_data(group='train').reset_index()
@@ -100,27 +106,19 @@ class VqaModelTrainer(object):
 
         try:
 
-            stop_callback = K_callbacks.EarlyStopping(monitor='val_loss', min_delta=0.02, patience=0, verbose=1,
-                                                      mode='auto')
-            acc_early_stop = EarlyStoppingByAccuracy(monitor='accuracy', value=0.98, verbose=1)
-
-            tensor_log_dir = os.path.abspath(os.path.join('.', 'tensor_board_logd'))
-            File.validate_dir_exists(tensor_log_dir)
-            tensor_board_callback = None  # K_callbacks.TensorBoard(log_dir=tensor_log_dir)
-            callbacks = [stop_callback, acc_early_stop, tensor_board_callback]
-            callbacks = [c for c in callbacks if c is not None]
-            callbacks = []
+            callbacks = self._get_call_backs()
 
             with VerboseTimer("Training Model"):
                 features_t, labels_t = dg[0]
                 self.print_shape_sanity(features_t, labels_t, features_val, labels_val)
 
-                diagnosis_class_weight = self.diagnosis_class_weight
-                class_weight = {i: 1 if label not in diagnosis else diagnosis_class_weight
-                                for i, label
-                                in enumerate(prediction_vector.values)}
-
-
+                class_weight = None
+                if self.use_class_weight:
+                    df_data_prediction = self. data_access.load_processed_data(columns=['processed_answer', 'question_category', 'answer'])
+                    df_data_prediction = df_data_prediction[df_data_prediction.group!= 'test']
+                    # df_data_prediction = df_data_prediction[df_data_prediction.question_category == self.question_category]
+                    train_classes = df_data_prediction.processed_answer.values
+                    class_weight = self.get_auto_class_weight(prediction_vector=prediction_vector, train_classes=train_classes)
 
                 history = model.fit_generator(generator=dg,
                                               validation_data=validation_input,
@@ -137,12 +135,67 @@ class VqaModelTrainer(object):
             raise
         return history
 
+    def get_diagnosis_class_weight(self, diagnosis_class_weight=50):
+        prediction_vector = self.model_folder.prediction_vector
+        class_weight = self._get_diagnosis_class_weight(prediction_vector, diagnosis_class_weight)
+        return class_weight
+
     @staticmethod
-    def save(model: Model, base_model_folder: ModelFolder, history: History = None, notes: str = None) -> ModelFolder:
+    def _get_diagnosis_class_weight(prediction_vector, diagnosis_class_weight=50):
+        diagnosis_in_prediction_vector = set(prediction_vector.values).intersection(set(diagnosis))
+        has_diagnosis = len(diagnosis_in_prediction_vector) > 0
+        if has_diagnosis:
+            class_weight = {i: 1 if label not in diagnosis else diagnosis_class_weight
+                            for i, label
+                            in enumerate(prediction_vector.values)}
+        else:
+            class_weight = None
+        return class_weight
+
+    @staticmethod
+    def get_auto_class_weight(prediction_vector, train_classes):
+
+        class_weights = sklearn_class_weight .compute_class_weight(
+            'balanced',
+            prediction_vector, #np.unique(prediction_vector),
+            train_classes)
+
+        ret = {i: weight for i, weight in enumerate(class_weights)}
+        return ret
+
+
+    def _get_call_backs(self):
+        stop_callback = K_callbacks.EarlyStopping(monitor='val_loss', min_delta=0.02, patience=0, verbose=1,
+                                                  mode='auto')
+        acc_early_stop = EarlyStoppingByAccuracy(monitor='accuracy', value=0.98, verbose=1)
+        tensor_log_dir = os.path.abspath(os.path.join('.', 'tensor_board_logd'))
+        File.validate_dir_exists(tensor_log_dir)
+        tensor_board_callback = None  # K_callbacks.TensorBoard(log_dir=tensor_log_dir)
+
+        callbacks = [stop_callback, acc_early_stop, tensor_board_callback]
+        callbacks = [c for c in callbacks if c is not None]
+
+
+        model_check_point_file_path = str(self.model_folder.folder / 'model_check_point.{epoch: 02d}-{val_acc: .2f}.hdf5')
+
+        save_model_call_back = K_callbacks.ModelCheckpoint(model_check_point_file_path, monitor='val_acc', verbose=0,
+                                                           save_best_only=False,
+                                                           save_weights_only=False, mode='auto', period=1)
+        callbacks = [save_model_call_back]
+        return callbacks
+
+    @staticmethod
+    def save(model: Model,
+             base_model_folder: ModelFolder,
+             history: History = None,
+             notes: str = None,
+             folder_suffix :str='') -> ModelFolder:
         with VerboseTimer("Saving trained Model"):
             model_folder: ModelFolder = save_model(model, vqa_models_folder,
                                                    base_model_folder.additional_info,
-                                                   base_model_folder.meta_data_path, history=history)
+                                                   base_model_folder.meta_data_path,
+                                                   history=history,
+                                                   folder_suffix=folder_suffix)
 
         msg = f"Summary: {model_folder.summary_path}\n"
         msg += f"Image: {model_folder.image_file_path}\n"

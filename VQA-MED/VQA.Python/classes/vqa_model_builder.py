@@ -34,8 +34,9 @@ class VqaModelBuilder(object):
                  lstm_units: int = LSTM_UNITS,
                  post_concat_dense_units: Union[int, List[int]] = POST_CONCAT_DENSE_UNITS,
                  optimizer: str = OPTIMIZER,
-                 prediction_vector_name: str = 'words',
-                 question_category: str = '') -> None:
+                 prediction_vector_name: str = 'answers',
+                 question_category: str = '',
+                 use_text_inputs_attention=False) -> None:
         """"""
         super(VqaModelBuilder, self).__init__()
         self.loss_function = loss_function
@@ -50,6 +51,7 @@ class VqaModelBuilder(object):
                                                                 self.question_category)
 
         self.lstm_units = lstm_units
+        self.use_text_inputs_attention = use_text_inputs_attention
         if isinstance(post_concat_dense_units, int):
             post_concat_arr = (post_concat_dense_units,)
         else:
@@ -72,12 +74,21 @@ class VqaModelBuilder(object):
 
         logger.debug("Creating Embedding model")
         x = input_tensor  # Since using spacy
+
         if lstm_units > 0:
             x = LSTM(units=lstm_units
                      , return_sequences=False
                      , name='embedding_LSTM'
                      , input_shape=(1, embedded_sentence_length))(x)
         else:
+            use_conv = False
+            if use_conv:
+                filters = 1
+                kernel_size = 5
+                x = keras_layers.Conv1D(filters=filters, kernel_size=kernel_size, activation='relu',
+                                       name=f'Embedding_Conv1D_filters_{filters}_kernel_size{kernel_size}')(x)
+
+
             x = Flatten(name='embedding_Flattening')(x)
 
         x = BatchNormalization(name='embedding_batch_normalization')(x)
@@ -103,6 +114,9 @@ class VqaModelBuilder(object):
         return base_model.input, model
 
     def get_vqa_model(self):
+        use_text_inputs_attention = self.use_text_inputs_attention
+        use_post_merge_attention = False
+
         metrics = [f1_score, recall_score, precision_score, 'accuracy']
 
         out_put_vals = self.prediction_vector
@@ -111,22 +125,31 @@ class VqaModelBuilder(object):
         image_model, lstm_model, fc_model = None, None, None
         try:
             lstm_input_tensor = Input(shape=(embedded_sentence_length, 1), name='embedding_input')
+            lstm_input = lstm_input_tensor
+
+            if use_text_inputs_attention:
+                lstm_input = self.__get_attention(lstm_input, 'text_inputs')
 
             logger.debug("Getting embedding (lstm model)")
-            lstm_model = self.word_2_vec_model(input_tensor=lstm_input_tensor, lstm_units=self.lstm_units)
+            lstm_model = self.word_2_vec_model(input_tensor=lstm_input, lstm_units=self.lstm_units)
 
             logger.debug("Getting image model")
 
             image_input_tensor, image_model = self.get_image_model()
 
             logger.debug("merging final model")
-            # Available merge strategies: keras_layers.multiply, keras_layers.add, keras_layers.concatenate,
-            # keras_layers.average, keras_layers.co, keras_layers.dot, keras_layers.maximum
             fc_tensors = keras_layers.concatenate([image_model, lstm_model])
-            #         fc_tensors = BatchNormalization()(fc_tensors)
+
+
+
+            if use_post_merge_attention:
+                fc_tensors = self.__get_attention(fc_tensors,'post_merge')
+
+            #fc_tensors = BatchNormalization()(fc_tensors)
 
             for i, dense_layer_units in enumerate(self.post_concat_dense_units):
-                fc_tensors = Dense(units=dense_layer_units, name=f'post_concat_dense{i+1}')(fc_tensors)
+                fc_tensors = Dense(units=dense_layer_units,
+                                   name=f'post_concat_dense{i+1}_{dense_layer_units}')(fc_tensors)
 
             fc_tensors = BatchNormalization()(fc_tensors)
             fc_tensors = Activation(DENSE_ACTIVATION)(fc_tensors)
@@ -151,10 +174,24 @@ class VqaModelBuilder(object):
 
         return fc_model
 
+    def __get_attention(self, tensor, description):
+        probe_units = tensor.get_shape()[-1].value
+        attention_probs = Dense(units=probe_units, activation='softmax', name=f'attention_probs_{description}')(tensor)
+        attention_mul = keras_layers.multiply([tensor, attention_probs], name=f'attention_mul_{description}')
+        ret_tensor = attention_mul
+        return ret_tensor
+
     @staticmethod
-    def save_model(model: Model, prediction_df_name: str, question_category: str = None) -> ModelFolder:
+    def save_model(model: Model,
+                   prediction_df_name: str,
+                   question_category: str = None,
+                   folder_suffix: str = '') -> ModelFolder:
         additional_info = {'prediction_data': prediction_df_name, 'question_category': question_category}
-        model_folder: ModelFolder = save_model(model, vqa_models_folder, additional_info, data_access.fn_meta)
+        model_folder: ModelFolder = save_model(model,
+                                               vqa_models_folder,
+                                               additional_info,
+                                               data_access.fn_meta,
+                                               folder_suffix=folder_suffix)
         # Copy meta data to local folder
 
         msg = f"Summary: {model_folder.summary_path}\n"

@@ -17,18 +17,23 @@ from data_access.model_folder import ModelFolder
 logger = logging.getLogger(__name__)
 
 
-def _get_time_stamp():
+def _get_time_stamp() -> str:
     now = time.time()
     ts = datetime.datetime.fromtimestamp(now).strftime('%Y%m%d_%H%M_%S')
     return ts
 
-def save_model(model, base_folder, additional_info, meta_data_location, history=None):
+
+def save_model(model, base_folder, additional_info, meta_data_location, history=None, folder_suffix: str = ''):
     ts = _get_time_stamp()
-    now_folder = Path(str(base_folder)) / ts
+    if folder_suffix:
+        folder_name = f'{ts}_{folder_suffix}'
+    else:
+        folder_name = ts
 
-    model_folder = ModelFolder.create(now_folder, model, additional_info, meta_data_location, history)
+    now_folder = Path(str(base_folder)) / folder_name
+
+    model_folder = ModelFolder.create(now_folder, model, additional_info, meta_data_location,history)
     return model_folder
-
 
 
 def get_trainable_params_distribution(model: Model, params_threshold: int = 1000) -> pd.DataFrame:
@@ -63,6 +68,8 @@ class EarlyStoppingByAccuracy(Callback):
             if self.verbose > 0:
                 print("Epoch %05d: early stopping THR" % epoch)
             self.model.stop_training = True
+
+
 def main():
     pass
     # from common import DAL

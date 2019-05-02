@@ -80,6 +80,11 @@ def pre_process_raw_data(df):
 
     __add_category_prediction(df)
 
+    abnormality_rows = df.question_category == 'Abnormality'
+    yes_no_abnormality_rows = abnormality_rows & \
+                              df.question.apply(lambda s: s.split()[0].lower() in ['does', 'is', 'are'])
+    df.loc[yes_no_abnormality_rows, 'question_category'] = 'Abnormality_yes_no'
+
     logger.debug('Done')
     return df
 
@@ -99,6 +104,8 @@ def __add_category_prediction(df):
         predictions = {}
         with VerboseTimer("Predicting question category"):
             for category, classifier_location in questions_classifiers.items():
+                if not classifier_location:
+                    continue
                 with VerboseTimer(f"Predicting for '{category}'"):
                     classifier = File.load_pickle(classifier_location)
                     prediction_result = classifier.predict_proba(x)

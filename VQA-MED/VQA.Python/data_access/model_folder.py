@@ -1,4 +1,7 @@
+import math
 import logging
+import numpy as np
+import matplotlib.pyplot as plt
 import shutil
 from pathlib import Path
 from keras import Model
@@ -95,7 +98,7 @@ class ModelFolder(ModelFolderStructure):
             File.dump_json(additional_info, folder_structure.additional_info_path)
             logger.debug("saved prediction vector")
 
-            shutil.copy(str(data_access.fn_meta), str(folder_structure.meta_data_path))
+            shutil.copy(str(meta_data_location), str(folder_structure.meta_data_path))
         except Exception as ex:
             location_message = "Failed to save model:\n{0}".format(ex)
             logger.error(location_message)
@@ -138,7 +141,7 @@ class ModelFolder(ModelFolderStructure):
 
     @property
     def history(self):
-        return File.load_pickle(self.history_path)
+        return File.load_pickle(self.history_path, read_mode='rb')
 
     def load_model(self) -> Model:  # object:#keras.engine.training.Model:
         with VerboseTimer("Loading Model"):
@@ -147,3 +150,139 @@ class ModelFolder(ModelFolderStructure):
                                                      'recall_score': recall_score,
                                                      'precision_score': precision_score})
         return model
+
+    def plot(self, block=True, title='', metric=None):
+        return self.plot_history(self.history, block=block, title=title, metric=metric)
+
+    @staticmethod
+    def plot_from_path(path, block=True, title='', metric=None):
+        mf = ModelFolder(path)
+        return mf.plot(block=block, title=title, metric=metric)
+
+    @staticmethod
+    def plot_history(history, block=True, title='', metric=None):
+
+        min_val = min([min(v) for k, v in history.items() if len(v) > 0])
+        max_val = max([max(v) for k, v in history.items() if len(v) > 0])
+
+        use_canonical_ticks = min_val - max_val > 0.05
+        if use_canonical_ticks:
+            major_ticks = np.arange(0., 1.1, 0.1)
+            minor_ticks = np.arange(0., 1.1, 0.05)
+        else:
+            major_ticks = [np.inf]
+            minor_ticks = [np.inf]
+
+
+        # plt.gcf().clear()
+        idx = -1
+        plot_items = [k for k, v in history.items() if 'val' in k and len(v) > 0 and max(v) < max(major_ticks)]
+
+        if metric is not None:
+            plot_items = [k for k in plot_items if metric in k]
+
+        if not plot_items:
+            logger.warning('Have no metrics to plot')
+            return
+
+
+
+        if len(plot_items) > 1:
+            title_key = "val_acc"
+            nrows = 2
+            ncols = math.ceil(len(plot_items) / 2)
+
+            share_y = 'rows' if use_canonical_ticks else False
+            fig, ax = plt.subplots(nrows=nrows, ncols=ncols, sharey=share_y)  # ,sharex='col'
+            for row in ax:
+                try:
+                    iterator = iter(row)
+                except TypeError:
+                    # not iterable, if there is only 1
+                    row = [row]
+                for col in row:
+                    idx += 1
+                    if idx >= len(plot_items):
+                        continue
+
+                    curr_metric = plot_items[idx]
+                    name = curr_metric
+                    vals = history[curr_metric]
+                    x = list(range(1, len(vals) + 1))
+                    col.plot(x, vals, color='blue', alpha=0.8, label=name)
+
+                    non_val_key = name.replace('val_', '')
+                    if non_val_key in history:
+                        vals_train = history[non_val_key]
+                        x_train = list(range(1, len(vals_train) + 1))
+                        col.plot(x_train, vals_train, color='green', alpha=0.8)
+
+
+
+                    if not use_canonical_ticks:
+                        max_val = max(vals)
+                        min_val = min(vals)
+                        if max_val == min_val:
+                            major_ticks = [max_val - 0.1, max_val, max_val + 0.1]
+                            minor_ticks = []
+                        else:
+                            major_step = (max_val - min_val) / 10.0
+                            major_ticks = np.arange(min_val, max_val + major_step, major_step)
+                            minor_ticks = []#np.arange(min_val, max_val, major_step / 2.0)
+                    else:
+                        min_val, max_val = [0.5, 1.0]
+
+
+
+                    col.set_yticks(major_ticks)
+                    col.set_yticks(minor_ticks, minor=True)
+
+                    col.set(ylabel=name, title=f"{name} / epochs ", ylim=[min_val , 1])  # set_xlim =[0, 5]
+                    col.set_ylim([min_val, max_val])
+
+            #     fig.legend(loc='upper left')
+            #     fig.legend(loc='best')
+        else:
+            fig = plt.figure()
+            key = plot_items[0]
+            vals = history[key]
+            x = list(range(1, len(vals) + 1))
+            plt.plot(x, vals)
+
+            non_val_key = key.replace('val_', '')
+            if non_val_key in history:
+                vals_train = history[non_val_key]
+                x_train = list(range(1, len(vals_train) + 1))
+                plt.plot(x_train, vals_train, color='green', alpha=0.8)
+
+            title_key = key
+
+        max_vals = [-1]
+        epoch_i = -1
+        try:
+            title_vals = history[title_key]
+            epoch_i = np.argmax(title_vals)
+            max_vals = title_vals#[epoch_i]
+            max_val = title_vals[epoch_i]
+            title = title or f'"{title_key}" Best epoch = {epoch_i+1} ({max_val:.3f})'
+        except Exception as ex:
+            print(ex)
+
+        fig.suptitle(str(title), fontsize=20)
+
+        plt.show(block=block)
+        return max_vals, epoch_i
+
+
+
+def main():
+    folder = "C:\\Users\\Public\\Documents\\Data\\2019\\models\\20190423_1229_10_Abnormality_trained"
+    folder = 'C:\\Users\\Public\\Documents\\Data\\2019\\models\\20190422_1546_38_Abnormality_yes_no_trained\\'
+    mmf = ModelFolder(folder)
+    mmf.plot()
+
+
+
+
+if __name__ == '__main__':
+    main()

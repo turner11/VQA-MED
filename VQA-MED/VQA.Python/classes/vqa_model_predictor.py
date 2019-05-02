@@ -143,9 +143,22 @@ class VqaModelPredictor(object):
             predictions[category] = df_specific_predictions
 
         df_predictions = pd.concat(predictions.values())
+
+        ## Converting answers to human style (de tokenizing)
+        if self.model_folder.prediction_data_name == 'answers':
+            df_conversions = data_acces_api.load_processed_data(columns=['answer', 'processed_answer'])
+            df_conversions = df_conversions[df_conversions.processed_answer.str.len() > 0]
+            # removing duplicates
+            df_conversions = df_conversions.set_index('processed_answer')
+            df_conversions = df_conversions[~df_conversions.index.duplicated(keep='first')]
+            df_predictions['prediction'] = df_predictions.prediction.apply(lambda p: df_conversions.loc[p].answer)
+
         # Those are the mandatory columns
         sort_columns = ['image_name', 'question', 'answer', 'prediction', 'probabilities']
-        ordered_columns = sorted(df_predictions.columns, key=lambda v: (v not in sort_columns,sort_columns.index(v) if v in sort_columns else 100), reverse=False)
+        ordered_columns = \
+            sorted(df_predictions.columns,
+                   key=lambda v: (v not in sort_columns, sort_columns.index(v) if v in sort_columns else 100),
+                   reverse=False)
 
         ret = df_predictions[ordered_columns].sort_index()
         return ret
@@ -156,7 +169,7 @@ class VqaModelPredictor(object):
         with VerboseTimer("Raw model prediction"):
             p = model.predict(features)
 
-        assert len(words_decoder) == len(p[0])
+        assert len(words_decoder) == len(p[0]), f'Expected decoder ({len(words_decoder)}) to be in the same length of probabilities ({len(p[0])})'
         allow_multi_predictions = all(len(txt.split()) <= 1 for txt in words_decoder.values)
 
         # noinspection PyTypeChecker
@@ -228,6 +241,9 @@ class DefaultVqaModelPredictor(VqaModelPredictor):
         specialized_classifiers = {'Abnormality': 72, 'Modality': 69, 'Organ': 70, 'Plane': 71}
         main_model = 78
         specialized_classifiers = {'Abnormality': main_model , 'Modality': 69, 'Organ': 70, 'Plane': 71}
+
+        main_model = 68
+        specialized_classifiers = {'Abnormality': main_model, 'Modality': 69, 'Organ': 70, 'Plane': 71}
         with VerboseTimer(f"Loading  VQA contender"):
             vqa_contender = DefaultVqaModelPredictor(model=main_model, specialized_classifiers=specialized_classifiers)
         return vqa_contender

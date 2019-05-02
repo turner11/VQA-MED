@@ -51,7 +51,9 @@ class VqaMedEvaluatorBase(object):
         # cls.update_nltk()
         from evaluate.BleuEvaluator import BleuEvaluator
         from evaluate.WbssEvaluator import WbssEvaluator
-        sub_classes = [BleuEvaluator, WbssEvaluator]
+        from evaluate.StrictAccuracyEvaluator import StrictAccuracyEvaluator
+
+        sub_classes = [StrictAccuracyEvaluator, BleuEvaluator, WbssEvaluator]
         instances = [sub_cls(predictions, ground_truth) for sub_cls in sub_classes]
 
         evaluations = {ins.get_name(): ins.evaluate() for ins in instances}
@@ -87,12 +89,19 @@ def main():
     Test evaluation a set of predictions
     call _evaluate method
     """
-    # Create instance of Evaluator
-    # predictions = [(0, 0, 'ct')]
-    # ground_truth = [(0, 0, 'axial CT')]
+
+    import pandas as pd
 
     predictions = ['ct']
     ground_truth = ['axial CT']
+
+    predictions_path = 'C:\\Users\\Public\\Documents\\Data\\2019\\submissions\\20190421_1436_41_answers_predictions\\predictions.hdf'
+    with pd.HDFStore(predictions_path) as store:
+        df_predictions = store['validation']
+
+    predictions = df_predictions.prediction.values
+    ground_truth = df_predictions.answer.values
+
     result = VqaMedEvaluatorBase.get_all_evaluation(predictions=predictions, ground_truth=ground_truth)
     # evaluator = VqaMedEvaluator(predictions=predictions, ground_truth=ground_truth)
     ## Call _evaluate method

@@ -78,7 +78,7 @@ class DataGenerator(keras.utils.Sequence):
 
             X, y = self._generate_data(data, self.prediction_vector)
         except Exception as ex:
-            str(ex)
+            logger.exception('Got an error while loading data')
             raise
         return X, y
 

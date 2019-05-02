@@ -38,13 +38,18 @@ class QuestionCatgory(Base):
     __tablename__ = 'question_categories'
 
     id = Column('id', Integer, primary_key=True)
-    name = Column('name', String(50), primary_key=True)
+    Category = Column('Category', String(50), primary_key=True)
 
-    def __init__(self, name):
+    def __init__(self, Category):
         """"""
         super().__init__()
-        self.name = name
+        self.Category = Category
 
+    def __repr__(self):
+        return f'{QuestionCatgory.__name__}(Category={self.Category})'
+
+    def __str__(self):
+        return f'{QuestionCatgory.__name__}:(id={self.id}, Category={self.Category})'
 
 class EvaluationType(Base):
     """"""
@@ -215,6 +220,7 @@ def get_items(dal_type: Base) -> [Base]:
 get_models = partial(get_items, Model)
 get_scores = partial(get_items, ModelScore)
 get_partial_scores = partial(get_items, ModelPartialScore)
+get_question_categories = partial(get_items, QuestionCatgory)
 
 
 def get_model(predicate: callable) -> Model:

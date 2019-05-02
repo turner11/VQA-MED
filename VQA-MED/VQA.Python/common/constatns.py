@@ -24,6 +24,7 @@ questions_classifiers = \
   'Modality': str(__base__question_classifier_models / 'modality' / 'question_classifier.pickle'),
   'Organ': str(__base__question_classifier_models / 'organ' / 'question_classifier.pickle'),
   'Plane': str(__base__question_classifier_models / 'plane' / 'question_classifier.pickle'),
+  'Abnormality_yes_no': ''
 }
 
 

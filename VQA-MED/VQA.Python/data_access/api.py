@@ -198,7 +198,8 @@ class DataAccess(object):
 
         if question_category and col_question_category in vector.columns:
             categories = vector[col_question_category]
-            idxs = categories.str.contains(question_category)  # Categories are space delimited strings
+            # idxs = categories.str.contains(question_category)  # Categories are space delimited strings
+            idxs = categories.str.contains(r'\b{0}\b'.format(question_category), regex=True)  # Categories are space delimited strings
             vector = vector[idxs]
 
         ret = vector[non_category_columns[0]].drop_duplicates().reset_index(drop=True)

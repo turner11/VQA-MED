@@ -10,6 +10,7 @@ from common.DAL import ModelScore, ModelPartialScore
 from common.utils import VerboseTimer
 from data_access.model_folder import ModelFolder
 import vqa_logger
+from flows.end_to_end_flow import train_model, get_folder_suffix, _post_training_prediction
 
 sys.path.append('C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\')
 
@@ -17,8 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 def debug():
-    from exported_notebooks import aaaa
-    aaaa.do()
+    from exported_notebooks import aaa
+    aaa.do()
     return
     # from exported_notebooks import concise_train
     # concise_train.do()
@@ -241,23 +242,55 @@ def train_all():
 
 
 def main():
-    base_model_id = 72
+    # debug()
+    # return
+
+
+    ### DELETE================================================================
+    # if True:
+    #     from flows.end_to_end_flow import train_model
+    #     dense_units = (8,7,6)
+    #     lstm_units = 128
+    #     question_category = 'Abnormality'
+    #     use_class_weight = False
+    #     use_text_inputs_attention =False
+    #     folder_suffix = get_folder_suffix(question_category, dense_units, lstm_units , use_class_weight=use_class_weight,
+    #                                       use_text_inputs_attention=use_text_inputs_attention )
+    #     train_model(172,'RMSprop', dense_units ,lstm_units ,question_category,epochs=3,batch_size=32,
+    #                 use_class_weight=use_class_weight,use_text_inputs_attention =use_text_inputs_attention,
+    #                 folder_suffix=folder_suffix)
+    # else:
+    #     f = ModelFolder('C:\\Users\\Public\\Documents\\Data\\2019\\models\\20190430_0104_56_Abnormality_dense_8_7_6_lstm_128_trained')
+    #     results = _post_training_prediction(f)
+    ### ================================================================
+
+    create_minor_categories_models()
+
+    from flows.end_to_end_flow import generate_multi_configuration
+    generate_multi_configuration()
+    return
+    # from flows.end_to_end_flow import insert_partial_scores
+    # insert_partial_scores(model_predicate=lambda m: m.id >= 68)
+
     from flows.end_to_end_flow import train_model
+    base_model_id = 68
     combs_2 = list(itertools.permutations(list(range(6,10)), 2))
     combs_3 = list(itertools.permutations(list(range(6, 10)), 3))
     combs = combs_2 + combs_3
     # combs.insert(0,[8,8])
-    combs = combs[4:]
+    combs = [[8]] + combs
+    combs = combs[29:]
     for dense_layers in combs:
+        folder_suffix = 'dense_layers' + '_'.join([str(d) for d in dense_layers])
         train_model(base_model_id=base_model_id ,
                     optimizer='RMSprop',
                     post_concat_dense_units=dense_layers,
                     lstm_units=0,
-                    epochs=4,
+                    epochs=5,
                     batch_size=32,
-                    notes_suffix=f'Based on #{base_model_id}, with class weights')
-    # insert_partial_scores()
-    # return
+                    notes_suffix=f'Based on #{base_model_id}, with class weights',
+                    folder_suffix=folder_suffix )
+
     # evaluate_contender()
     # return
     # evaluate_models(models=[68,69,70,71,72,66,67,21,27,39,33,41,13,6,3,15,55,72,46,50,26,32])
@@ -272,6 +305,52 @@ def main():
     # return
     # train_model(model_id=85, optimizer='Adam', post_concat_dense_units=16)
     pass
+
+
+
+
+
+def create_minor_categories_models():
+    from flows.end_to_end_flow import _train_model
+    from flows.end_to_end_flow import get_folder_suffix
+    lstm_units = 0
+    use_class_weight = False
+    use_text_inputs_attention = False
+    default_batch_size = 32
+    dense_units_collection = (
+        # [8, 6],
+        [8],
+        [9,6], [4])
+    for dense_units in dense_units_collection:
+        MinorCategoryConfig = namedtuple('MinorCategoryConfig',['category', 'epochs', 'batch_size', 'dense_units'])
+        for config in [MinorCategoryConfig('Abnormality_yes_no', 2, default_batch_size, dense_units ),
+                       MinorCategoryConfig('Plane', 5, default_batch_size, dense_units ),
+                       MinorCategoryConfig('Organ', 7, default_batch_size, dense_units ),
+                       MinorCategoryConfig('Modality',10, default_batch_size, dense_units)
+                       ]:
+            question_category = config.category
+            epochs = config.epochs
+            batch_size = config.batch_size
+            ds = config.dense_units
+
+            folder_suffix = get_folder_suffix(question_category, dense_units, lstm_units, use_class_weight,
+                                          use_text_inputs_attention)
+            _train_model(activation='softmax',
+                         prediction_vector_name='answers',
+                         epochs=epochs,
+                         loss_function='categorical_crossentropy',
+                         lstm_units=lstm_units,
+                         optimizer='RMSprop',
+                         post_concat_dense_units=ds,
+                         use_text_inputs_attention=use_text_inputs_attention,
+                         question_category=question_category,
+                         batch_size=batch_size,
+                         augmentations=20,
+                         notes_suffix=f'For Category: {question_category}',
+                         folder_suffix=folder_suffix,
+                         use_class_weight=use_class_weight,
+                         )
+
 
 
 if __name__ == '__main__':

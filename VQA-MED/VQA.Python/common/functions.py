@@ -128,9 +128,10 @@ def get_features(df: pd.DataFrame):
 
     pool = ThreadPool(processes=7)
     unique_image_paths = df.path.drop_duplicates()
-    logger.debug('Getting image features')
+    # logger.debug('Getting image features')
     worker_generator = pool.imap(lambda im_path: np.array(get_image(im_path)), unique_image_paths)
-    images = list(tqdm.tqdm(worker_generator , total=len(unique_image_paths)))
+    # images = list(tqdm.tqdm(worker_generator , total=len(unique_image_paths)))
+    images = list(worker_generator)
 
     # images = pool.map(lambda im_path: np.array(get_image(im_path)), unique_image_paths)
     image_by_path = {im_path:img for im_path, img in zip(unique_image_paths, images)}
