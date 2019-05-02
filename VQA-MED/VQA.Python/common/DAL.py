@@ -1,9 +1,9 @@
 from functools import partial
-from typing import Iterable, List, Any
+from typing import Iterable
 
-from sqlalchemy import Column, Integer, String, Float, create_engine, ForeignKey, PrimaryKeyConstraint
+from sqlalchemy import Column, Integer, String, Float, create_engine, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import scoped_session, sessionmaker, relationship
+from sqlalchemy.orm import sessionmaker, relationship
 import pandas as pd
 from common.constatns import _DB_FILE_LOCATION
 
@@ -33,6 +33,7 @@ class ModelScore(Base):
     def __repr__(self):
         return f'{self.__class__.__name__}(model_id={self.model_id}, bleu={self.bleu}, wbss={self.wbss})'
 
+
 class QuestionCatgory(Base):
     """"""
     __tablename__ = 'question_categories'
@@ -40,16 +41,17 @@ class QuestionCatgory(Base):
     id = Column('id', Integer, primary_key=True)
     Category = Column('Category', String(50), primary_key=True)
 
-    def __init__(self, Category):
+    def __init__(self, category):
         """"""
         super().__init__()
-        self.Category = Category
+        self.Category = category
 
     def __repr__(self):
         return f'{QuestionCatgory.__name__}(Category={self.Category})'
 
     def __str__(self):
         return f'{QuestionCatgory.__name__}:(id={self.id}, Category={self.Category})'
+
 
 class EvaluationType(Base):
     """"""
@@ -76,9 +78,7 @@ class ModelPartialScore(Base):
     question_category_id = Column('question_category_id', ForeignKey('question_categories.id'), primary_key=True)
     score = Column('score', Float)
 
-
-
-    def __init__(self, model_id, evaluation_type, question_category_id,score):
+    def __init__(self, model_id, evaluation_type, question_category_id, score):
         """"""
         self.model_id = model_id
         self.evaluation_type = evaluation_type
@@ -86,8 +86,8 @@ class ModelPartialScore(Base):
         self.score = score
 
     def __repr__(self):
-        return f'{self.__class__.__name__}(evaluation_type={self.evaluation_type}, question_category_id={self.question_category_id},' \
-            f' score={self.score})'
+        return f'{self.__class__.__name__}(evaluation_type={self.evaluation_type}, ' \
+            f'question_category_id={self.question_category_id}, score={self.score})'
 
 
 class Model(Base):
@@ -221,6 +221,25 @@ get_models = partial(get_items, Model)
 get_scores = partial(get_items, ModelScore)
 get_partial_scores = partial(get_items, ModelPartialScore)
 get_question_categories = partial(get_items, QuestionCatgory)
+get_evaluation_types = partial(get_items, EvaluationType)
+
+
+
+def get_data_frame(get_objectcs_func, index=None):
+    objects = get_objectcs_func()
+    # Dont bring private objects
+    attr = [str(k) for k in objects[0].__dict__.keys() if not str(k).startswith('_') and not hasattr(k, '__dict__')]
+    df = pd.DataFrame([[getattr(curr_obj, curr_attr) for curr_attr in attr] for curr_obj in objects], columns=attr)
+    if index:
+        df.set_index(keys=index, inplace=True)
+    return df
+
+
+get_models_data_frame = partial(get_data_frame, get_models, index='id')
+get_scores_data_frame = partial(get_data_frame, get_scores, index='model_id')
+get_partial_scores_data_frame = partial(get_data_frame, get_partial_scores, index='model_id')
+get_question_categories_data_frame = partial(get_data_frame, get_question_categories, index='id')
+get_evaluation_types_data_frame = partial(get_data_frame, get_evaluation_types, index='id')
 
 
 def get_model(predicate: callable) -> Model:
@@ -232,26 +251,25 @@ def get_model_by_id(model_id: int) -> Model:
     return get_model(lambda model: model.id == model_id)
 
 
-def get_models_data_frame():
-    models = get_models()
-    if not models:
-        return pd.DataFrame()
-    variables = [v for v in models[0].__dict__.keys() if not v.startswith('_')]
-    df = pd.DataFrame([[getattr(i, j) for j in variables] for i in models], columns=variables)
-
-    scores = get_scores()
-    if len(scores) > 0:
-        s_variables = [v for v in scores[0].__dict__.keys() if not v.startswith('_')] if scores else []
-        s_df = pd.DataFrame([[getattr(i, j) for j in s_variables] for i in scores], columns=s_variables)
-
-
-        merged_df = s_df.merge(df, left_on='model_id', right_on='id', how='outer')  # how='left')
-        ret = merged_df
-    else:
-        # Should happen only before we have done ANY evaluations
-        ret = df
-
-    return ret
+# def get_models_data_frame():
+#     models = get_models()
+#     if not models:
+#         return pd.DataFrame()
+#     variables = [v for v in models[0].__dict__.keys() if not v.startswith('_')]
+#     df = pd.DataFrame([[getattr(i, j) for j in variables] for i in models], columns=variables)
+#
+#     scores = get_scores()
+#     if len(scores) > 0:
+#         s_variables = [v for v in scores[0].__dict__.keys() if not v.startswith('_')] if scores else []
+#         s_df = pd.DataFrame([[getattr(i, j) for j in s_variables] for i in scores], columns=s_variables)
+#
+#         merged_df = s_df.merge(df, left_on='model_id', right_on='id', how='outer')  # how='left')
+#         ret = merged_df
+#     else:
+#         # Should happen only before we have done ANY evaluations
+#         ret = df
+#
+#     return ret
 
 
 def execute_sql(txt):
@@ -266,7 +284,9 @@ def execute_sql_from_file(file_name):
     return execute_sql(txt)
 
 
+# noinspection PyUnreachableCode
 def main():
+    df = get_scores_data_frame()
     # create_db()
     return
     # ps = ModelPartialScore(1,1,4,0.5)
@@ -288,26 +308,26 @@ def main():
     #                      notes ='Categorial, 4 options Imaging devices')
 
     # loss: - acc:  - val_loss: - val_acc:  Training Model: 3:50:30.246880
-    vgg19_model_multi_classes = Model(
-        model_location='C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180829_1113_47\\vqa_model_ClassifyStrategies.CATEGORIAL_trained.h5',
-        history_location='',
-        image_base_net='vgg19',
-        loss=26.7192,
-        val_loss=18.9696,
-        accuracy=0.066,
-        val_accuracy=0.0064,
-        notes='',
-        parameter_count=21061245,
-        trainable_parameter_count=1036221,
-        f1_score=0.0579,
-        f1_score_val=0.0520,
-        recall=0.0318,
-        recall_val=0.0296,
-        precsision=0.3887,
-        precsision_val=0.2135,
-        loss_function='categorical_crossentropy',
-        activation='softmax'
-    )
+    # vgg19_model_multi_classes = Model(
+    #     model_location='C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180829_1113_47\\vqa_model_ClassifyStrategies.CATEGORIAL_trained.h5',
+    #     history_location='',
+    #     image_base_net='vgg19',
+    #     loss=26.7192,
+    #     val_loss=18.9696,
+    #     accuracy=0.066,
+    #     val_accuracy=0.0064,
+    #     notes='',
+    #     parameter_count=21061245,
+    #     trainable_parameter_count=1036221,
+    #     f1_score=0.0579,
+    #     f1_score_val=0.0520,
+    #     recall=0.0318,
+    #     recall_val=0.0296,
+    #     precsision=0.3887,
+    #     precsision_val=0.2135,
+    #     loss_function='categorical_crossentropy',
+    #     activation='softmax'
+    # )
 
     # model_location = 'C:\\Users\\Public\\Documents\\Data\\2018\\vqa_models\\20180829_1113_47\\vqa_model_ClassifyStrategies.CATEGORIAL_trained.h5',
     # history_location = '',
@@ -349,3 +369,13 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
+
+
+
+
+
+
+
