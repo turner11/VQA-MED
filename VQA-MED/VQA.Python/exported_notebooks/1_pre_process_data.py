@@ -1,11 +1,80 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# # Preprocessing Data
+
+# In this notebook we will produce the  model input data.  
+# For that, we will  **clean** the data and **enrich**  it, and then **extract** features from raw data.  
+# This includes:  
+# 1. Cleaning the questions / answers (removing stop words, tokenizing)
+# 2. Enrichment: Marking diagnosis using thumb rules (Note: Eventually, we did not use this data)  
+# 3. Enrichment: Adding a question category to data (given in train / validation sets, thumb rules + prediction to test set)
+# 4. Pre processing: Getting Embedding for questions (get_text_features)  
+#     For this, we used Spacy's NLP package
+
+# ### Some main functions we used:
+
 # In[1]:
 
 
-# %%capture
 import IPython
+from common.functions import get_highlighted_function_code
+
+
+# #### get_text_features for getting embedding of text
+
+# In[2]:
+
+
+from pre_processing.prepare_data import get_text_features
+code = get_highlighted_function_code(get_text_features,remove_comments=True)
+IPython.display.display(code)
+
+
+# #### pre_process_raw_data for the data pre processing:
+
+# In[3]:
+
+
+from pre_processing.prepare_data import  pre_process_raw_data
+code = get_highlighted_function_code(pre_process_raw_data,remove_comments=True)
+IPython.display.display(code)
+
+
+# #### Cleaning the data:
+
+# In[7]:
+
+
+# from pre_processing.data_cleaning import clean_data
+# code = get_highlighted_function_code(clean_data,remove_comments=True)
+# IPython.display.display(code)
+
+
+# #### Enriching the data
+
+# In[6]:
+
+
+# from pre_processing.data_enrichment import enrich_data
+# code = get_highlighted_function_code(enrich_data,remove_comments=True)
+# IPython.display.display(code)
+
+
+# ---
+# ## The code:
+
+# In[8]:
+
+
+# %%capture
+from common.settings import get_nlp, data_access
+from common.functions import get_image,  get_size
+from pre_processing.prepare_data import get_text_features, pre_process_raw_data
+from pre_processing.data_enrichment import enrich_data
+from pre_processing.data_cleaning import clean_data
+from common.utils import VerboseTimer
+from collections import Counter
 import os
 from pandas import HDFStore
 import pyarrow as pa
@@ -14,111 +83,60 @@ import logging
 from pathlib import Path
 
 
-# In[2]:
+# In[9]:
 
 
 logger = logging.getLogger(__name__)
 
 
-# In[3]:
+# ##### Getting the nlp engine
+# (doing it once - it is a singleton)
 
-
-from common.settings import get_nlp, data_access
-from common.functions import get_highlighted_function_code, get_image,  get_size
-from pre_processing.prepare_data import get_text_features, pre_process_raw_data
-from common.utils import VerboseTimer
-
-
-# ### Preparing the data for training
-
-# #### Getting the nlp engine
-
-# In[4]:
+# In[10]:
 
 
 nlp = get_nlp()
 
 
-# #### Where get_nlp is defined as:
+# Getting the raw input
 
-# In[5]:
-
-
-code = get_highlighted_function_code(get_nlp,remove_comments=True)
-IPython.display.display(code)
-
-
-# In[6]:
+# In[11]:
 
 
 image_name_question = data_access.load_raw_input()
 
 
-# In[7]:
+# In[12]:
 
 
 image_name_question.head()
 
 
-# ##### This is just for performance and quick debug cycles! remove before actual trainining:
-
-# ### Aditional functions we will use:
-
-# #### get_text_features:
-
-# In[8]:
-
-
-code = get_highlighted_function_code(get_text_features,remove_comments=True)
-IPython.display.display(code)
-
-
-# #### get_image:
-
-# In[9]:
-
-
-code = get_highlighted_function_code(get_image,remove_comments=True)
-IPython.display.display(code)
-
-
-# #### pre_process_raw_data:
-
-# In[10]:
-
-
-code = get_highlighted_function_code(pre_process_raw_data,remove_comments=True)
-IPython.display.display(code)
-
-
 # ### Clean and enrich the data
 
-# In[11]:
+# In[13]:
 
-
-from pre_processing.data_enrichment import enrich_data
-from pre_processing.data_cleaning import clean_data
 
 orig_image_name_question = image_name_question.copy()
 image_name_question = clean_data(image_name_question)
 image_name_question = enrich_data(image_name_question)
 
 
-# In[12]:
+# In[14]:
 
 
 groups = image_name_question.groupby('group')
 groups.describe()
 
 
-# In[13]:
+# In[15]:
 
 
 image_name_question.head()
-image_name_question.sample(n=7)
+image_name_question.sample(n=4)
 
 
-# ### Do the actual pre processing
+# ## Do the actual pre processing
 
 # #### If running in an exported notebook, use the following:
 # (indent everything to be under the main guard) - for avoiding recursive spawning of processes
@@ -135,23 +153,42 @@ if __name__ == '__main__':
 # Note:  
 # This might take a while...
 
-# In[15]:
+# In[17]:
 
 
 logger.debug('----===== Preproceccing train data =====----')
 image_name_question_processed = pre_process_raw_data(image_name_question)
 
 
-# In[16]:
+# In[18]:
 
 
-image_name_question_processed.sample(5)
+image_name_question_processed.sample(2)
 
+
+# Take a look at data of a single image:
 
 # In[17]:
 
 
 image_name_question_processed[image_name_question_processed.image_name == 'synpic52143.jpg'].head()
+
+
+# In[19]:
+
+
+from collections import Counter
+
+
+# How many categories did we get for questions?
+
+# In[21]:
+
+
+print('--Test--')
+print(Counter(image_name_question_processed[image_name_question_processed.group=='test'].question_category.values))
+print('--All--')
+print(Counter(image_name_question_processed.question_category.values))
 
 
 # #### Saving the data, so later on we don't need to compute it again

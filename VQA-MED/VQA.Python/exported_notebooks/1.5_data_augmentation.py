@@ -1,7 +1,33 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# # Data Augmentation
+
+# In this notebook will will generate more data to train on based on given train and validation sets.  
+
+# ### Some main functions we used:
+
 # In[1]:
+
+
+import IPython
+from common.functions import get_highlighted_function_code
+
+
+# #### The augmentation function:
+
+# In[2]:
+
+
+from common.functions import generate_image_augmentations
+code = get_highlighted_function_code(generate_image_augmentations,remove_comments=False)
+IPython.display.display(code)  
+
+
+# ---
+# ## The code:
+
+# In[3]:
 
 
 import os
@@ -15,7 +41,7 @@ from collections import defaultdict, namedtuple
 from pathlib import Path
 
 
-# In[2]:
+# In[4]:
 
 
 from common.utils import VerboseTimer
@@ -26,13 +52,13 @@ import vqa_logger
 logger = logging.getLogger(__name__)
 
 
-# In[3]:
+# In[5]:
 
 
 df_data = data_access.load_processed_data(columns=['path','question','answer', 'group'])
 
 
-# In[4]:
+# In[6]:
 
 
 df_data = df_data[df_data.group.isin(['train','validation'])]
@@ -40,7 +66,7 @@ print(f'Data length: {len(df_data)}')
 df_data.head(2)
 
 
-# In[5]:
+# In[7]:
 
 
 df_data.group.drop_duplicates()
@@ -48,14 +74,7 @@ df_data.group.drop_duplicates()
 
 # ### For the augmaentation we will use the following code:
 
-# In[6]:
-
-
-code = get_highlighted_function_code(generate_image_augmentations,remove_comments=False)
-IPython.display.display(code)  
-
-
-# In[7]:
+# In[8]:
 
 
 df_train = df_data[df_data.group == 'train']
@@ -105,7 +124,7 @@ pool_res = pool.map(augments_single_image, inputs)
 pool.terminate()
 
 
-# In[8]:
+# In[10]:
 
 
 failes = [tpl[1] for tpl in pool_res if tpl[0]==0]
@@ -114,19 +133,19 @@ successes = [tpl[1] for tpl in pool_res if tpl[0]==1]
 
 f_summary = '\n'.join(failes[:5])
 s_summary = '\n'.join(successes[:5])
-summary = f'success: {len(successes)}\n{s_summary}\n\nfailes: {len(failes)}\n{f_summary}'.strip()
+summary = f'success: {len(successes)}\n{s_summary}\nfailes: {len(failes)}\n{f_summary}'.strip()
 
 print(summary)
 
 
-# In[10]:
+# In[11]:
 
 
 df_all_images_info.head()
-len(df_all_images_info.original_path.drop_duplicates()), len(df_all_images_info), len(df_all_images_info.drop_duplicates())
+# len(df_all_images_info.original_path.drop_duplicates()), len(df_all_images_info), len(df_all_images_info.drop_duplicates())
 
 
-# In[13]:
+# In[12]:
 
 
 
@@ -154,26 +173,21 @@ with VerboseTimer("Collecting augmented rows"):
         new_rows.extend(curr_augmentations)
 
 
-# In[16]:
+# Last preperatons (sorting, data types...)
 
-
-l_aug = len(df_augments)
-l_r = len(new_rows)
-l_aug, l_r, l_r / l_aug 
-
-
-# In[27]:
+# In[15]:
 
 
 df = df_augments.append(new_rows)
 df['augmentation'] = df.augmentation.astype(int)
 df = df.sort_values(['augmentation'], ascending=[True])
-print(len(df), len(df.drop_duplicates()))
+# print(len(df), len(df.drop_duplicates()))
+assert len(df) ==  len(df.drop_duplicates()), 'got duplicated row'
 
-df.head(1)
 
+# And lets take a look:
 
-# In[28]:
+# In[17]:
 
 
 df.iloc[[0,1,-2,-1]]
@@ -189,17 +203,19 @@ data_access.save_augmentation_data(df)
 
 # ### The results:
 
-# In[32]:
+# In[21]:
 
 
-augmentation_1 = data_access.load_augmentation_data(augmentation=1)
-augmentation_5 = data_access.load_augmentation_data(augmentation=5)
+augmentation_1 = data_access.load_augmentation_data(augmentations=1)
+augmentation_5 = data_access.load_augmentation_data(augmentations=5)
 augmentation_all = data_access.load_augmentation_data()
 print(len(augmentation_all))
 augmentation_all.sample(5)
 
 
-# In[33]:
+# Validation of data:
+
+# In[22]:
 
 
 orig_a1 = set(augmentation_1.original_path)

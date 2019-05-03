@@ -76,7 +76,7 @@ class VqaModelPredictor(object):
         if isinstance(model, int):
             model_idx_in_db = model
             df_models = df_models if df_models is not None else get_models_data_frame()
-            notes = df_models.loc[df_models.id == model_idx_in_db].notes.values[0]
+            notes = df_models.loc[df_models.index == model_idx_in_db].notes.values[0]
             logger.debug(f'Getting model #{model_idx_in_db} ({notes})')
             model_dal = get_model_by_id(model_idx_in_db)
             model = model_dal
