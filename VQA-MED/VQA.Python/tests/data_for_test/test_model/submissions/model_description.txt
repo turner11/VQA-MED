@@ -1,0 +1,12 @@
+
+    ==Model==
+    VqaModelPredictor(model=ModelFolder(folder="C:\\Users\\Public\\Documents\\Data\\2019\\models\\20190504_0514_48_Abnormality_yes_no_dense_6_9_trained"), specialized_classifiers=None)
+
+    ==Sub models==
+    
+
+    ==validation evaluation==
+                            bleu  strict_accuracy      wbss prediction_vector
+Abnormality_yes_no  0.782609         0.782609  0.792833                --
+Total               0.782609         0.782609  0.792833                --
+    
