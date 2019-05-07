@@ -1,13 +1,10 @@
 import pytest
-import os
-import pandas as pd
 import logging
 from classes.vqa_model_builder import VqaModelBuilder
 from classes.vqa_model_predictor import VqaModelPredictor
 from classes.vqa_model_trainer import VqaModelTrainer
 from common.utils import VerboseTimer
 import tensorflow as tf
-
 from data_access.model_folder import ModelFolder
 from tests.conftest import model_path
 import tests.conftest as conftest
@@ -47,19 +44,26 @@ def test_model_creation():
 def test_model_training(data_access):
     # Arrange
     batch_size = 5
-    model_folder = ModelFolder(conftest.model_folder)
+    model_folder = ModelFolder(model_path)
 
-    mt = VqaModelTrainer(model_folder, augmentations=1, batch_size=batch_size, data_access=data_access)
+    mt = VqaModelTrainer(model_folder,
+                         augmentations=1,
+                         batch_size=batch_size,
+                         data_access=data_access,
+                         epochs=1,
+                         # question_category=model_folder.question_category,
+                         )
 
     # Act
     mt.train()
 
 # @pytest.mark.skip(reason='Still need to fix prediction for 2019 data')
 @pytest.mark.filterwarnings('ignore:DeprecationWarning')
-def test_model_predicting(data_frame):
+def test_model_predicting(data_access):
+    model_folder = ModelFolder(model_path)
+    test_data = data_access.load_processed_data()
 
-    mp = VqaModelPredictor(model_path)
-    test_data = data_frame
+    mp = VqaModelPredictor(model_folder)
     predictions = mp.predict(test_data)
     preds = predictions.prediction
     # ground_truth = predictions.answer
