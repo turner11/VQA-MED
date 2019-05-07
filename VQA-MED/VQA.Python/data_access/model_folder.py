@@ -74,7 +74,10 @@ class ModelFolder(ModelFolderStructure):
 
     def __init__(self, folder):
         """"""
-        super().__init__(folder)
+        p_folder = Path(folder)
+        if p_folder .is_file():
+            p_folder = p_folder .parent
+        super().__init__(p_folder)
         self.additional_info = File.load_json(str(self.additional_info_path))
         self.prediction_data_name = self.additional_info['prediction_data']
         self.question_category = self.additional_info.get('question_category')
