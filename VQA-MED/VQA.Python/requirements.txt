@@ -20,7 +20,7 @@ pysqlite3
 scikit-learn==0.20.2
 scipy==1.0.1
 spacy
-SQLAlchemy==1.2.16
+SQLAlchemy==1.3.3
 tables
 tensorflow-gpu==1.9.0 #This depends on version of CuDNN library installed (1.9 coresponds to CuDNN 7.0.5)
 tqdm==4.29.1
