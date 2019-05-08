@@ -39,7 +39,7 @@ class VqaModelTrainer(object):
 
     def __init__(self, model_folder: ModelFolder, augmentations: int, batch_size: int,
                  data_access: DataAccess, epochs: int = 1, question_category: str = None,
-                 use_class_weight: bool = True) -> None:
+                 use_class_weight: bool = False) -> None:
         super().__init__()
 
         self._epochs = epochs
