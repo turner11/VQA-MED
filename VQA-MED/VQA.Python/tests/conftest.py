@@ -1,6 +1,8 @@
-from data_access.api import DataAccess
+from data_access.api import DataAccess, SpecificDataAccess
 import os
 from pathlib import Path
+
+from data_access.model_folder import ModelFolder
 
 curr_folder, _ = os.path.split(__file__)
 root = Path(curr_folder)
@@ -16,7 +18,11 @@ def pytest_runtest_setup(item):
     # __generate_data_folder()
     global data_access
     if data_access is None:
-        da = DataAccess(data_folder)
+        mf = ModelFolder(model_path)
+        specific_data_access = SpecificDataAccess(data_folder,
+                                                  group='validation',
+                                                  question_category=mf.question_category)
+        da = specific_data_access
         data_access = da
 
 
@@ -41,6 +47,7 @@ def __generate_data_folder():
 
 
 def main():
+    __generate_data_folder()
     pytest_runtest_setup(None)
 
     from tests.test_model import test_model_training
