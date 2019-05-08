@@ -355,3 +355,4 @@ VQA-MED/VQA.Python/exported_notebooks/concise_train.py
 VQA-MED/VQA.Python/run_tests.bat
 VQA-MED/VQA.Python/.coverage*
 VQA-MED/VQA.Python/reports/*
+VQA-MED/VQA.Python/tests/data_for_test/test_model/model_check_point. 1- 1.00.hdf5
