@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="utf-8"?><testsuite errors="0" failures="0" name="pytest" skipped="0" tests="66" time="117.906"><testcase classname="tests.dal_test" file="tests\dal_test.py" line="4" name="test_getting_models" time="0.100"></testcase><testcase classname="tests.dal_test" file="tests\dal_test.py" line="10" name="test_getting_scores" time="0.044"></testcase><testcase classname="tests.test_data_gathering" file="tests\test_data_gathering.py" line="21" name="test_data_length[1]" time="0.023"><system-out>[2019-05-08 09:39:39][parsers.data_loader][DEBUG] Attempting to get data from &quot;2019 Raw Path -&gt; Data&quot;
+[2019-05-08 09:39:39][parsers.data_loader][DEBUG] Attempting to get data from &quot;2019 Raw Data-&gt; Data&quot;
+</system-out></testcase><testcase classname="tests.test_data_gathering" file="tests\test_data_gathering.py" line="21" name="test_data_length[10]" time="0.015"><system-out>[2019-05-08 09:39:39][parsers.data_loader][DEBUG] Attempting to get data from &quot;2019 Raw Path -&gt; Data&quot;
+[2019-05-08 09:39:39][parsers.data_loader][DEBUG] Attempting to get data from &quot;2019 Raw Data-&gt; Data&quot;
+</system-out></testcase><testcase classname="tests.test_data_gathering" file="tests\test_data_gathering.py" line="21" name="test_data_length[50]" time="0.023"><system-out>[2019-05-08 09:39:39][parsers.data_loader][DEBUG] Attempting to get data from &quot;2019 Raw Path -&gt; Data&quot;
+[2019-05-08 09:39:39][parsers.data_loader][DEBUG] Attempting to get data from &quot;2019 Raw Data-&gt; Data&quot;
+</system-out></testcase><testcase classname="tests.test_data_gathering" file="tests\test_data_gathering.py" line="21" name="test_data_length[100]" time="0.025"><system-out>[2019-05-08 09:39:39][parsers.data_loader][DEBUG] Attempting to get data from &quot;2019 Raw Path -&gt; Data&quot;
+[2019-05-08 09:39:39][parsers.data_loader][DEBUG] Attempting to get data from &quot;2019 Raw Data-&gt; Data&quot;
+</system-out></testcase><testcase classname="tests.test_data_gathering" file="tests\test_data_gathering.py" line="36" name="test_data_load[data_arg0]" time="3.040"><system-out>[2019-05-08 09:39:39][parsers.data_loader][DEBUG] Attempting to get data from &quot;2019 Raw Path -&gt; Data&quot;
+</system-out></testcase><testcase classname="tests.test_data_gathering" file="tests\test_data_gathering.py" line="36" name="test_data_load[data_arg1]" time="0.315"><system-out>[2019-05-08 09:39:42][parsers.data_loader][DEBUG] Attempting to get data from &quot;2019 Raw Path -&gt; Data&quot;
+</system-out></testcase><testcase classname="tests.test_evaluations" file="tests\test_evaluations.py" line="8" name="test_bss_relative[ct-mri-head]" time="4.141"></testcase><testcase classname="tests.test_evaluations" file="tests\test_evaluations.py" line="8" name="test_bss_relative[stomach-abdomen-tumor]" time="0.022"></testcase><testcase classname="tests.test_evaluations" file="tests\test_evaluations.py" line="8" name="test_bss_relative[abdomen-stomach-chest]" time="0.028"></testcase><testcase classname="tests.test_evaluations" file="tests\test_evaluations.py" line="8" name="test_bss_relative[tumor-cancer-fracture]" time="0.029"></testcase><testcase classname="tests.test_evaluations" file="tests\test_evaluations.py" line="8" name="test_bss_relative[Magnetic resonance imaging-mri-ct]" time="0.046"></testcase><testcase classname="tests.test_evaluations" file="tests\test_evaluations.py" line="21" name="test_bleu_relative[The roof is on fire-roof fire-you are fired]" time="0.019"></testcase><testcase classname="tests.test_evaluations" file="tests\test_evaluations.py" line="21" name="test_bleu_relative[group of words to subtract ngrams long or short-words subtract ngrams long-words subtract ngrams]" time="0.005"></testcase><testcase classname="tests.test_evaluations" file="tests\test_evaluations.py" line="56" name="test_bss_absolute[stomach-abdomen-1-exact]" time="0.011"></testcase><testcase classname="tests.test_evaluations" file="tests\test_evaluations.py" line="56" name="test_bss_absolute[stomach-cancer-0.1-max]" time="0.028"></testcase><testcase classname="tests.test_evaluations" file="tests\test_evaluations.py" line="56" name="test_bss_absolute[foot-foot-1-exact]" time="0.002"></testcase><testcase classname="tests.test_evaluations" file="tests\test_evaluations.py" line="56" name="test_bss_absolute[dog food-cat meal-0.2-max]" time="0.207"></testcase><testcase classname="tests.test_evaluations" file="tests\test_evaluations.py" line="56" name="test_bss_absolute[scan-image-0.9-min]" time="0.106"></testcase><testcase classname="tests.test_evaluations" file="tests\test_evaluations.py" line="56" name="test_bss_absolute[thorax-chest-1-exact]" time="0.019"></testcase><testcase classname="tests.test_evaluations" file="tests\test_evaluations.py" line="56" name="test_bss_absolute[chest-thorax-1-exact]" time="0.021"></testcase><testcase classname="tests.test_evaluations" file="tests\test_evaluations.py" line="56" name="test_bss_absolute[ct-CT-1-exact]" time="0.009"></testcase><testcase classname="tests.test_evaluations" file="tests\test_evaluations.py" line="82" name="test_bleu_absolute[ct-CT-1-exact]" time="0.004"></testcase><testcase classname="tests.test_evaluations" file="tests\test_evaluations.py" line="82" name="test_bleu_absolute[bilateral multiple pulmonary nodules-bilateral MULTIPLE pulmonary NODULES-1-exact]" time="0.004"></testcase><testcase classname="tests.test_evaluations" file="tests\test_evaluations.py" line="82" name="test_bleu_absolute[no sub ngrams-a sentence with words-0-exact]" time="0.003"></testcase><testcase classname="tests.test_evaluations" file="tests\test_evaluations.py" line="82" name="test_bleu_absolute[lets say something-say something-0.5-min]" time="0.003"></testcase><testcase classname="tests.test_evaluations" file="tests\test_evaluations.py" line="82" name="test_bleu_absolute[BLEU (bilingual evaluation understudy) is an algorithm for evaluating the quality of text which has been machine-translated from one natural language to another. Quality is considered to be the correspondence between a machines output and that of a human: &quot;the closer a machine translation is to a professional human translation, the better it is&quot; \u2013 this is the central idea behind BLEU.[1][2] BLEU was one of the first metrics to claim a high correlation with human judgements of quality,[3][4] and remains one of the most popular automated and inexpensive metrics.  a short suffix-BLEU (bilingual evaluation understudy) is an algorithm for evaluating the quality of text which has been machine-translated from one natural language to another. Quality is considered to be the correspondence between a machines output and that of a human: &quot;the closer a machine translation is to a professional human translation, the better it is&quot; \u2013 this is the central idea behind BLEU.[1][2] BLEU was one of the first metrics to claim a high correlation with human judgements of quality,[3][4] and remains one of the most popular automated and inexpensive metrics. -0.95-min]" time="0.016"></testcase><testcase classname="tests.test_evaluations" file="tests\test_evaluations.py" line="82" name="test_bleu_absolute[BLEU (bilingual evaluation understudy) is an algorithm for evaluating the quality of text which has been machine-translated from one natural language to another. Quality is considered to be the correspondence between a machines output and that of a human: &quot;the closer a machine translation is to a professional human translation, the better it is&quot; \u2013 this is the central idea behind BLEU.[1][2] BLEU was one of the first metrics to claim a high correlation with human judgements of quality,[3][4] and remains one of the most popular automated and inexpensive metrics. -BLEU (bilingual evaluation understudy) is an algorithm for evaluating the quality of text which has been machine-translated from one natural language to another. Quality is considered to be the correspondence between a machines output and that of a human: &quot;the closer a machine translation is to a professional human translation, the better it is&quot; \u2013 this is the central idea behind BLEU.[1][2] BLEU was one of the first metrics to claim a high correlation with human judgements of quality,[3][4] and remains one of the most popular automated and inexpensive metrics.  a short suffix-0.95-min]" time="0.008"></testcase><testcase classname="tests.test_general" file="tests\test_general.py" line="15" name="test_dask_feature_extraction" time="8.559"></testcase><testcase classname="tests.test_general" file="tests\test_general.py" line="55" name="test_regex[is this a ct scan?-ct-is this ct?]" time="0.002"></testcase><testcase classname="tests.test_general" file="tests\test_general.py" line="55" name="test_regex[I am the ct Image of you-ct-I am ct of you]" time="0.001"></testcase><testcase classname="tests.test_gpu" file="tests\test_gpu.py" line="7" name="test_gpu" time="3.026"><system-err>2019-05-08 09:39:55.982959: I T:\src\github\tensorflow\tensorflow\core\platform\cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2
+2019-05-08 09:39:57.321059: I T:\src\github\tensorflow\tensorflow\core\common_runtime\gpu\gpu_device.cc:1392] Found device 0 with properties: 
+name: GeForce GTX 1050 Ti major: 6 minor: 1 memoryClockRate(GHz): 1.62
+pciBusID: 0000:01:00.0
+totalMemory: 4.00GiB freeMemory: 3.30GiB
+2019-05-08 09:39:57.326229: I T:\src\github\tensorflow\tensorflow\core\common_runtime\gpu\gpu_device.cc:1471] Adding visible gpu devices: 0
+2019-05-08 09:39:58.758728: I T:\src\github\tensorflow\tensorflow\core\common_runtime\gpu\gpu_device.cc:952] Device interconnect StreamExecutor with strength 1 edge matrix:
+2019-05-08 09:39:58.760469: I T:\src\github\tensorflow\tensorflow\core\common_runtime\gpu\gpu_device.cc:958]      0 
+2019-05-08 09:39:58.762151: I T:\src\github\tensorflow\tensorflow\core\common_runtime\gpu\gpu_device.cc:971] 0:   N 
+2019-05-08 09:39:58.764085: I T:\src\github\tensorflow\tensorflow\core\common_runtime\gpu\gpu_device.cc:1084] Created TensorFlow device (/job:localhost/replica:0/task:0/device:GPU:0 with 3027 MB memory) -&gt; physical GPU (device: 0, name: GeForce GTX 1050 Ti, pci bus id: 0000:01:00.0, compute capability: 6.1)
+2019-05-08 09:39:58.948429: I T:\src\github\tensorflow\tensorflow\core\common_runtime\gpu\gpu_device.cc:1471] Adding visible gpu devices: 0
+2019-05-08 09:39:58.949718: I T:\src\github\tensorflow\tensorflow\core\common_runtime\gpu\gpu_device.cc:952] Device interconnect StreamExecutor with strength 1 edge matrix:
+2019-05-08 09:39:58.951062: I T:\src\github\tensorflow\tensorflow\core\common_runtime\gpu\gpu_device.cc:958]      0 
+2019-05-08 09:39:58.952229: I T:\src\github\tensorflow\tensorflow\core\common_runtime\gpu\gpu_device.cc:971] 0:   N 
+2019-05-08 09:39:58.953309: I T:\src\github\tensorflow\tensorflow\core\common_runtime\gpu\gpu_device.cc:1084] Created TensorFlow device (/job:localhost/replica:0/task:0/device:GPU:0 with 3027 MB memory) -&gt; physical GPU (device: 0, name: GeForce GTX 1050 Ti, pci bus id: 0000:01:00.0, compute capability: 6.1)
+</system-err></testcase><testcase classname="tests.test_gpu" file="tests\test_gpu.py" line="28" name="test_compile_model" time="0.285"></testcase><testcase classname="tests.test_label_vectors" file="tests\test_label_vectors.py" line="13" name="test_word_labeling[labels0-expected_hot_vectors0]" time="0.004"></testcase><testcase classname="tests.test_label_vectors" file="tests\test_label_vectors.py" line="13" name="test_word_labeling[labels1-expected_hot_vectors1]" time="0.001"></testcase><testcase classname="tests.test_label_vectors" file="tests\test_label_vectors.py" line="13" name="test_word_labeling[labels2-expected_hot_vectors2]" time="0.002"></testcase><testcase classname="tests.test_label_vectors" file="tests\test_label_vectors.py" line="13" name="test_word_labeling[labels3-expected_hot_vectors3]" time="0.002"></testcase><testcase classname="tests.test_label_vectors" file="tests\test_label_vectors.py" line="13" name="test_word_labeling[labels4-expected_hot_vectors4]" time="0.004"></testcase><testcase classname="tests.test_label_vectors" file="tests\test_label_vectors.py" line="13" name="test_word_labeling[labels5-expected_hot_vectors5]" time="0.001"></testcase><testcase classname="tests.test_label_vectors" file="tests\test_label_vectors.py" line="13" name="test_word_labeling[labels6-expected_hot_vectors6]" time="0.003"></testcase><testcase classname="tests.test_label_vectors" file="tests\test_label_vectors.py" line="13" name="test_word_labeling[labels7-expected_hot_vectors7]" time="0.002"></testcase><testcase classname="tests.test_label_vectors" file="tests\test_label_vectors.py" line="13" name="test_word_labeling[labels8-expected_hot_vectors8]" time="0.003"></testcase><testcase classname="tests.test_label_vectors" file="tests\test_label_vectors.py" line="13" name="test_word_labeling[labels9-expected_hot_vectors9]" time="0.004"></testcase><testcase classname="tests.test_label_vectors" file="tests\test_label_vectors.py" line="13" name="test_word_labeling[labels10-expected_hot_vectors10]" time="0.001"></testcase><testcase classname="tests.test_label_vectors" file="tests\test_label_vectors.py" line="40" name="test_sentence_labeling" time="0.003"></testcase><testcase classname="tests.test_meta_data" file="tests\test_meta_data.py" line="57" name="test_meta_keys[words]" time="0.165"><system-out>[2019-05-08 09:39:59][pre_processing.meta_data][DEBUG] Data frame had 8 rows
+[2019-05-08 09:39:59][tests.test_meta_data][DEBUG] For &apos;words&apos; Got a data set with 17 records
+</system-out></testcase><testcase classname="tests.test_meta_data" file="tests\test_meta_data.py" line="57" name="test_meta_keys[answers]" time="0.001"><system-out>[2019-05-08 09:39:59][tests.test_meta_data][DEBUG] For &apos;answers&apos; Got a data set with 8 records
+</system-out></testcase><testcase classname="tests.test_meta_data" file="tests\test_meta_data.py" line="64" name="test_answer_count" time="0.003"></testcase><testcase classname="tests.test_meta_data" file="tests\test_meta_data.py" line="76" name="test_word_count" time="0.001"></testcase><testcase classname="tests.test_model" file="tests\test_model.py" line="28" name="test_model_creation" time="2.432"><system-out>[2019-05-08 09:39:59][common.utils][DEBUG] Starting &apos;Instantiating VqaModelBuilder&apos;
+[2019-05-08 09:39:59][common.utils][DEBUG] Instantiating VqaModelBuilder: 0:00:00.240062
+[2019-05-08 09:39:59][common.utils][DEBUG] Starting &apos;Instantiating VqaModelBuilder&apos;
+[2019-05-08 09:39:59][classes.vqa_model_builder][DEBUG] Getting embedding (lstm model)
+[2019-05-08 09:39:59][classes.vqa_model_builder][DEBUG] Creating Embedding model
+[2019-05-08 09:40:00][classes.vqa_model_builder][DEBUG] Done Creating Embedding model
+[2019-05-08 09:40:00][classes.vqa_model_builder][DEBUG] Getting image model
+[2019-05-08 09:40:01][classes.vqa_model_builder][DEBUG] merging final model
+[2019-05-08 09:40:01][common.utils][DEBUG] Instantiating VqaModelBuilder: 0:00:02.186889
+</system-out></testcase><testcase classname="tests.test_model" file="tests\test_model.py" line="42" name="test_model_training" time="39.848"><system-out>[2019-05-08 09:40:01][common.utils][DEBUG] Starting &apos;Loading Model&apos;
+[2019-05-08 09:40:04][common.utils][DEBUG] Loading Model: 0:00:02.480794
+[2019-05-08 09:40:04][data_access.api][DEBUG] loading processed data from:
+C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\VQA.Python\tests\data_for_test\model_input.parquet
+[2019-05-08 09:40:04][data_access.api][DEBUG] loading parquet from:
+C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\VQA.Python\tests\data_for_test\model_input.parquet
+[2019-05-08 09:40:04][common.utils][DEBUG] Starting &apos;Loading parquet&apos;
+[2019-05-08 09:40:04][common.utils][DEBUG] Loading parquet: 0:00:00.011970
+[2019-05-08 09:40:04][common.utils][DEBUG] Starting &apos;Converting to pandas&apos;
+[2019-05-08 09:40:04][common.utils][DEBUG] Converting to pandas: 0:00:00.003177
+[2019-05-08 09:40:04][data_access.api][DEBUG] Loading augmentations:
+C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\VQA.Python\tests\data_for_test\augmentations.parquet
+[2019-05-08 09:40:04][data_access.api][DEBUG] loading parquet from:
+C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\VQA.Python\tests\data_for_test\augmentations.parquet
+[2019-05-08 09:40:04][common.utils][DEBUG] Starting &apos;Loading parquet&apos;
+[2019-05-08 09:40:04][common.utils][DEBUG] Loading parquet: 0:00:00.001966
+[2019-05-08 09:40:04][common.utils][DEBUG] Starting &apos;Converting to pandas&apos;
+[2019-05-08 09:40:04][common.utils][DEBUG] Converting to pandas: 0:00:00.002715
+[2019-05-08 09:40:04][data_access.api][DEBUG] loading processed data from:
+C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\VQA.Python\tests\data_for_test\model_input.parquet
+[2019-05-08 09:40:04][data_access.api][DEBUG] loading parquet from:
+C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\VQA.Python\tests\data_for_test\model_input.parquet
+[2019-05-08 09:40:04][common.utils][DEBUG] Starting &apos;Loading parquet&apos;
+[2019-05-08 09:40:04][common.utils][DEBUG] Loading parquet: 0:00:00.007195
+[2019-05-08 09:40:04][common.utils][DEBUG] Starting &apos;Converting to pandas&apos;
+[2019-05-08 09:40:04][common.utils][DEBUG] Converting to pandas: 0:00:00.001851
+[2019-05-08 09:40:04][common.utils][DEBUG] Starting &apos;Training Model&apos;
+[2019-05-08 09:40:04][classes.vqa_model_trainer][DEBUG] ===========================================================================
+[2019-05-08 09:40:04][classes.vqa_model_trainer][DEBUG] Expected shape: [(None, 4608, 1), (None, None, None, 3)]
+[2019-05-08 09:40:04][classes.vqa_model_trainer][DEBUG] ---------------------------------------------------------------------------
+[2019-05-08 09:40:04][classes.vqa_model_trainer][DEBUG] Actual training shape:((5, 4608, 1), (5, 224, 224, 3))
+[2019-05-08 09:40:04][classes.vqa_model_trainer][DEBUG] Actual Validation shape:((5, 4608, 1), (5, 224, 224, 3))
+[2019-05-08 09:40:04][classes.vqa_model_trainer][DEBUG] ---------------------------------------------------------------------------
+[2019-05-08 09:40:04][classes.vqa_model_trainer][DEBUG] Train Labels shape:(5, 2)
+[2019-05-08 09:40:04][classes.vqa_model_trainer][DEBUG] Validation Labels shape:(5, 2)
+[2019-05-08 09:40:04][classes.vqa_model_trainer][DEBUG] ===========================================================================
+Epoch 1/1
+
+1/1 [==============================] - 19s 19s/step - loss: 0.3857 - f1_score: 0.8000 - recall_score: 0.8000 - precision_score: 0.8000 - acc: 0.8000 - val_loss: 0.0214 - val_f1_score: 1.0000 - val_recall_score: 1.0000 - val_precision_score: 1.0000 - val_acc: 1.0000
+[2019-05-08 09:40:41][common.utils][DEBUG] Training Model: 0:00:37.101520
+</system-out><system-err>ValueError: Buffer dtype mismatch, expected &apos;Python object&apos; but got &apos;long long&apos;
+Exception ignored in: &apos;pandas._libs.lib.is_bool_array&apos;
+ValueError: Buffer dtype mismatch, expected &apos;Python object&apos; but got &apos;long long&apos;
+Using TensorFlow backend.
+Using TensorFlow backend.
+Using TensorFlow backend.
+</system-err></testcase><testcase classname="tests.test_model" file="tests\test_model.py" line="60" name="test_model_predicting" time="6.155"><system-out>[2019-05-08 09:40:41][data_access.api][DEBUG] loading processed data from:
+C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\VQA.Python\tests\data_for_test\model_input.parquet
+[2019-05-08 09:40:41][common.utils][DEBUG] Starting &apos;Loading Model&apos;
+[2019-05-08 09:40:47][common.utils][DEBUG] Loading Model: 0:00:05.434745
+[2019-05-08 09:40:47][classes.vqa_model_predictor][WARNING] Expected main model to be with no question category, but got: &quot;Abnormality_yes_no&quot;
+[2019-05-08 09:40:47][classes.vqa_model_predictor][INFO] Category &quot;Abnormality&quot; had no specialized classifier. using general model...
+[2019-05-08 09:40:47][classes.vqa_model_predictor][DEBUG] Classifying: &quot;Abnormality&quot;
+[2019-05-08 09:40:47][classes.vqa_model_predictor][WARNING] Did not get any data for category &quot;Abnormality&quot;
+[2019-05-08 09:40:47][classes.vqa_model_predictor][INFO] Category &quot;Modality&quot; had no specialized classifier. using general model...
+[2019-05-08 09:40:47][classes.vqa_model_predictor][DEBUG] Classifying: &quot;Modality&quot;
+[2019-05-08 09:40:47][classes.vqa_model_predictor][WARNING] Did not get any data for category &quot;Modality&quot;
+[2019-05-08 09:40:47][classes.vqa_model_predictor][INFO] Category &quot;Organ&quot; had no specialized classifier. using general model...
+[2019-05-08 09:40:47][classes.vqa_model_predictor][DEBUG] Classifying: &quot;Organ&quot;
+[2019-05-08 09:40:47][classes.vqa_model_predictor][WARNING] Did not get any data for category &quot;Organ&quot;
+[2019-05-08 09:40:47][classes.vqa_model_predictor][INFO] Category &quot;Plane&quot; had no specialized classifier. using general model...
+[2019-05-08 09:40:47][classes.vqa_model_predictor][DEBUG] Classifying: &quot;Plane&quot;
+[2019-05-08 09:40:47][classes.vqa_model_predictor][WARNING] Did not get any data for category &quot;Plane&quot;
+[2019-05-08 09:40:47][classes.vqa_model_predictor][INFO] Category &quot;Abnormality_yes_no&quot; had no specialized classifier. using general model...
+[2019-05-08 09:40:47][classes.vqa_model_predictor][DEBUG] Classifying: &quot;Abnormality_yes_no&quot;
+[2019-05-08 09:40:47][common.utils][DEBUG] Starting &apos;Raw model prediction&apos;
+[2019-05-08 09:40:47][common.utils][DEBUG] Raw model prediction: 0:00:00.410792
+[2019-05-08 09:40:47][data_access.api][DEBUG] loading processed data from:
+C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\VQA.Python\data\model_input.parquet
+[2019-05-08 09:40:47][data_access.api][DEBUG] loading parquet from:
+C:\Users\avitu\Documents\GitHub\VQA-MED\VQA-MED\VQA.Python\data\model_input.parquet
+[2019-05-08 09:40:47][common.utils][DEBUG] Starting &apos;Loading parquet&apos;
+[2019-05-08 09:40:47][common.utils][DEBUG] Loading parquet: 0:00:00.012212
+[2019-05-08 09:40:47][common.utils][DEBUG] Starting &apos;Converting to pandas&apos;
+[2019-05-08 09:40:47][common.utils][DEBUG] Converting to pandas: 0:00:00.007229
+</system-out><system-err>  0%|          | 0/5 [00:00&lt;?, ?it/s]Prediction: [0]; probabilities: [0.98923314]:   0%|          | 0/5 [00:00&lt;?, ?it/s]Prediction: [0]; probabilities: [0.9395474]:   0%|          | 0/5 [00:00&lt;?, ?it/s] Prediction: [1]; probabilities: [0.9963224]:   0%|          | 0/5 [00:00&lt;?, ?it/s]Prediction: [1]; probabilities: [0.9895125]:   0%|          | 0/5 [00:00&lt;?, ?it/s]Prediction: [0]; probabilities: [0.9925309]:   0%|          | 0/5 [00:00&lt;?, ?it/s]Prediction: [0]; probabilities: [0.9925309]: 100%|██████████| 5/5 [00:00&lt;00:00, 167.12it/s]
+</system-err></testcase><testcase classname="tests.test_pre_processing" file="tests\test_pre_processing.py" line="82" name="test_proccessed_length" time="31.105"><system-out>[2019-05-08 09:40:47][common.settings][DEBUG] Embedding vector set to: en_core_web_sm
+[2019-05-08 09:40:47][common.utils][DEBUG] Starting &apos;Pre processing&apos;
+[2019-05-08 09:40:47][pre_processing.prepare_data][INFO] Answer: removing stop words and tokenizing
+[2019-05-08 09:40:47][common.utils][DEBUG] Starting &apos;Answer Tokenizing&apos;
+[2019-05-08 09:40:47][common.utils][DEBUG] Answer Tokenizing: 0:00:00.001493
+[2019-05-08 09:40:47][pre_processing.prepare_data][INFO] Question: removing stop words and tokenizing
+[2019-05-08 09:40:47][common.utils][DEBUG] Starting &apos;Question Tokenizing&apos;
+[2019-05-08 09:40:47][common.utils][DEBUG] Question Tokenizing: 0:00:00.001549
+[2019-05-08 09:40:47][pre_processing.prepare_data][INFO] Getting answers embedding
+[2019-05-08 09:40:47][common.utils][DEBUG] Starting &apos;Answer Embedding&apos;
+[2019-05-08 09:40:47][common.settings][DEBUG] using embedding vector: en_core_web_sm
+[2019-05-08 09:40:50][common.settings][DEBUG] Got NLP engine (en_core_web_sm)
+[2019-05-08 09:40:59][common.settings][DEBUG] using embedding vector: en_core_web_lg
+[2019-05-08 09:40:59][common.settings][DEBUG] using embedding vector: en_core_web_lg
+[2019-05-08 09:40:59][common.settings][DEBUG] using embedding vector: en_core_web_lg
+[2019-05-08 09:40:59][common.settings][DEBUG] using embedding vector: en_core_web_lg
+[2019-05-08 09:41:00][common.settings][DEBUG] using embedding vector: en_core_web_lg
+[2019-05-08 09:41:00][common.settings][DEBUG] using embedding vector: en_core_web_lg
+[2019-05-08 09:41:00][common.settings][DEBUG] using embedding vector: en_core_web_lg
+[2019-05-08 09:41:00][common.settings][DEBUG] using embedding vector: en_core_web_lg
+[2019-05-08 09:41:03][common.settings][DEBUG] Got NLP engine (en_core_web_lg)
+[2019-05-08 09:41:03][common.settings][DEBUG] Got NLP engine (en_core_web_lg)
+[2019-05-08 09:41:03][common.settings][DEBUG] Got NLP engine (en_core_web_lg)
+[2019-05-08 09:41:03][common.settings][DEBUG] Got NLP engine (en_core_web_lg)
+[2019-05-08 09:41:04][common.settings][DEBUG] Got NLP engine (en_core_web_lg)
+[2019-05-08 09:41:04][common.settings][DEBUG] Got NLP engine (en_core_web_lg)
+[2019-05-08 09:41:04][common.settings][DEBUG] Got NLP engine (en_core_web_lg)
+[2019-05-08 09:41:04][common.settings][DEBUG] Got NLP engine (en_core_web_lg)
+[2019-05-08 09:41:04][common.utils][DEBUG] Answer Embedding: 0:00:16.957741
+[2019-05-08 09:41:04][pre_processing.prepare_data][INFO] Getting questions embedding
+[2019-05-08 09:41:04][common.utils][DEBUG] Starting &apos;Question Embedding&apos;
+[2019-05-08 09:41:13][common.settings][DEBUG] using embedding vector: en_core_web_lg
+[2019-05-08 09:41:13][common.settings][DEBUG] using embedding vector: en_core_web_lg
+[2019-05-08 09:41:13][common.settings][DEBUG] using embedding vector: en_core_web_lg
+[2019-05-08 09:41:13][common.settings][DEBUG] using embedding vector: en_core_web_lg
+[2019-05-08 09:41:13][common.settings][DEBUG] using embedding vector: en_core_web_lg
+[2019-05-08 09:41:13][common.settings][DEBUG] using embedding vector: en_core_web_lg
+[2019-05-08 09:41:14][common.settings][DEBUG] using embedding vector: en_core_web_lg
+[2019-05-08 09:41:14][common.settings][DEBUG] using embedding vector: en_core_web_lg
+[2019-05-08 09:41:17][common.settings][DEBUG] Got NLP engine (en_core_web_lg)
+[2019-05-08 09:41:17][common.settings][DEBUG] Got NLP engine (en_core_web_lg)
+[2019-05-08 09:41:17][common.settings][DEBUG] Got NLP engine (en_core_web_lg)
+[2019-05-08 09:41:17][common.settings][DEBUG] Got NLP engine (en_core_web_lg)
+[2019-05-08 09:41:17][common.settings][DEBUG] Got NLP engine (en_core_web_lg)
+[2019-05-08 09:41:17][common.settings][DEBUG] Got NLP engine (en_core_web_lg)
+[2019-05-08 09:41:18][common.settings][DEBUG] Got NLP engine (en_core_web_lg)
+[2019-05-08 09:41:18][common.settings][DEBUG] Got NLP engine (en_core_web_lg)
+[2019-05-08 09:41:19][common.utils][DEBUG] Question Embedding: 0:00:14.077991
+[2019-05-08 09:41:19][common.utils][DEBUG] Pre processing: 0:00:31.058829
+[2019-05-08 09:41:19][pre_processing.prepare_data][DEBUG] Done
+</system-out></testcase><testcase classname="tests.test_pre_processing" file="tests\test_pre_processing.py" line="85" name="test_new_columns_added" time="0.010"></testcase><testcase classname="tests.test_pre_processing" file="tests\test_pre_processing.py" line="91" name="test_has_embedding" time="0.047"></testcase><testcase classname="tests.test_pre_processing" file="tests\test_pre_processing.py" line="97" name="test_data_cleaning" time="0.033"></testcase><testcase classname="tests.test_pre_processing" file="tests\test_pre_processing.py" line="118" name="test_data_enrichment" time="3.747"><system-out>[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;fracture&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;cyst&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;cerebral&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;acute&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;syndrome&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;cell&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;disease&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;artery&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;carcinoma&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;malformation&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;tumor&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;pulmonary&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;lymphoma&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;venous&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;abscess&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;meningioma&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;aortic&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;sclerosis&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;astrocytoma&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;spinal&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;infarction&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;renal&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;multiple&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;glioblastoma&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;multiforme&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;aneurysm&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;thrombosis&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;intracranial&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;arteriovenous&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;posterior&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;bone&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;dural&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;secondary&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;nerve&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;cancer&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;diffuse&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;carotid&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;sinus&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;central&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;metastatic&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;cerebellar&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;appendicitis&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;kidney&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;hernia&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;epidermoid&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;infarct&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;orbital&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;glioma&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;histiocytosis&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;vein&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;dysplasia&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;arachnoid&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;subclavian&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;hemangioma&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;cavernous&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;cord&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;breast&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;epidural&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;dermoid&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;tear&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;osteomyelitis&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;lipoma&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;anterior&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;dissection&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;hemorrhage&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;esophageal&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;embolism&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;ependymoma&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;adenoma&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;disseminated&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;encephalomyelitis&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;tuberous&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;medulloblastoma&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;b-cell&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;injury&apos;
+[2019-05-08 09:41:19][pre_processing.data_enrichment][WARNING] 
+found no matching for &apos;arch&apos;
+</system-out><system-err>  0%|          | 0/80 [00:00&lt;?, ?it/s]Looking for word: fracture:   0%|          | 0/80 [00:00&lt;?, ?it/s]Looking for word: cyst:   0%|          | 0/80 [00:00&lt;?, ?it/s]    Looking for word: cerebral:   0%|          | 0/80 [00:00&lt;?, ?it/s]Looking for word: acute:   0%|          | 0/80 [00:00&lt;?, ?it/s]   Looking for word: syndrome:   0%|          | 0/80 [00:00&lt;?, ?it/s]Looking for word: cell:   0%|          | 0/80 [00:00&lt;?, ?it/s]    Looking for word: disease:   0%|          | 0/80 [00:00&lt;?, ?it/s]Looking for word: artery:   0%|          | 0/80 [00:00&lt;?, ?it/s] Looking for word: carcinoma:   0%|          | 0/80 [00:00&lt;?, ?it/s]Looking for word: malformation:   0%|          | 0/80 [00:00&lt;?, ?it/s]Looking for word: tumor:   0%|          | 0/80 [00:00&lt;?, ?it/s]       Looking for word: pulmonary:   0%|          | 0/80 [00:00&lt;?, ?it/s]Looking for word: lymphoma:   0%|          | 0/80 [00:00&lt;?, ?it/s] Looking for word: venous:   0%|          | 0/80 [00:00&lt;?, ?it/s]  Looking for word: venous:  18%|█▊        | 14/80 [00:00&lt;00:00, 136.31it/s]Looking for word: abscess:  18%|█▊        | 14/80 [00:00&lt;00:00, 136.31it/s]Looking for word: meningioma:  18%|█▊        | 14/80 [00:00&lt;00:00, 136.31it/s]Looking for word: aortic:  18%|█▊        | 14/80 [00:00&lt;00:00, 136.31it/s]    Looking for word: sclerosis:  18%|█▊        | 14/80 [00:00&lt;00:00, 136.31it/s]Looking for word: astrocytoma:  18%|█▊        | 14/80 [00:00&lt;00:00, 136.31it/s]Looking for word: spinal:  18%|█▊        | 14/80 [00:00&lt;00:00, 136.31it/s]     Looking for word: infarction:  18%|█▊        | 14/80 [00:00&lt;00:00, 136.31it/s]Looking for word: renal:  18%|█▊        | 14/80 [00:00&lt;00:00, 136.31it/s]     Looking for word: multiple:  18%|█▊        | 14/80 [00:00&lt;00:00, 136.31it/s]Looking for word: glioblastoma:  18%|█▊        | 14/80 [00:00&lt;00:00, 136.31it/s]Looking for word: multiforme:  18%|█▊        | 14/80 [00:00&lt;00:00, 136.31it/s]  Looking for word: aneurysm:  18%|█▊        | 14/80 [00:00&lt;00:00, 136.31it/s]  Looking for word: thrombosis:  18%|█▊        | 14/80 [00:00&lt;00:00, 136.31it/s]Looking for word: intracranial:  18%|█▊        | 14/80 [00:00&lt;00:00, 136.31it/s]Looking for word: arteriovenous:  18%|█▊        | 14/80 [00:00&lt;00:00, 136.31it/s]Looking for word: posterior:  18%|█▊        | 14/80 [00:00&lt;00:00, 136.31it/s]    Looking for word: posterior:  38%|███▊      | 30/80 [00:00&lt;00:00, 142.37it/s]Looking for word: adenocarcinoma:  38%|███▊      | 30/80 [00:00&lt;00:00, 142.37it/s]Looking for word: bone:  38%|███▊      | 30/80 [00:00&lt;00:00, 142.37it/s]          Looking for word: dural:  38%|███▊      | 30/80 [00:00&lt;00:00, 142.37it/s]Looking for word: secondary:  38%|███▊      | 30/80 [00:00&lt;00:00, 142.37it/s]Looking for word: schwannoma:  38%|███▊      | 30/80 [00:00&lt;00:00, 142.37it/s]Looking for word: nerve:  38%|███▊      | 30/80 [00:00&lt;00:00, 142.37it/s]     Looking for word: cancer:  38%|███▊      | 30/80 [00:00&lt;00:00, 142.37it/s]Looking for word: diffuse:  38%|███▊      | 30/80 [00:00&lt;00:00, 142.37it/s]Looking for word: carotid:  38%|███▊      | 30/80 [00:00&lt;00:00, 142.37it/s]Looking for word: sinus:  38%|███▊      | 30/80 [00:00&lt;00:00, 142.37it/s]  Looking for word: central:  38%|███▊      | 30/80 [00:00&lt;00:00, 142.37it/s]Looking for word: metastatic:  38%|███▊      | 30/80 [00:00&lt;00:00, 142.37it/s]Looking for word: cerebellar:  38%|███▊      | 30/80 [00:00&lt;00:00, 142.37it/s]Looking for word: appendicitis:  38%|███▊      | 30/80 [00:00&lt;00:00, 142.37it/s]Looking for word: kidney:  38%|███▊      | 30/80 [00:00&lt;00:00, 142.37it/s]      Looking for word: kidney:  56%|█████▋    | 45/80 [00:00&lt;00:00, 144.26it/s]Looking for word: hernia:  56%|█████▋    | 45/80 [00:00&lt;00:00, 144.26it/s]Looking for word: epidermoid:  56%|█████▋    | 45/80 [00:00&lt;00:00, 144.26it/s]Looking for word: infarct:  56%|█████▋    | 45/80 [00:00&lt;00:00, 144.26it/s]   Looking for word: lung:  56%|█████▋    | 45/80 [00:00&lt;00:00, 144.26it/s]   Looking for word: orbital:  56%|█████▋    | 45/80 [00:00&lt;00:00, 144.26it/s]Looking for word: glioma:  56%|█████▋    | 45/80 [00:00&lt;00:00, 144.26it/s] Looking for word: histiocytosis:  56%|█████▋    | 45/80 [00:00&lt;00:00, 144.26it/s]Looking for word: vein:  56%|█████▋    | 45/80 [00:00&lt;00:00, 144.26it/s]         Looking for word: dysplasia:  56%|█████▋    | 45/80 [00:00&lt;00:00, 144.26it/s]Looking for word: arachnoid:  56%|█████▋    | 45/80 [00:00&lt;00:00, 144.26it/s]Looking for word: subclavian:  56%|█████▋    | 45/80 [00:00&lt;00:00, 144.26it/s]Looking for word: hemangioma:  56%|█████▋    | 45/80 [00:00&lt;00:00, 144.26it/s]Looking for word: cavernous:  56%|█████▋    | 45/80 [00:00&lt;00:00, 144.26it/s] Looking for word: cord:  56%|█████▋    | 45/80 [00:00&lt;00:00, 144.26it/s]     Looking for word: breast:  56%|█████▋    | 45/80 [00:00&lt;00:00, 144.26it/s]Looking for word: epidural:  56%|█████▋    | 45/80 [00:00&lt;00:00, 144.26it/s]Looking for word: dermoid:  56%|█████▋    | 45/80 [00:00&lt;00:00, 144.26it/s] Looking for word: dermoid:  78%|███████▊  | 62/80 [00:00&lt;00:00, 149.25it/s]Looking for word: tear:  78%|███████▊  | 62/80 [00:00&lt;00:00, 149.25it/s]   Looking for word: osteomyelitis:  78%|███████▊  | 62/80 [00:00&lt;00:00, 149.25it/s]Looking for word: lipoma:  78%|███████▊  | 62/80 [00:00&lt;00:00, 149.25it/s]       Looking for word: anterior:  78%|███████▊  | 62/80 [00:00&lt;00:00, 149.25it/s]Looking for word: dissection:  78%|███████▊  | 62/80 [00:00&lt;00:00, 149.25it/s]Looking for word: hemorrhage:  78%|███████▊  | 62/80 [00:00&lt;00:00, 149.25it/s]Looking for word: esophageal:  78%|███████▊  | 62/80 [00:00&lt;00:00, 149.25it/s]Looking for word: embolism:  78%|███████▊  | 62/80 [00:00&lt;00:00, 149.25it/s]  Looking for word: ependymoma:  78%|███████▊  | 62/80 [00:00&lt;00:00, 149.25it/s]Looking for word: hematoma:  78%|███████▊  | 62/80 [00:00&lt;00:00, 149.25it/s]  Looking for word: adenoma:  78%|███████▊  | 62/80 [00:00&lt;00:00, 149.25it/s] Looking for word: disseminated:  78%|███████▊  | 62/80 [00:00&lt;00:00, 149.25it/s]Looking for word: encephalomyelitis:  78%|███████▊  | 62/80 [00:00&lt;00:00, 149.25it/s]Looking for word: tuberous:  78%|███████▊  | 62/80 [00:00&lt;00:00, 149.25it/s]         Looking for word: medulloblastoma:  78%|███████▊  | 62/80 [00:00&lt;00:00, 149.25it/s]Looking for word: b-cell:  78%|███████▊  | 62/80 [00:00&lt;00:00, 149.25it/s]         Looking for word: injury:  78%|███████▊  | 62/80 [00:00&lt;00:00, 149.25it/s]Looking for word: injury:  99%|█████████▉| 79/80 [00:00&lt;00:00, 153.78it/s]Looking for word: arch:  99%|█████████▉| 79/80 [00:00&lt;00:00, 153.78it/s]  Looking for word: arch: 100%|██████████| 80/80 [00:00&lt;00:00, 154.26it/s]
+</system-err></testcase><testcase classname="tests.test_pre_processing" file="tests\test_pre_processing.py" line="156" name="test_data_augmentation" time="0.391"><system-out>[2019-05-08 09:41:22][tests.test_pre_processing][INFO] Augmentations are at:
+C:\Users\avitu\AppData\Local\Temp\tmpnkoz1i85\augmentations
+</system-out></testcase><testcase classname="tests.test_sentence_clustering" file="tests\test_sentence_clustering.py" line="28" name="test_single_cluster" time="0.602"><system-out>[2019-05-08 09:41:23][pre_processing.answers_clustering][DEBUG] Getting clusters
+[2019-05-08 09:41:23][pre_processing.answers_clustering][INFO] Estimated number of clusters: 1
+[2019-05-08 09:41:23][pre_processing.answers_clustering][INFO] Estimated number of noise points: 0
+</system-out><system-err>  0%|          | 0/10 [00:00&lt;?, ?it/s] 30%|███       | 3/10 [00:00&lt;00:00, 27.60it/s] 90%|█████████ | 9/10 [00:00&lt;00:00, 32.41it/s]100%|██████████| 10/10 [00:00&lt;00:00, 44.56it/s]
+</system-err></testcase><testcase classname="tests.test_sentence_clustering" file="tests\test_sentence_clustering.py" line="33" name="test_number_of_cluster[1]" time="0.112"><system-out>[2019-05-08 09:41:24][pre_processing.answers_clustering][DEBUG] Getting clusters
+[2019-05-08 09:41:24][pre_processing.answers_clustering][INFO] Estimated number of clusters: 1
+[2019-05-08 09:41:24][pre_processing.answers_clustering][INFO] Estimated number of noise points: 0
+</system-out><system-err>  0%|          | 0/5 [00:00&lt;?, ?it/s]100%|██████████| 5/5 [00:00&lt;00:00, 50.64it/s]
+</system-err></testcase><testcase classname="tests.test_sentence_clustering" file="tests\test_sentence_clustering.py" line="33" name="test_number_of_cluster[2]" time="0.365"><system-out>[2019-05-08 09:41:24][pre_processing.answers_clustering][DEBUG] Getting clusters
+[2019-05-08 09:41:24][pre_processing.answers_clustering][INFO] Estimated number of clusters: 2
+[2019-05-08 09:41:24][pre_processing.answers_clustering][INFO] Estimated number of noise points: 0
+</system-out><system-err>  0%|          | 0/10 [00:00&lt;?, ?it/s] 20%|██        | 2/10 [00:00&lt;00:00, 16.17it/s] 50%|█████     | 5/10 [00:00&lt;00:00, 17.68it/s]100%|██████████| 10/10 [00:00&lt;00:00, 28.65it/s]
+</system-err></testcase><testcase classname="tests.test_sentence_clustering" file="tests\test_sentence_clustering.py" line="33" name="test_number_of_cluster[3]" time="0.632"><system-out>[2019-05-08 09:41:25][pre_processing.answers_clustering][DEBUG] Getting clusters
+[2019-05-08 09:41:25][pre_processing.answers_clustering][INFO] Estimated number of clusters: 3
+[2019-05-08 09:41:25][pre_processing.answers_clustering][INFO] Estimated number of noise points: 0
+</system-out><system-err>  0%|          | 0/15 [00:00&lt;?, ?it/s] 13%|█▎        | 2/15 [00:00&lt;00:01, 11.94it/s] 27%|██▋       | 4/15 [00:00&lt;00:00, 12.88it/s] 47%|████▋     | 7/15 [00:00&lt;00:00, 14.94it/s] 67%|██████▋   | 10/15 [00:00&lt;00:00, 17.51it/s]100%|██████████| 15/15 [00:00&lt;00:00, 24.58it/s]
+</system-err></testcase><testcase classname="tests.test_sentence_clustering" file="tests\test_sentence_clustering.py" line="33" name="test_number_of_cluster[4]" time="1.076"><system-out>[2019-05-08 09:41:26][pre_processing.answers_clustering][DEBUG] Getting clusters
+[2019-05-08 09:41:26][pre_processing.answers_clustering][INFO] Estimated number of clusters: 4
+[2019-05-08 09:41:26][pre_processing.answers_clustering][INFO] Estimated number of noise points: 0
+</system-out><system-err>  0%|          | 0/20 [00:00&lt;?, ?it/s]  5%|▌         | 1/20 [00:00&lt;00:02,  8.64it/s] 10%|█         | 2/20 [00:00&lt;00:02,  8.80it/s] 20%|██        | 4/20 [00:00&lt;00:01,  9.37it/s] 30%|███       | 6/20 [00:00&lt;00:01, 10.40it/s] 40%|████      | 8/20 [00:00&lt;00:01, 11.59it/s] 50%|█████     | 10/20 [00:00&lt;00:00, 13.04it/s] 65%|██████▌   | 13/20 [00:00&lt;00:00, 14.98it/s] 85%|████████▌ | 17/20 [00:01&lt;00:00, 18.17it/s]100%|██████████| 20/20 [00:01&lt;00:00, 18.86it/s]
+</system-err></testcase><testcase classname="tests.test_sentence_clustering" file="tests\test_sentence_clustering.py" line="33" name="test_number_of_cluster[5]" time="1.502"><system-out>[2019-05-08 09:41:27][pre_processing.answers_clustering][DEBUG] Getting clusters
+[2019-05-08 09:41:27][pre_processing.answers_clustering][INFO] Estimated number of clusters: 5
+[2019-05-08 09:41:27][pre_processing.answers_clustering][INFO] Estimated number of noise points: 0
+</system-out><system-err>  0%|          | 0/25 [00:00&lt;?, ?it/s]  4%|▍         | 1/25 [00:00&lt;00:02,  8.80it/s]  8%|▊         | 2/25 [00:00&lt;00:02,  9.01it/s] 12%|█▏        | 3/25 [00:00&lt;00:02,  9.02it/s] 16%|█▌        | 4/25 [00:00&lt;00:02,  9.15it/s] 24%|██▍       | 6/25 [00:00&lt;00:01,  9.72it/s] 32%|███▏      | 8/25 [00:00&lt;00:01, 10.25it/s] 40%|████      | 10/25 [00:00&lt;00:01, 11.04it/s] 48%|████▊     | 12/25 [00:01&lt;00:01, 11.87it/s] 56%|█████▌    | 14/25 [00:01&lt;00:00, 13.16it/s] 68%|██████▊   | 17/25 [00:01&lt;00:00, 15.07it/s] 84%|████████▍ | 21/25 [00:01&lt;00:00, 18.01it/s]100%|██████████| 25/25 [00:01&lt;00:00, 16.81it/s]
+</system-err></testcase><testcase classname="tests.test_sentence_clustering" file="tests\test_sentence_clustering.py" line="48" name="test_correct_dimensions" time="0.003"></testcase></testsuite>

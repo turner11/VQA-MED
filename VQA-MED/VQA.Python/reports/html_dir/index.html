@@ -1,0 +1,509 @@
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Coverage report</title>
+    <link rel="stylesheet" href="style.css" type="text/css">
+    
+    <script type="text/javascript" src="jquery.min.js"></script>
+    <script type="text/javascript" src="jquery.ba-throttle-debounce.min.js"></script>
+    <script type="text/javascript" src="jquery.tablesorter.min.js"></script>
+    <script type="text/javascript" src="jquery.hotkeys.js"></script>
+    <script type="text/javascript" src="coverage_html.js"></script>
+    <script type="text/javascript">
+        jQuery(document).ready(coverage.index_ready);
+    </script>
+</head>
+<body class="indexfile">
+
+<div id="header">
+    <div class="content">
+        <h1>Coverage report:
+            <span class="pc_cov">66%</span>
+        </h1>
+
+        <img id="keyboard_icon" src="keybd_closed.png" alt="Show keyboard shortcuts" />
+
+        <form id="filter_container">
+            <input id="filter" type="text" value="" placeholder="filter..." />
+        </form>
+    </div>
+</div>
+
+<div class="help_panel">
+    <img id="panel_icon" src="keybd_open.png" alt="Hide keyboard shortcuts" />
+    <p class="legend">Hot-keys on this page</p>
+    <div>
+    <p class="keyhelp">
+        <span class="key">n</span>
+        <span class="key">s</span>
+        <span class="key">m</span>
+        <span class="key">x</span>
+        
+        <span class="key">c</span> &nbsp; change column sorting
+    </p>
+    </div>
+</div>
+
+<div id="index">
+    <table class="index">
+        <thead>
+            
+            <tr class="tablehead" title="Click to sort">
+                <th class="name left headerSortDown shortkey_n">Module</th>
+                <th class="shortkey_s">statements</th>
+                <th class="shortkey_m">missing</th>
+                <th class="shortkey_x">excluded</th>
+                
+                <th class="right shortkey_c">coverage</th>
+            </tr>
+        </thead>
+        
+        <tfoot>
+            <tr class="total">
+                <td class="name left">Total</td>
+                <td>2827</td>
+                <td>963</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="1864 2827">66%</td>
+            </tr>
+        </tfoot>
+        <tbody>
+            
+            <tr class="file">
+                <td class="name left"><a href="classes_DataGenerator_py.html">classes\DataGenerator.py</a></td>
+                <td>81</td>
+                <td>26</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="55 81">68%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="classes___init___py.html">classes\__init__.py</a></td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="0 0">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="classes_vqa_model_builder_py.html">classes\vqa_model_builder.py</a></td>
+                <td>137</td>
+                <td>48</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="89 137">65%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="classes_vqa_model_predictor_py.html">classes\vqa_model_predictor.py</a></td>
+                <td>164</td>
+                <td>45</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="119 164">73%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="classes_vqa_model_trainer_py.html">classes\vqa_model_trainer.py</a></td>
+                <td>156</td>
+                <td>71</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="85 156">54%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="common_DAL_py.html">common\DAL.py</a></td>
+                <td>158</td>
+                <td>66</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="92 158">58%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="common___init___py.html">common\__init__.py</a></td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="0 0">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="common_constatns_py.html">common\constatns.py</a></td>
+                <td>13</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="13 13">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="common_data_locations_py.html">common\data_locations.py</a></td>
+                <td>47</td>
+                <td>2</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="45 47">96%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="common_exceptions_py.html">common\exceptions.py</a></td>
+                <td>18</td>
+                <td>11</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="7 18">39%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="common_functions_py.html">common\functions.py</a></td>
+                <td>96</td>
+                <td>24</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="72 96">75%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="common_model_utils_py.html">common\model_utils.py</a></td>
+                <td>56</td>
+                <td>30</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="26 56">46%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="common_os_utils_py.html">common\os_utils.py</a></td>
+                <td>67</td>
+                <td>25</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="42 67">63%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="common_settings_py.html">common\settings.py</a></td>
+                <td>36</td>
+                <td>4</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="32 36">89%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="common_utils_py.html">common\utils.py</a></td>
+                <td>53</td>
+                <td>25</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="28 53">53%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="data_access___init___py.html">data_access\__init__.py</a></td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="0 0">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="data_access_api_py.html">data_access\api.py</a></td>
+                <td>161</td>
+                <td>53</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="108 161">67%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="data_access_model_folder_py.html">data_access\model_folder.py</a></td>
+                <td>198</td>
+                <td>132</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="66 198">33%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="evaluate_BleuEvaluator_py.html">evaluate\BleuEvaluator.py</a></td>
+                <td>58</td>
+                <td>5</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="53 58">91%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="evaluate_VqaMedEvaluatorBase_py.html">evaluate\VqaMedEvaluatorBase.py</a></td>
+                <td>55</td>
+                <td>26</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="29 55">53%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="evaluate_WbssEvaluator_py.html">evaluate\WbssEvaluator.py</a></td>
+                <td>87</td>
+                <td>6</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="81 87">93%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="evaluate___init___py.html">evaluate\__init__.py</a></td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="0 0">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="evaluate_statistical_py.html">evaluate\statistical.py</a></td>
+                <td>28</td>
+                <td>3</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="25 28">89%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="parsers___init___py.html">parsers\__init__.py</a></td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="0 0">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="parsers_data_loader_py.html">parsers\data_loader.py</a></td>
+                <td>150</td>
+                <td>69</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="81 150">54%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="pre_processing___init___py.html">pre_processing\__init__.py</a></td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="0 0">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="pre_processing_answers_clustering_py.html">pre_processing\answers_clustering.py</a></td>
+                <td>204</td>
+                <td>119</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="85 204">42%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="pre_processing_data_cleaning_py.html">pre_processing\data_cleaning.py</a></td>
+                <td>20</td>
+                <td>3</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="17 20">85%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="pre_processing_data_enrichment_py.html">pre_processing\data_enrichment.py</a></td>
+                <td>61</td>
+                <td>24</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="37 61">61%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="pre_processing_known_find_and_replace_items_py.html">pre_processing\known_find_and_replace_items.py</a></td>
+                <td>31</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="31 31">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="pre_processing_meta_data_py.html">pre_processing\meta_data.py</a></td>
+                <td>58</td>
+                <td>17</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="41 58">71%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="pre_processing_prepare_data_py.html">pre_processing\prepare_data.py</a></td>
+                <td>122</td>
+                <td>39</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="83 122">68%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="tests___init___py.html">tests\__init__.py</a></td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="0 0">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="tests_conftest_py.html">tests\conftest.py</a></td>
+                <td>41</td>
+                <td>21</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="20 41">49%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="tests_dal_test_py.html">tests\dal_test.py</a></td>
+                <td>8</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="8 8">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="tests_test_classify_questions_py.html">tests\test_classify_questions.py</a></td>
+                <td>18</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="18 18">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="tests_test_data_gathering_py.html">tests\test_data_gathering.py</a></td>
+                <td>32</td>
+                <td>4</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="28 32">88%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="tests_test_evaluations_py.html">tests\test_evaluations.py</a></td>
+                <td>58</td>
+                <td>14</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="44 58">76%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="tests_test_general_py.html">tests\test_general.py</a></td>
+                <td>33</td>
+                <td>5</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="28 33">85%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="tests_test_gpu_py.html">tests\test_gpu.py</a></td>
+                <td>34</td>
+                <td>8</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="26 34">76%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="tests_test_label_vectors_py.html">tests\test_label_vectors.py</a></td>
+                <td>28</td>
+                <td>5</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="23 28">82%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="tests_test_meta_data_py.html">tests\test_meta_data.py</a></td>
+                <td>45</td>
+                <td>9</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="36 45">80%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="tests_test_model_py.html">tests\test_model.py</a></td>
+                <td>42</td>
+                <td>5</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="37 42">88%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="tests_test_pre_processing_py.html">tests\test_pre_processing.py</a></td>
+                <td>89</td>
+                <td>5</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="84 89">94%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="tests_test_sentence_clustering_py.html">tests\test_sentence_clustering.py</a></td>
+                <td>39</td>
+                <td>5</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="34 39">87%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="vqa_logger_py.html">vqa_logger.py</a></td>
+                <td>45</td>
+                <td>9</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="36 45">80%</td>
+            </tr>
+            
+        </tbody>
+    </table>
+
+    <p id="no_rows">
+        No items found using the specified filter.
+    </p>
+</div>
+
+<div id="footer">
+    <div class="content">
+        <p>
+            <a class="nav" href="https://coverage.readthedocs.io">coverage.py v4.5.3</a>,
+            created at 2019-05-08 09:41
+        </p>
+    </div>
+</div>
+
+</body>
+</html>
