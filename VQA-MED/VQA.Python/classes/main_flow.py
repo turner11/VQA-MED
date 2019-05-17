@@ -10,7 +10,8 @@ from common.DAL import ModelScore, ModelPartialScore
 from common.utils import VerboseTimer
 from data_access.model_folder import ModelFolder
 import vqa_logger
-from flows.end_to_end_flow import train_model, get_folder_suffix, _post_training_prediction
+from flows.end_to_end_flow import train_model, get_folder_suffix, _post_training_prediction, _train_model, \
+    insert_partial_scores
 
 sys.path.append('C:\\Users\\avitu\\Documents\\GitHub\\VQA-MED\\VQA-MED\\VQA.Python\\')
 
@@ -242,6 +243,12 @@ def train_all():
 
 
 def main():
+    insert_partial_scores(lambda model:model.id > 225 )
+    return
+    # mf = ModelFolder(r'C:\Users\Public\Documents\Data\2019\models\20190510_1102_35_Abnormality_breast_dense_8_lstm_128_trained')
+    # _post_training_prediction(mf)
+    # return
+
     # debug()
     # return
 
@@ -263,33 +270,39 @@ def main():
     #     f = ModelFolder('C:\\Users\\Public\\Documents\\Data\\2019\\models\\20190430_0104_56_Abnormality_dense_8_7_6_lstm_128_trained')
     #     results = _post_training_prediction(f)
     ### ================================================================
+    categories = [
+                #'Abnormality_breast',
+                 'Abnormality_face_sinuses_and_neck',
+                 'Abnormality_gastrointestinal',
+                 'Abnormality_genitourinary',
+                 'Abnormality_heart_and_great_vessels',
+                 'Abnormality_lung_mediastinum_pleura',
+                 'Abnormality_musculoskeletal',
+                 'Abnormality_skull_and_contents',
+                 'Abnormality_spine_and_contents',
+                 'Abnormality_vascular_and_lymphatic',
+                 ]
 
-    create_minor_categories_models()
-
-    from flows.end_to_end_flow import generate_multi_configuration
-    generate_multi_configuration()
-    return
-    # from flows.end_to_end_flow import insert_partial_scores
-    # insert_partial_scores(model_predicate=lambda m: m.id >= 68)
-
-    from flows.end_to_end_flow import train_model
-    base_model_id = 68
-    combs_2 = list(itertools.permutations(list(range(6,10)), 2))
-    combs_3 = list(itertools.permutations(list(range(6, 10)), 3))
-    combs = combs_2 + combs_3
-    # combs.insert(0,[8,8])
-    combs = [[8]] + combs
-    combs = combs[29:]
-    for dense_layers in combs:
-        folder_suffix = 'dense_layers' + '_'.join([str(d) for d in dense_layers])
-        train_model(base_model_id=base_model_id ,
-                    optimizer='RMSprop',
-                    post_concat_dense_units=dense_layers,
-                    lstm_units=0,
-                    epochs=5,
-                    batch_size=32,
-                    notes_suffix=f'Based on #{base_model_id}, with class weights',
-                    folder_suffix=folder_suffix )
+    for cat in categories:
+        kw ={
+        'activation': 'softmax',
+        'prediction_vector_name': 'answers',
+        'epochs':8,
+        'loss_function':'cosine_proximity',
+        'lstm_units': 128,
+        'optimizer': 'RMSprop',
+        'post_concat_dense_units':(8,),
+        'use_text_inputs_attention':False,
+        'question_category': cat,
+        'batch_size': 32,
+        'augmentations': 20,
+        # 'notes_suffix': ,
+        # 'folder_suffix':,
+        'use_class_weight':False,
+        }
+        folder_suffix = get_folder_suffix(kw['question_category'], kw['post_concat_dense_units'], kw['lstm_units'], kw['use_class_weight'],kw['use_text_inputs_attention'])
+        kw['folder_suffix'] = folder_suffix
+        _train_model(**kw)
 
     # evaluate_contender()
     # return
@@ -317,16 +330,17 @@ def create_minor_categories_models():
     use_class_weight = False
     use_text_inputs_attention = False
     default_batch_size = 32
-    dense_units_collection = (
-        # [8, 6],
-        [8],
-        [9,6], [4])
+
+    combs_2 = list(itertools.permutations(list(range(6, 15)), 2))
+    combs_3 = list(itertools.permutations(list(range(6, 10)), 3))
+    dense_units_collection = combs_2 + combs_3
+
     for dense_units in dense_units_collection:
         MinorCategoryConfig = namedtuple('MinorCategoryConfig',['category', 'epochs', 'batch_size', 'dense_units'])
-        for config in [MinorCategoryConfig('Abnormality_yes_no', 2, default_batch_size, dense_units ),
-                       MinorCategoryConfig('Plane', 5, default_batch_size, dense_units ),
-                       MinorCategoryConfig('Organ', 7, default_batch_size, dense_units ),
-                       MinorCategoryConfig('Modality',10, default_batch_size, dense_units)
+        for config in [MinorCategoryConfig('Abnormality_yes_no', 5, default_batch_size, dense_units ),
+                       MinorCategoryConfig('Plane', 7, default_batch_size, dense_units ),
+                       MinorCategoryConfig('Organ', 9, default_batch_size, dense_units ),
+                       MinorCategoryConfig('Modality',12, default_batch_size, dense_units)
                        ]:
             question_category = config.category
             epochs = config.epochs
@@ -377,11 +391,6 @@ if __name__ == '__main__':
     # VqaModelTrainer.model_2_db(model, model_fn, fn_history=None, notes='')
 
     main()
-
-
-
-
-
 
 
 

@@ -32,10 +32,17 @@ def _post_training_prediction(model_folder):
             data_sets[name] = df[df.question_category == model_folder.question_category]
 
     predictions = {}
+    found_data = False
     for name, df in data_sets.items():
         with VerboseTimer(f"Predictions for VQA contender {name}"):
+            if len(df) == 0:
+                logger.warning(f'Found no items for category "{model_folder.question_category}" in "{name}" data set')
+                continue
+            found_data = True
             df_predictions = mp.predict(df)
             predictions[name] = df_predictions
+    if not found_data:
+        raise Exception(f'Found no data for category "{model_folder.question_category}" ({model_folder})')
 
     outputs = {}
     for name, df_predictions in predictions.items():
@@ -53,7 +60,7 @@ def _post_training_prediction(model_folder):
         df_output = df_output[sort_columns]
         outputs[name] = df_output
 
-    df_output_test = outputs['test']
+    df_output_test = outputs.get('test')
     df_output_validation = outputs['validation']
 
     def get_str(df_arg):
@@ -65,7 +72,7 @@ def _post_training_prediction(model_folder):
         res_value = '\n'.join(rows)
         return res_value
 
-    res = get_str(df_output_test)
+    res = get_str(df_output_test) if df_output_test is not None else 'NO DATA IN TEST'
     res_val = get_str(df_output_validation)
 
     # Get evaluation per category:
@@ -186,9 +193,10 @@ def generate_multi_configuration():
                              ['dense_units', 'lstm_units', 'use_text_inputs_attention', 'use_class_weight'])
     lstm_units = 128
     dense_units_collection = [
-        (8,),
-        (8, 7, 6),
-        (7, 8, 6),(6, 9, 7),
+        # (8,),
+        # (8, 7, 6),
+        (7, 8, 6),
+        (6, 9, 7),
         (6, 9),(8, 6),
         (7, 8, 9), (6, 8, 9), (8, 6, 7), (8, 9, 7), (8, 6, 9),
     ]
@@ -399,10 +407,9 @@ def insert_partial_scores(model_predicate=None):
                 f'This might take a while')
 
         keras_backend.clear_session()
-        categories = OrderedDict(
-            {5: 'Abnormality_yes_no', 2: 'Plane', 3: 'Organ', 1: 'Modality', 4: 'Abnormality'}
-        )
-        evaluations = {'wbss': 1, 'bleu': 2, 'strict_accuracy': 3}
+        categories = DAL.get_question_categories_data_frame().Category.to_dict()
+        rev_evaluations  = DAL.get_evaluation_types_data_frame().name.to_dict()
+        evaluations = {ev: ev_id for ev_id, ev in rev_evaluations.items()}
 
         for category_id, question_category in categories.items():
             data_access = SpecificDataAccess(data_access_api.folder, question_category=question_category, group=None)
@@ -428,7 +435,12 @@ def insert_partial_scores(model_predicate=None):
 
             predictions = df_predictions.prediction.values
             ground_truth = df_predictions.answer.values
-            results = VqaMedEvaluatorBase.get_all_evaluation(predictions=predictions, ground_truth=ground_truth)
+            max_length = max([len(s) for s in predictions])
+            if max_length < 100:
+                results = VqaMedEvaluatorBase.get_all_evaluation(predictions=predictions, ground_truth=ground_truth)
+            else:
+                results = {'bleu': -1, 'wbss': -1}
+
 
             logger.debug(f'For {question_category} (model id: {model_id}), Got results of\n{results}')
 
