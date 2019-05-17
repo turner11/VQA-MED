@@ -9,6 +9,7 @@ from typing import Union
 import tqdm
 from keras import Model as keras_model
 
+from common import DAL
 from common.constatns import questions_classifiers
 from common.exceptions import InvalidArgumentException  # , NoDataException
 from common.os_utils import File
@@ -44,7 +45,8 @@ class VqaModelPredictor(object):
 
         specialized_classifiers = specialized_classifiers or {}
         self.model_by_question_category = {}
-        question_categories = questions_classifiers.keys()
+
+        question_categories = sorted(DAL.get_question_categories_data_frame().Category.values)
         bad_category_keys = [k for k in specialized_classifiers.keys() if k not in question_categories]
         assert len(bad_category_keys) == 0, f'Got unexpected question categories classifiers: {bad_category_keys}'
         for category in question_categories:
