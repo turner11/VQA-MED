@@ -80,13 +80,55 @@ def pre_process_raw_data(df):
 
     __add_category_prediction(df)
 
+    __add_augmented_categories(df)
+
+    logger.debug('Done')
+    return df
+
+
+def __add_augmented_categories(df):
+    import re
+    from common.functions import get_features
+    from classes.vqa_model_predictor import VqaModelPredictor
+    from data_access.model_folder import ModelFolder
+
     abnormality_rows = df.question_category == 'Abnormality'
     yes_no_abnormality_rows = abnormality_rows & \
                               df.question.apply(lambda s: s.split()[0].lower() in ['does', 'is', 'are'])
     df.loc[yes_no_abnormality_rows, 'question_category'] = 'Abnormality_yes_no'
 
-    logger.debug('Done')
-    return df
+    organ_system_folder = ModelFolder(folder="C:\\Users\\Public\\Documents\\Data\\2019\\models\\20190329_0440_18")
+    organ_model = organ_system_folder.load_model()
+    abnormality_rows = df.question_category == 'Abnormality'
+    a = []
+    df_organs = df[df.question_category == 'Organ']
+    for i, row in df[abnormality_rows].iterrows():
+        image_name = row.image_name
+        dd = df_organs[df_organs .image_name == image_name]
+        if len(dd):
+            organ = dd.iloc[0].answer
+            clean_organ = re.sub(r'[^0-9a-zA-Z]+', '_', organ)
+            new_category = f'Abnormality_{clean_organ}'
+            df.loc[i,'question_category'] = new_category
+    abnormality_rows = df.question_category == 'Abnormality'
+
+    df_no_data = df[abnormality_rows]
+    with VerboseTimer("Abnormality category prediction"):
+        df_preds = VqaModelPredictor._predict_keras(df_no_data,organ_model,organ_system_folder.prediction_vector,0.001)
+
+    df.loc[abnormality_rows,'question_category'] = df_preds.prediction.apply(
+        lambda organ:f"Abnormality_{re.sub(r'[^0-9a-zA-Z]+', '_', organ)}")
+
+
+
+
+
+
+
+
+
+
+
 
 
 def __add_category_prediction(df):
@@ -182,3 +224,13 @@ def normalize_data_strucrture(df, group, image_folder):
                               axis=1)  # x: get_image_path(x['group'],x['image_name'])
 
     return df_c
+
+
+def main():
+    from common.settings import data_access
+    df = data_access.load_processed_data()
+    __add_augmented_categories(df)
+
+
+if __name__ == '__main__':
+    main()
