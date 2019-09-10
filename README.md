@@ -16,8 +16,10 @@ You can see the the outline of the work done:
 7. [Predict](https://github.com/turner11/VQA-MED/blob/master/VQA-MED/VQA.Python/5_predicting.ipynb)
 8. [Create a submission in the expected format](https://github.com/turner11/VQA-MED/blob/master/VQA-MED/VQA.Python/6_create_submission.ipynb)
 
-Please note, that this repo was created with the ImageClef contest in mind, and therfore was designed to work on my machine, and might need some tweeking to work on yours...
+For more information, please read the following [paper](http://ceur-ws.org/Vol-2380/paper_116.pdf):
 
-The resulting published paper is available [here](http://ceur-ws.org/Vol-2380/paper_116.pdf)
+`Avi Turner, Assaf Spanier. "LSTM in VQA-Med, is It Really Needed? JCE Study on the ImageCLEF 2019 Dataset." CLEF (Working Notes) 2019`
+
+Please also cite this paper if you are using it for your research!
 
 
