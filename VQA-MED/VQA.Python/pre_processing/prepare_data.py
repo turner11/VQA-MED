@@ -9,7 +9,6 @@ from functools import partial
 from nltk.corpus import stopwords
 import dask.dataframe as dd
 
-
 from common.os_utils import File
 from common.utils import VerboseTimer
 from common.settings import input_length, get_nlp, embedding_dim
@@ -34,9 +33,9 @@ def pre_process_raw_data(df):
         assert existing_idxs.all()
         # df = df.loc[df['path'].isin(existing_idxs)]
 
-
         # Getting text features. This is the heavy task...
         df = df.reset_index(drop=True)
+
         def process_text(txt):
             exclude = set(string.punctuation)
             no_punctuation = ''.join(ch.lower() if ch not in exclude else ' ' for ch in txt)
@@ -44,7 +43,6 @@ def pre_process_raw_data(df):
             no_multi_space = ' '.join(no_single_chars.split())
             # no_stop_words = ' '.join([w for w in no_multi_space.split() if w not in english_stopwords])
             return no_multi_space
-
 
         logger.info('Answer: removing stop words and tokenizing')
 
@@ -97,38 +95,31 @@ def __add_augmented_categories(df):
                               df.question.apply(lambda s: s.split()[0].lower() in ['does', 'is', 'are'])
     df.loc[yes_no_abnormality_rows, 'question_category'] = 'Abnormality_yes_no'
 
-    organ_system_folder = ModelFolder(folder="C:\\Users\\Public\\Documents\\Data\\2019\\models\\20190329_0440_18")
+    # organ_predictor_path = "C:\\Users\\Public\\Documents\\Data\\2019\\models\\20190329_0440_18"
+    # __add_organ_abnormality_categories(df, organ_predictor_path)
+
+
+def __add_organ_abnormality_categories(df, organ_predictor_path):
+    organ_system_folder = ModelFolder(folder=organ_predictor_path)
     organ_model = organ_system_folder.load_model()
     abnormality_rows = df.question_category == 'Abnormality'
     a = []
     df_organs = df[df.question_category == 'Organ']
     for i, row in df[abnormality_rows].iterrows():
         image_name = row.image_name
-        dd = df_organs[df_organs .image_name == image_name]
+        dd = df_organs[df_organs.image_name == image_name]
         if len(dd):
             organ = dd.iloc[0].answer
             clean_organ = re.sub(r'[^0-9a-zA-Z]+', '_', organ)
             new_category = f'Abnormality_{clean_organ}'
-            df.loc[i,'question_category'] = new_category
+            df.loc[i, 'question_category'] = new_category
     abnormality_rows = df.question_category == 'Abnormality'
-
     df_no_data = df[abnormality_rows]
     with VerboseTimer("Abnormality category prediction"):
-        df_preds = VqaModelPredictor._predict_keras(df_no_data,organ_model,organ_system_folder.prediction_vector,0.001)
-
-    df.loc[abnormality_rows,'question_category'] = df_preds.prediction.apply(
-        lambda organ:f"Abnormality_{re.sub(r'[^0-9a-zA-Z]+', '_', organ)}")
-
-
-
-
-
-
-
-
-
-
-
+        df_preds = VqaModelPredictor._predict_keras(df_no_data, organ_model, organ_system_folder.prediction_vector,
+                                                    0.001)
+    df.loc[abnormality_rows, 'question_category'] = df_preds.prediction.apply(
+        lambda organ: f"Abnormality_{re.sub(r'[^0-9a-zA-Z]+', '_', organ)}")
 
 
 def __add_category_prediction(df):
@@ -163,7 +154,8 @@ def __add_category_prediction(df):
                         curr_prob = probabilities[idx]
                         if curr_prob > highest_prob:
                             predictions[idx] = category
-        predictions_by_question = {row.processed_question: predictions[i] for i, row in df.iloc[idxs_predict].iterrows()}
+        predictions_by_question = {row.processed_question: predictions[i] for i, row in
+                                   df.iloc[idxs_predict].iterrows()}
         df.loc[idxs_predict, 'question_category'] = df.iloc[idxs_predict].processed_question.apply(
             lambda pq: predictions_by_question[pq])
 
@@ -181,8 +173,8 @@ def get_text_features(txt):
 
     text_features = np.zeros((1, input_length, embedding_dim), dtype=float)
 
-    no_data = txt == '' or txt is None or (isinstance(txt,float) and math.isnan(txt))
-    if no_data :
+    no_data = txt == '' or txt is None or (isinstance(txt, float) and math.isnan(txt))
+    if no_data:
         pass
     elif not isinstance(txt, str):
         raise Exception(f'Got an unexpected type for text features: {type(txt).__name__}\n (value was {str(txt)[:20]})')

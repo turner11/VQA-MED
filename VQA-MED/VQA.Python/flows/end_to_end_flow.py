@@ -243,7 +243,7 @@ def get_folder_suffix(question_category, dense_units, lstm_units, use_class_weig
 
     folder_suffix = f'{question_category}_dense_{"_".join(str(v) for v in dense_units)}'
     if lstm_units:
-        folder_suffix += f'_lstm_{lstm_units}'
+        folder_suffix += f'_lstm_{int(lstm_units)}'
     if use_text_inputs_attention:
         folder_suffix += f'_attention'
     if use_class_weight:
