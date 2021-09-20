@@ -1,18 +1,9 @@
-update conda (for me: 4.5.12)
-pip uninstall vurtualenv
-conda install virtual env
+# update conda (for me: 4.5.12)
 
-create conda virtual environment
-
-
-
-#Make sure conda is hand
-pip uninstall virtualenv
-conda install virtualenv
-
-cd C:\PATH_TO_PROJECT\VQA-MED\VQA-MED\VQA.Python
+# create conda virtual environment
 conda create -n vqa python=3.6
 activate vqa
 
+cd C:\PATH_TO_PROJECT\VQA-MED\VQA-MED\VQA.Python
 pip install -r requirements.txt
 python -m spacy download en

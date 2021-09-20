@@ -1,5 +1,6 @@
 import logging
 import keras.layers as keras_layers
+from keras.applications import InceptionResNetV2
 from keras.layers import GlobalAveragePooling2D, Flatten  # , Dense, Input, Dropout
 from keras.applications.vgg19 import VGG19
 # from keras.applications.resnet50 import ResNet50
@@ -14,7 +15,10 @@ from common.model_utils import save_model, get_trainable_params_distribution
 from common.constatns import vqa_models_folder
 from evaluate.statistical import f1_score, recall_score, precision_score
 
-DEFAULT_IMAGE_WEIGHTS = 'imagenet'
+VGG_19 = 'VGG19'
+ResNet50 = 'ResNet50'
+INCEPTION_RESNET_V2 = 'InceptionResNetV2'
+DEFAULT_IMAGE_WEIGHTS = VGG_19
 #  Since VGG was trained as a image of 224x224, every new image
 # is required to go through the same transformation
 image_size_by_base_models = {'imagenet': (224, 224)}
@@ -97,11 +101,17 @@ class VqaModelBuilder(object):
         return model
 
     @staticmethod
-    def get_image_model(base_model_weights=DEFAULT_IMAGE_WEIGHTS):
-        base_model_weights = base_model_weights
+    def get_image_model(base_model_name=DEFAULT_IMAGE_WEIGHTS, base_model_weights='imagenet'):
+        if base_model_name == VGG_19:
+            base_model = VGG19(weights=base_model_weights, include_top=False)
+        elif base_model_name == IMAGENET:
+            base_model = ResNet50(weights=base_model_weights, include_top=False)
+        elif base_model_name == INCEPTION_RESNET_V2:
+            base_model = InceptionResNetV2(weights=base_model_weights, include_top=False)
+        else:
+            raise Exception(f'Got unknown image net: {base_model_weights}')
 
-        base_model = VGG19(weights=base_model_weights, include_top=False)
-        #     base_model = ResNet50(weights=base_model_weights, include_top=False)
+
         base_model.trainable = False
         for layer in base_model.layers:
             layer.trainable = False

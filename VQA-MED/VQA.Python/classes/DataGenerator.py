@@ -35,7 +35,7 @@ class DataGenerator(keras.utils.Sequence):
         joined = data.join(augs, how='left').reset_index(drop=True)
         self.data = joined.sort_values(by='augmentation')
 
-        self.batch_size = batch_size
+        self.batch_size = int(batch_size)
         self.n_channels = n_channels
 
         self.indexes = np.arange(0)# Will be set in on_epoch_end
@@ -67,7 +67,9 @@ class DataGenerator(keras.utils.Sequence):
         """Generate one batch of data"""
         # Generate indexes of the batch
         try:
-            indexes = self.indexes[index * self.batch_size:(index + 1) * self.batch_size]
+            start = int(index * self.batch_size)
+            end = int((index + 1) * self.batch_size)
+            indexes = self.indexes[start:end]
             # Find list of IDs
             data = self.data.iloc[indexes]
             # Make sure not to get same question/image from different augmentations at the same pass
