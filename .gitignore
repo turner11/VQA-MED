@@ -345,7 +345,11 @@ VQA-MED/VQA.Python/data-2018/ckpts/embeddings_300.h5_BACKUP
 VQA-MED/VQA.Python/data-2018/vqa_specs.pkl
 VQA-MED/VQA.Python/data-2018/VQAMed2018Train-QA.xlsx
 VQA-MED/VQA.Python/data-2018/VQAMed2018Train-QA_processed.xlsx
+VQA-MED/VQA.Python/data-2018/vqa_specs.pkl
+VQA-MED/VQA.Python/logs/**
 *.parquet
+*.db
+*.h5
 VQA-MED/VQA.Python/exported_notebooks/__init__.py
 VQA-MED/VQA.Python/exported_notebooks/aaa.py
 VQA-MED/VQA.Python/.vscode/settings.json
