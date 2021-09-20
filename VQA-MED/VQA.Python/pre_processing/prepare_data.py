@@ -85,21 +85,20 @@ def pre_process_raw_data(df):
 
 
 def __add_augmented_categories(df):
-    import re
-    from common.functions import get_features
-    from classes.vqa_model_predictor import VqaModelPredictor
-    from data_access.model_folder import ModelFolder
-
     abnormality_rows = df.question_category == 'Abnormality'
     yes_no_abnormality_rows = abnormality_rows & \
                               df.question.apply(lambda s: s.split()[0].lower() in ['does', 'is', 'are'])
     df.loc[yes_no_abnormality_rows, 'question_category'] = 'Abnormality_yes_no'
 
-    # organ_predictor_path = "C:\\Users\\Public\\Documents\\Data\\2019\\models\\20190329_0440_18"
-    # __add_organ_abnormality_categories(df, organ_predictor_path)
+    organ_predictor_path = "C:\\Users\\Public\\Documents\\Data\\2019\\models\\20190329_0440_18"
+    __add_organ_abnormality_categories(df, organ_predictor_path)
 
 
 def __add_organ_abnormality_categories(df, organ_predictor_path):
+    import re
+    from common.functions import get_features
+    from classes.vqa_model_predictor import VqaModelPredictor
+    from data_access.model_folder import ModelFolder
     organ_system_folder = ModelFolder(folder=organ_predictor_path)
     organ_model = organ_system_folder.load_model()
     abnormality_rows = df.question_category == 'Abnormality'
